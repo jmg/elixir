@@ -1,0 +1,24 @@
+"""
+    DSL-syntax helper
+"""
+
+class Statement(object):
+    
+    """
+        Simple DSL statement
+    """
+    
+    statements = []
+    
+    def __init__(self, target):
+        self.target = target
+    
+    def __call__(self, *args, **kwargs):
+        Statement.statements.append((self, args, kwargs))
+    
+    @classmethod
+    def process(cls, entity):
+        """apply all statements to the given entity"""
+        for statement, args, kwargs in Statement.statements:
+            statement.target(entity, *args, **kwargs)
+        Statement.statements = []
