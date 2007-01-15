@@ -3,7 +3,7 @@
 """
 
 import sys
-from sqlalchemy import Table, Integer, relation
+from sqlalchemy import Table, Integer, relation, desc
 from sqlalchemy.orm.properties import ColumnProperty
 
 from sqlalchemy.ext.assignmapper import assign_mapper
@@ -114,9 +114,23 @@ class EntityDescriptor(object):
             return
         
         session = getattr(self.module, 'session', supermodel.objectstore)
-        
         table = self.setup_table()
-        assign_mapper(session.context, entity, table)
+        
+        kwargs = dict()
+        if self.order_by:
+            if isinstance(self.order_by, basestring):
+                self.order_by = [self.order_by]
+            
+            order = list()
+            for field in self.order_by:
+                col = self.fields[field.strip('-')].column
+                if field.startswith('-'):
+                    col = desc(col)
+                order.append(col)
+            
+            kwargs['order_by'] = order
+        
+        assign_mapper(session.context, entity, table, **kwargs)
         supermodel.metadatas.add(self.metadata)
     
     def setup_table(self):

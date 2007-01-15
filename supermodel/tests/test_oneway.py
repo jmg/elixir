@@ -35,7 +35,6 @@ class TestOneWay(object):
     
     def teardown(self):
         drop_all()
-        pass
     
     def test_oneway(self):
         santa = Person(name="Santa Claus")

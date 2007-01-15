@@ -38,7 +38,10 @@ class UsingOptions(object):
                                       the corresponding entity
                                 
                                 False: Disallow auto-creation of a primary key
-            order_by:           (not yet implemented)
+            order_by:           How to order select results. Either a string
+                                or a list of strings, composed of the field
+                                name, optionally lead by a minus (descending
+                                order)
         """
         
         desc = entity._descriptor

@@ -92,7 +92,6 @@ class TestMovies(object):
         objectstore.flush()
         objectstore.clear()
         
-        
         # directors
         assert Movie.get_by(title="Alien").director is Director.get_by(name="Ridley Scott")
         assert Director.get_by(name="Ridley Scott").name == "Ridley Scott"

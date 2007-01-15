@@ -16,7 +16,7 @@ class Person(Entity):
     belongs_to('father', of_kind='Person', as='children')
     has_many('children', of_kind='Person', as='father')
     
-    using_options(tablename="people", order_by="name")
+    using_options(tablename='people', order_by='name')
 
 
 class TestSelfRef(object):
