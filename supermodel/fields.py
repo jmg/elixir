@@ -23,10 +23,23 @@ class Field(object):
         return self._column
 
 
+class HasField(object):
+    """
+        Specifies one field of an entity
+    """
+
+    def __init__(self, entity, name, *args, **kwargs):
+        field = Field(*args, **kwargs)
+        field.colname = name
+        entity._descriptor.add_field(field)
+
+has_field = Statement(HasField)
+
+
 class WithFields(object):
     
     """
-        Specifies all fields of an entity
+        Specifies all fields of an entity at once
     """
     
     def __init__(self, entity, *args, **fields):
@@ -38,5 +51,5 @@ class WithFields(object):
                 field.colname = colname
             desc.add_field(field)
 
-
 with_fields = Statement(WithFields)
+

@@ -2,7 +2,6 @@
     simple test case
 """
 
-import nose
 from sqlalchemy import create_engine
 from supermodel import *
 from supermodel import metadata, objectstore
@@ -27,7 +26,6 @@ class TestSelfRef(object):
     
     def teardown(self):
         drop_all()
-        pass
     
     def test_selfref(self):
         grampa = Person(name="Abe")

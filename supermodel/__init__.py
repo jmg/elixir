@@ -8,7 +8,7 @@ import sqlalchemy
 from sqlalchemy.types import *
 
 from supermodel.entity import Entity, EntityDescriptor
-from supermodel.fields import Field, with_fields
+from supermodel.fields import Field, has_field, with_fields
 from supermodel.relationships import belongs_to, has_one, has_many, \
                                      has_and_belongs_to_many
 from supermodel.options import using_options
@@ -16,7 +16,7 @@ from supermodel.options import using_options
 import sqlalchemy
 from sqlalchemy.ext.sessioncontext import SessionContext
 
-__all__ = ['Entity', 'Field', 'with_fields', 'belongs_to', 'has_one',
+__all__ = ['Entity', 'Field', 'has_field', 'with_fields', 'belongs_to', 'has_one',
            'has_many', 'has_and_belongs_to_many', 'using_options',
            'create_all', 'drop_all'] + sqlalchemy.types.__all__
 
