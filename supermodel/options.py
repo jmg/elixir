@@ -12,7 +12,8 @@ class UsingOptions(object):
         'auto_primarykey',
         'tablename',
         'shortnames',
-        'order_by'
+        'order_by',
+        'extension'
     ]
     
     def __init__(self, entity, *args, **kwargs):
@@ -42,6 +43,7 @@ class UsingOptions(object):
                                 or a list of strings, composed of the field
                                 name, optionally lead by a minus (descending
                                 order)
+            extension:          Use one or more MapperExtensions
         """
         
         desc = entity._descriptor

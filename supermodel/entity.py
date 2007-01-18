@@ -68,6 +68,7 @@ class EntityDescriptor(object):
         self.auto_primarykey = True
         self.shortnames = False
         self.tablename = None
+        self.extension = None
         
         entity.table = None
         entity.mapper = None
@@ -129,6 +130,9 @@ class EntityDescriptor(object):
                 order.append(col)
             
             kwargs['order_by'] = order
+        
+        if self.extension:
+            kwargs['extension'] = self.extension
         
         assign_mapper(session.context, entity, table, **kwargs)
         supermodel.metadatas.add(self.metadata)
