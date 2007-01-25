@@ -13,7 +13,7 @@ class Director(Entity):
         name = Field(Unicode(60))
     )
     
-    has_many('movies', of_kind='Movie', as='director')
+    has_many('movies', of_kind='Movie', inverse='director')
     
     using_options(shortnames=True)
 
@@ -30,10 +30,10 @@ class Movie(Entity):
     )
     
     # relationships
-    belongs_to('director', of_kind="Director", as='movies')
+    belongs_to('director', of_kind="Director", inverse='movies')
     
-    has_and_belongs_to_many('actors', of_kind="Actor", as='movies')
-    has_one('media', of_kind='Media', as='movie')
+    has_and_belongs_to_many('actors', of_kind="Actor", inverse='movies')
+    has_one('media', of_kind='Media', inverse='movie')
     
     # options
     using_options(tablename="movies_table")
@@ -44,7 +44,7 @@ class Actor(Entity):
         name = Field(Unicode(60))
     )
     
-    has_and_belongs_to_many('movies', of_kind="Movie", as="actors")
+    has_and_belongs_to_many('movies', of_kind="Movie", inverse="actors")
 
 
 class Media(Entity):
@@ -52,7 +52,7 @@ class Media(Entity):
         number = Field(Integer, primary_key=True)
     )
     
-    belongs_to('movie', of_kind='Movie', as='media')
+    belongs_to('movie', of_kind='Movie', inverse='media')
     
 
 class TestMovies(object):

@@ -1,6 +1,6 @@
 import sys
 from sqlalchemy import relation, ForeignKeyConstraint, Column, Table, \
-                       backref, class_mapper
+                       backref, class_mapper, and_
 from sqlalchemy.util import to_set
 from supermodel.statements import Statement
 from supermodel.fields import Field
@@ -12,10 +12,10 @@ class Relationship(object):
         Base class for relationships
     """
     
-    def __init__(self, entity, *args, **kwargs):
-        self.name = args[0]
+    def __init__(self, entity, name, *args, **kwargs):
+        self.name = name
         self.of_kind = kwargs.pop('of_kind')
-        self.inverse_name = kwargs.pop('as', None)
+        self.inverse_name = kwargs.pop('inverse', None)
         
         self.entity = entity
         self._target = None
@@ -34,6 +34,7 @@ class Relationship(object):
         self.args = args
         self.kwargs = kwargs
         
+        #CHECKME: is this useful?
         self.entity._descriptor.relationships[self.name] = self
     
     def create_keys(self):
@@ -82,12 +83,14 @@ class Relationship(object):
             # full qualified entity name?
             if path:
                 module = sys.modules[path.pop()]
-            else: # if not, try the same module as the source
+            # if not, try the same module as the source
+            else: 
                 module = self.entity._descriptor.module
             
             try:
                 self._target = getattr(module, classname)
             except AttributeError:
+                #CHECKME: this is really ugly. Do we really need that?
                 e = EntityDescriptor.current.entity
                 if classname == e.__name__ or \
                         self.of_kind == e.__module__ +'.'+ e.__name__:
@@ -97,39 +100,50 @@ class Relationship(object):
         
         return self._target
     
-    def get_inverse(self):
+    @property
+    def inverse(self):
+        #TODO: we should use a different value for when an inverse was searched
+        # for but none was found than when it hasn't been searched for yet so
+        # that we don't do the whole search again
         if not self._inverse:
-            if not self.inverse_name:
-                # TODO: automatically figure out inverses in non-ambiguous
-                #       situations
-                return None
+            if self.inverse_name:
+                desc = self.target._descriptor
+                inverse = desc.relationships[self.inverse_name]
+                assert self.match_type_of(inverse)
+            else:
+                inverse = self.target._descriptor.get_inverse_relation(self)
         
-            inverse = self.target._descriptor.relationships[self.inverse_name]
-        
-            if isinstance(self, BelongsTo):
-                assert isinstance(inverse, HasOne) or \
-                            isinstance(inverse, HasMany)
-            elif isinstance(self, HasOne) or isinstance(self, HasMany):
-                assert isinstance(inverse, BelongsTo)
-            elif isinstance(self, HasAndBelongsToMany):
-                assert isinstance(inverse, HasAndBelongsToMany)
-        
-            self._inverse = inverse
-            inverse.inverse = self
+            if inverse:
+                self._inverse = inverse
+                inverse._inverse = self
         
         return self._inverse
     
-    def set_inverse(self, inverse):
-        self._inverse = inverse
+    def match_type_of(self, other):
+        t1, t2 = type(self), type(other)
     
-    inverse = property(get_inverse, set_inverse)
-        
+        if t1 is HasAndBelongsToMany:
+            return t1 is t2
+        elif t1 in (HasOne, HasMany):
+            return t2 is BelongsTo
+        elif t1 is BelongsTo:
+            return t2 in (HasMany, HasOne)
+        else:
+            return False
+
+    def is_inverse(self, other):
+        return other is not self and \
+               self.match_type_of(other) and \
+               self.entity == other.target and \
+               other.entity == self.target and \
+               (self.inverse_name == other.name or not self.inverse_name) and \
+               (other.inverse_name == self.name or not other.inverse_name)
 
 class BelongsTo(Relationship):
     def create_keys(self):
         """
-            Find all primary keys on the target and accordingly create
-            foreign keys on the source
+            Find all primary keys on the target and create
+            foreign keys on the source accordingly 
         """
         source_desc = self.entity._descriptor
         target_desc = self.target._descriptor
@@ -147,6 +161,8 @@ class BelongsTo(Relationship):
         for key in target_desc.primary_keys:
             keycol = key.column
             refcol = target_desc.tablename + '.' + keycol.name
+            #CHECKME: why do we use a Field here instead of directly using a 
+            # Column
             field = Field(keycol.type, colname=self.name + '_' + keycol.name,
                           index=True)
             
@@ -162,14 +178,15 @@ class BelongsTo(Relationship):
                                         use_alter=True))
     
     def create_properties(self):
-        kwargs = dict()
+        kwargs = self.kwargs
         
         if self.entity is self.target:
             cols = [k.column for k in self.target._descriptor.primary_keys]
             kwargs['remote_side'] = cols
         
-        if self.inverse:
-            kwargs['backref'] = self.inverse.name
+        #CHECKME: is this of any use?
+#        if self.inverse:
+#            kwargs['backref'] = self.inverse.name
         
         kwargs['uselist'] = False
         
@@ -178,77 +195,125 @@ class BelongsTo(Relationship):
 
 
 class HasOne(Relationship):
+    uselist = False
+
     def create_keys(self):
         # make sure the inverse is set up because it creates the
         # foreign key we'll need
         self.inverse.setup()
     
-    def create_properties(self, uselist=False):
-        kwargs = dict()
+    def create_properties(self):
+        kwargs = self.kwargs
         
         if self.entity is self.target:
             kwargs['post_update'] = True
             kwargs['remote_side'] = [f.column
                                         for f in self.inverse.foreign_key]
         
-        kwargs['backref'] = self.inverse.name
+        #CHECKME: is this of any use?
+#        kwargs['backref'] = self.inverse.name
+        #FIXME: this is *BAD*
         kwargs['post_update'] = True
-        kwargs['uselist'] = uselist
+        kwargs['uselist'] = self.uselist
         
         self.property = relation(self.target, **kwargs)
         self.entity.mapper.add_property(self.name, self.property)
 
 
 class HasMany(HasOne):
-    def create_properties(self):
-        super(HasMany, self).create_properties(uselist=True)
+    uselist = True
 
 
 class HasAndBelongsToMany(Relationship):
     def create_tables(self):
-        t1_desc = self.entity._descriptor
-        t2_desc = self.target._descriptor
-        
-        columns = list()
-        constraints = list()
-        
         if self.inverse:
-            if isinstance(self.inverse, basestring):
-                self.inverse = t2_desc.relationships[self.inverse]
-            
             if self.inverse.secondary:
                 self.secondary = self.inverse.secondary
 
         if not self.secondary:
-            for t in [t1_desc, t2_desc]:
-                cols = list()
-                refcols = list()
+            e1_desc = self.entity._descriptor
+            e2_desc = self.target._descriptor
             
-                for key in t.primary_keys:
-                    keycol = key.column
-                    refcol = t.tablename + '.' + keycol.name
-                    col = Column(t.tablename +'_' + keycol.name, keycol.type)
-                    cols.append(col.name)
+            columns = list()
+            constraints = list()
+
+            #CHECKME: it might be better to only compute joins when we have a
+            # self reference. The thing is I'm unsure it's only usefull in that
+            # case. I think it's also usefull when you have several many-to-many
+            # relations between the same objects. I'll have to test that...
+#            if self.entity is self.target:
+#                print "many2many self ref detected"
+            self.primary_clauses = list()
+            self.secondary_clauses = list()
+
+            for desc, join_name in ((e1_desc, 'primary'), 
+                                    (e2_desc, 'secondary')):
+                fk_colnames = list()
+                fk_refcols = list()
+            
+                for key in desc.primary_keys:
+                    pk_col = key.column
+                    
+                    colname = '%s_%s' % (desc.tablename, pk_col.name)
+
+                    # In case we have many-to-many self-reference, we need
+                    # to tweak the names of the columns corresponding to one 
+                    # of the entities so that we don't end up with twice the 
+                    # same column name.
+
+                    # If we are in that case, we test whether we are in the 
+                    # second iteration or not
+                    if self.entity is self.target and \
+                       (join_name == 'secondary'):
+                        colname += '2'
+
+                    col = Column(colname, pk_col.type)
                     columns.append(col)
-                    refcols.append(refcol)
+
+                    # build the list of columns which will be part of the 
+                    # foreign key
+                    fk_colnames.append(colname)
+
+                    # build the list of columns the foreign key will point to
+                    fk_refcols.append(desc.tablename + '.' + pk_col.name)
+
+                    # build join clauses
+                    getattr(self, join_name+'_clauses').append(col == pk_col)
                 
                 # TODO: better constraint-naming?
+                #FIXME: using use_alter systematically is no good
                 constraints.append(
-                    ForeignKeyConstraint(cols, refcols,
-                                    name=t.tablename + '_fk', use_alter=True))
+                    ForeignKeyConstraint(fk_colnames, fk_refcols,
+                                         name=desc.tablename + '_fk', 
+                                         use_alter=True))
         
-            tablename = "%s_%s__%s_%s" % (t1_desc.tablename, self.name,
-                                          t2_desc.tablename,
-                                          self.inverse.name)
+            # In the table name code below, we use the name of the relation
+            # for the first entity (instead of the name of its primary key), 
+            # so that we can have two many-to-many relations between the same
+            # objects without having a table name collision. On the other hand,
+            # we use the name of the primary key for the second entity 
+            # (instead of the inverse relation's name) so that a many-to-many
+            # relation can be defined without inverse.
+            e2_pk_name = '_'.join([key.column.name for key in
+                                   e2_desc.primary_keys])
+            tablename = "%s_%s__%s_%s" % (e1_desc.tablename, self.name,
+                                          e2_desc.tablename, e2_pk_name)
 
             args = columns + constraints
-            self.secondary = Table(tablename, t1_desc.metadata, *args)
+            self.secondary = Table(tablename, e1_desc.metadata, *args)
     
     def create_properties(self):
+        kwargs = self.kwargs
+
+        if self.entity is self.target:
+            kwargs['primaryjoin'] = and_(*self.primary_clauses)
+            kwargs['secondaryjoin'] = and_(*self.secondary_clauses)
+
         m = self.entity.mapper
+        #FIXME: using post_update systematically is *really* not good
         m.add_property(self.name,
                        relation(self.target, secondary=self.secondary,
-                                uselist=True, post_update=True))
+                                uselist=True, post_update=True, **kwargs))
 
 
 belongs_to = Statement(BelongsTo)

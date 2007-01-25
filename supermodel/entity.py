@@ -28,9 +28,11 @@ class Entity(object):
         def __init__(cls, name, bases, dict_):
             try:
                 desc = cls._descriptor = EntityDescriptor(cls)
+                #FIXME: ugllyyyyy
                 EntityDescriptor.current = desc
             except NameError:
-                return # happens only for the base class itself
+                # happens only for the base class itself
+                return 
             
             Statement.process(cls)
 
@@ -156,7 +158,6 @@ class EntityDescriptor(object):
             kwargs['autoload'] = True
         
         table = Table(self.tablename, self.metadata, *args, **kwargs)
-        table.entity_descriptor = self
         self.entity.table = table
         return table
     
@@ -182,7 +183,8 @@ class EntityDescriptor(object):
         table = self.entity.table
         if table:
             table.append_column(field.column)
-    
+
+    #FIXME: to remove. it's better to just use SA directly
     def add_constraint(self, constraint):
         self.constraints.append(constraint)
         
@@ -190,6 +192,24 @@ class EntityDescriptor(object):
         if table:
             table.append_constraint(constraint)
         
+    def get_inverse_relation(self, rel):
+        """Return the inverse relation of rel, if any, None otherwise."""
+
+        matching_rel = None
+        for other_rel in self.relationships.itervalues():
+            if other_rel.is_inverse(rel):
+                if matching_rel is None:
+                    matching_rel = other_rel
+                else:
+                    raise Exception(
+                            "Several relations match as inverse of the '%s' "
+                            "relation in class '%s'. You should specify "
+                            "inverse relations manually by using the inverse "
+                            "keyword."
+                            % (rel.name, rel.entity.__name__) 
+                          )
+        return matching_rel
+
     @classmethod
     def setup_relationships(cls):
         for relationship in list(EntityDescriptor.uninitialized_rels):
