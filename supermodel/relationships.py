@@ -158,18 +158,24 @@ class BelongsTo(Relationship):
             return
         
         self.foreign_key = []
+        self.primaryjoin_clauses = list()
+
         for key in target_desc.primary_keys:
-            keycol = key.column
-            refcol = target_desc.tablename + '.' + keycol.name
+            pk_col = key.column
+            refcol = target_desc.tablename + '.' + pk_col.name
             #CHECKME: why do we use a Field here instead of directly using a 
             # Column
-            field = Field(keycol.type, colname=self.name + '_' + keycol.name,
+            field = Field(pk_col.type, colname=self.name + '_' + pk_col.name,
                           index=True)
             
             self.foreign_key.append(field)
             refcolumns.append(refcol)
             columns.append(field.column.name)
             source_desc.add_field(field)
+
+            # build up the primary join. This is needed when you have several
+            # belongs_to relations between two objects
+            self.primaryjoin_clauses.append(field.column == pk_col)
         
         # TODO: better constraint-naming?
         source_desc.add_constraint(ForeignKeyConstraint(
@@ -183,6 +189,8 @@ class BelongsTo(Relationship):
         if self.entity is self.target:
             cols = [k.column for k in self.target._descriptor.primary_keys]
             kwargs['remote_side'] = cols
+
+        kwargs['primaryjoin'] = and_(*self.primaryjoin_clauses)
         
         #CHECKME: is this of any use?
 #        if self.inverse:
@@ -210,6 +218,7 @@ class HasOne(Relationship):
             kwargs['remote_side'] = [f.column
                                         for f in self.inverse.foreign_key]
         
+        kwargs['primaryjoin'] = and_(*self.inverse.primaryjoin_clauses)
         #CHECKME: is this of any use?
 #        kwargs['backref'] = self.inverse.name
         #FIXME: this is *BAD*
@@ -229,6 +238,8 @@ class HasAndBelongsToMany(Relationship):
         if self.inverse:
             if self.inverse.secondary:
                 self.secondary = self.inverse.secondary
+                self.primaryjoin_clauses = self.inverse.secondaryjoin_clauses
+                self.secondaryjoin_clauses = self.inverse.primaryjoin_clauses
 
         if not self.secondary:
             e1_desc = self.entity._descriptor
@@ -241,10 +252,13 @@ class HasAndBelongsToMany(Relationship):
             # self reference. The thing is I'm unsure it's only usefull in that
             # case. I think it's also usefull when you have several many-to-many
             # relations between the same objects. I'll have to test that...
+            # no it's not since the tables are different. It would only if the
+            # tables where the same, but I'm not sure if it has some sense to be
+            # in that situation.
 #            if self.entity is self.target:
 #                print "many2many self ref detected"
-            self.primary_clauses = list()
-            self.secondary_clauses = list()
+            self.primaryjoin_clauses = list()
+            self.secondaryjoin_clauses = list()
 
             for desc, join_name in ((e1_desc, 'primary'), 
                                     (e2_desc, 'secondary')):
@@ -278,7 +292,8 @@ class HasAndBelongsToMany(Relationship):
                     fk_refcols.append(desc.tablename + '.' + pk_col.name)
 
                     # build join clauses
-                    getattr(self, join_name+'_clauses').append(col == pk_col)
+                    join_list = getattr(self, join_name+'join_clauses')
+                    join_list.append(col == pk_col)
                 
                 # TODO: better constraint-naming?
                 #FIXME: using use_alter systematically is no good
@@ -305,9 +320,9 @@ class HasAndBelongsToMany(Relationship):
     def create_properties(self):
         kwargs = self.kwargs
 
-        if self.entity is self.target:
-            kwargs['primaryjoin'] = and_(*self.primary_clauses)
-            kwargs['secondaryjoin'] = and_(*self.secondary_clauses)
+        if self.target is self.entity:
+            kwargs['primaryjoin'] = and_(*self.primaryjoin_clauses)
+            kwargs['secondaryjoin'] = and_(*self.secondaryjoin_clauses)
 
         m = self.entity.mapper
         #FIXME: using post_update systematically is *really* not good
