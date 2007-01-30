@@ -235,6 +235,11 @@ class HasMany(HasOne):
 
 
 class HasAndBelongsToMany(Relationship):
+    
+    def __init__(self, entity, name, *args, **kwargs):
+        self.tablename = kwargs.pop('table_name', None)
+        super(HasAndBelongsToMany, self).__init__(entity, name, *args, **kwargs)
+    
     def create_tables(self):
         if self.inverse:
             if self.inverse.secondary:
@@ -296,10 +301,13 @@ class HasAndBelongsToMany(Relationship):
             # we use the name of the primary key for the second entity 
             # (instead of the inverse relation's name) so that a many-to-many
             # relation can be defined without inverse.
-            e2_pk_name = '_'.join([key.column.name for key in
-                                   e2_desc.primary_keys])
-            tablename = "%s_%s__%s_%s" % (e1_desc.tablename, self.name,
-                                          e2_desc.tablename, e2_pk_name)
+            if not self.tablename:
+                e2_pk_name = '_'.join([key.column.name for key in
+                                       e2_desc.primary_keys])
+                tablename = "%s_%s__%s_%s" % (e1_desc.tablename, self.name,
+                                              e2_desc.tablename, e2_pk_name)
+            else:
+                tablename = self.tablename
 
             args = columns + constraints
             self.secondary = Table(tablename, e1_desc.metadata, *args)
