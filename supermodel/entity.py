@@ -28,10 +28,12 @@ class Entity(object):
         def __init__(cls, name, bases, dict_):
             try:
                 desc = cls._descriptor = EntityDescriptor(cls)
-                #FIXME: ugllyyyyy
                 EntityDescriptor.current = desc
             except NameError:
                 # happens only for the base class itself
+                #CHECKME: checking explicitely for the name 'Entity' seem 
+                # cleaner to me because it's more explicit and we wouldn't 
+                # rely on code position which is always subject to change
                 return 
             
             Statement.process(cls)
@@ -64,6 +66,11 @@ class EntityDescriptor(object):
         self.relationships = dict()
         self.constraints = list()
         self.module = sys.modules[entity.__module__]
+
+        #CHECKME: this is a workaround for the "current" descriptor/target
+        # property ugliness. The problem is that this workaround is ugly too.
+        # I'm not sure if this is a safe practice. It works but...?
+#        setattr(self.module, entity.__name__, entity)
         self.metadata = getattr(self.module, 'metadata', supermodel.metadata)
         self.initialized = False
         self.autoload = None
@@ -86,8 +93,9 @@ class EntityDescriptor(object):
             if self.shortnames:
                 self.tablename = entity.__name__.lower()
             else:
-                self.tablename = entity.__module__.replace('.', '_')
-                self.tablename += '_'+ entity.__name__
+                modulename = entity.__module__.replace('.', '_')
+                tablename = "%s_%s" % (modulename, entity.__name__)
+                self.tablename = tablename.lower()
     
     def setup(self):
         """
@@ -111,9 +119,7 @@ class EntityDescriptor(object):
             Initializes and assign a mapper to the given entity,
             which needs a table defined, so it calls setup_table.
         """
-        entity = self.entity
-        
-        if entity.mapper:
+        if self.entity.mapper:
             return
         
         session = getattr(self.module, 'session', supermodel.objectstore)
@@ -136,7 +142,7 @@ class EntityDescriptor(object):
         if self.extension:
             kwargs['extension'] = self.extension
         
-        assign_mapper(session.context, entity, table, **kwargs)
+        assign_mapper(session.context, self.entity, table, **kwargs)
         supermodel.metadatas.add(self.metadata)
     
     def setup_table(self):
@@ -167,9 +173,10 @@ class EntityDescriptor(object):
         """
         assert not self.primary_keys and self.auto_primarykey
         
-        colname = DEFAULT_AUTO_PRIMARYKEY_NAME
         if isinstance(self.auto_primarykey, basestring):
             colname = self.auto_primarykey
+        else:
+            colname = DEFAULT_AUTO_PRIMARYKEY_NAME
         
         self.add_field(Field(DEFAULT_AUTO_PRIMARYKEY_TYPE,
                              colname=colname, primary_key=True))

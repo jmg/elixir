@@ -16,6 +16,21 @@ class Person(Entity):
     has_many('children', of_kind='Person', inverse='father')
     has_and_belongs_to_many('friends', of_kind='Person')
 
+# define a self-referential table with several relations
+class TreeNode(Entity):
+    has_field('name', String(50), nullable=False)
+
+    belongs_to('parent', of_kind='TreeNode')
+    has_many('children', of_kind='TreeNode', inverse='parent')
+    belongs_to('root', of_kind='TreeNode')
+
+    def __str__(self):
+        return self._getstring(0)
+
+    def _getstring(self, level):
+        s = ('  ' * level) + "%s (%s,%s,%s, %d)" % (self.name, self.id, self.parent_id, self.root_id, id(self)) + '\n'
+        s += ''.join([n._getstring(level+1) for n in self.children])
+        return s
 
 class TestSelfRef(object):
     def setup(self):
@@ -63,7 +78,22 @@ class TestSelfRef(object):
 
         assert homer in barney.friends
         assert barney in homer.friends
+
+    def test_belongs_to_multiple_selfref(self):
+        node2 = TreeNode(name='node2')
+        node2.children.append(TreeNode(name='subnode1'))
+        node2.children.append(TreeNode(name='subnode2'))
+        node = TreeNode(name='rootnode')
+        node.children.append(TreeNode(name='node1'))
+        node.children.append(node2)
+        node.children.append(TreeNode(name='node3'))
+            
+        objectstore.flush()
+        objectstore.clear()
         
+        root = TreeNode.get_by(name='rootnode')
+        print root
+
 if __name__ == '__main__':
     test = TestSelfRef()
     test.setup()
@@ -71,4 +101,7 @@ if __name__ == '__main__':
     test.teardown()        
     test.setup()
     test.test_has_and_belongs_to_many_selfref()
+    test.teardown()        
+    test.setup()
+    test.test_belongs_to_multiple_selfref()
     test.teardown()        

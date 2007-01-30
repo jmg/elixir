@@ -90,7 +90,12 @@ class Relationship(object):
             try:
                 self._target = getattr(module, classname)
             except AttributeError:
-                #CHECKME: this is really ugly. Do we really need that?
+                # This is ugly but we need it because the class which is
+                # currently being defined (we have to keep in mind we are in 
+                # its metaclass code) is not yet available in the module
+                # namespace, so the getattr above fails. And unfortunately,
+                # this doesn't only happen for the owning entity of this
+                # relation since we might be setting up a deferred relation.
                 e = EntityDescriptor.current.entity
                 if classname == e.__name__ or \
                         self.of_kind == e.__module__ +'.'+ e.__name__:
@@ -148,38 +153,44 @@ class BelongsTo(Relationship):
         source_desc = self.entity._descriptor
         target_desc = self.target._descriptor
         
-        refcolumns = []
-        columns = []
-        
         if self.foreign_key:
             self.foreign_key = [source_desc.fields[k]
                                     for k in self.foreign_key 
                                         if isinstance(k, basestring)]
             return
         
-        self.foreign_key = []
+        fk_refcols = list()
+        fk_colnames = list()
+
+        self.foreign_key = list()
         self.primaryjoin_clauses = list()
 
         for key in target_desc.primary_keys:
             pk_col = key.column
-            refcol = target_desc.tablename + '.' + pk_col.name
-            #CHECKME: why do we use a Field here instead of directly using a 
-            # Column
-            field = Field(pk_col.type, colname=self.name + '_' + pk_col.name,
-                          index=True)
-            
-            self.foreign_key.append(field)
-            refcolumns.append(refcol)
-            columns.append(field.column.name)
+
+            colname = '%s_%s' % (self.name, pk_col.name)
+            # we use a Field here instead of using a Column directly 
+            # because of add_field 
+            field = Field(pk_col.type, colname=colname, index=True)
             source_desc.add_field(field)
+
+            self.foreign_key.append(field)
+
+            # build the list of local columns which will be part of
+            # the foreign key
+            fk_colnames.append(colname)
+
+            # build the list of columns the foreign key will point to
+            fk_refcols.append(target_desc.tablename + '.' + pk_col.name)
 
             # build up the primary join. This is needed when you have several
             # belongs_to relations between two objects
             self.primaryjoin_clauses.append(field.column == pk_col)
         
         # TODO: better constraint-naming?
+        #CHECKME: do we really need use_alter systematically?
         source_desc.add_constraint(ForeignKeyConstraint(
-                                        columns, refcolumns,
+                                        fk_colnames, fk_refcols,
                                         name=self.name +'_fk',
                                         use_alter=True))
     
@@ -191,11 +202,6 @@ class BelongsTo(Relationship):
             kwargs['remote_side'] = cols
 
         kwargs['primaryjoin'] = and_(*self.primaryjoin_clauses)
-        
-        #CHECKME: is this of any use?
-#        if self.inverse:
-#            kwargs['backref'] = self.inverse.name
-        
         kwargs['uselist'] = False
         
         self.property = relation(self.target, **kwargs)
@@ -214,15 +220,10 @@ class HasOne(Relationship):
         kwargs = self.kwargs
         
         if self.entity is self.target:
-            kwargs['post_update'] = True
-            kwargs['remote_side'] = [f.column
-                                        for f in self.inverse.foreign_key]
+            kwargs['remote_side'] = [field.column
+                                        for field in self.inverse.foreign_key]
         
         kwargs['primaryjoin'] = and_(*self.inverse.primaryjoin_clauses)
-        #CHECKME: is this of any use?
-#        kwargs['backref'] = self.inverse.name
-        #FIXME: this is *BAD*
-        kwargs['post_update'] = True
         kwargs['uselist'] = self.uselist
         
         self.property = relation(self.target, **kwargs)
@@ -248,20 +249,11 @@ class HasAndBelongsToMany(Relationship):
             columns = list()
             constraints = list()
 
-            #CHECKME: it might be better to only compute joins when we have a
-            # self reference. The thing is I'm unsure it's only usefull in that
-            # case. I think it's also usefull when you have several many-to-many
-            # relations between the same objects. I'll have to test that...
-            # no it's not since the tables are different. It would only if the
-            # tables where the same, but I'm not sure if it has some sense to be
-            # in that situation.
-#            if self.entity is self.target:
-#                print "many2many self ref detected"
             self.primaryjoin_clauses = list()
             self.secondaryjoin_clauses = list()
 
-            for desc, join_name in ((e1_desc, 'primary'), 
-                                    (e2_desc, 'secondary')):
+            for num, desc, join_name in (('1', e1_desc, 'primary'), 
+                                         ('2', e2_desc, 'secondary')):
                 fk_colnames = list()
                 fk_refcols = list()
             
@@ -270,22 +262,17 @@ class HasAndBelongsToMany(Relationship):
                     
                     colname = '%s_%s' % (desc.tablename, pk_col.name)
 
-                    # In case we have many-to-many self-reference, we need
-                    # to tweak the names of the columns corresponding to one 
-                    # of the entities so that we don't end up with twice the 
-                    # same column name.
-
-                    # If we are in that case, we test whether we are in the 
-                    # second iteration or not
-                    if self.entity is self.target and \
-                       (join_name == 'secondary'):
-                        colname += '2'
+                    # In case we have a many-to-many self-reference, we need
+                    # to tweak the names of the columns so that we don't end 
+                    # up with twice the same column name.
+                    if self.entity is self.target:
+                        colname += num
 
                     col = Column(colname, pk_col.type)
                     columns.append(col)
 
-                    # build the list of columns which will be part of the 
-                    # foreign key
+                    # build the list of local columns which will be part of
+                    # the foreign key
                     fk_colnames.append(colname)
 
                     # build the list of columns the foreign key will point to
@@ -296,7 +283,7 @@ class HasAndBelongsToMany(Relationship):
                     join_list.append(col == pk_col)
                 
                 # TODO: better constraint-naming?
-                #FIXME: using use_alter systematically is no good
+                #CHECKME: do we really need use_alter systematically?
                 constraints.append(
                     ForeignKeyConstraint(fk_colnames, fk_refcols,
                                          name=desc.tablename + '_fk', 
@@ -328,7 +315,7 @@ class HasAndBelongsToMany(Relationship):
         #FIXME: using post_update systematically is *really* not good
         m.add_property(self.name,
                        relation(self.target, secondary=self.secondary,
-                                uselist=True, post_update=True, **kwargs))
+                                uselist=True, **kwargs))
 
 
 belongs_to = Statement(BelongsTo)
