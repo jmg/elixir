@@ -1,10 +1,10 @@
+from sqlalchemy             import relation, ForeignKeyConstraint, \
+                                   Column, Table, and_
+from supermodel.statements  import Statement
+from supermodel.fields      import Field
+from supermodel.entity      import EntityDescriptor
+
 import sys
-from sqlalchemy import relation, ForeignKeyConstraint, Column, Table, \
-                       backref, class_mapper, and_
-from sqlalchemy.util import to_set
-from supermodel.statements import Statement
-from supermodel.fields import Field
-from supermodel.entity import EntityDescriptor
 
 
 class Relationship(object):
@@ -237,7 +237,7 @@ class HasMany(HasOne):
 class HasAndBelongsToMany(Relationship):
     
     def __init__(self, entity, name, *args, **kwargs):
-        self.tablename = kwargs.pop('table_name', None)
+        self.tablename = kwargs.pop('tablename', None)
         super(HasAndBelongsToMany, self).__init__(entity, name, *args, **kwargs)
     
     def create_tables(self):

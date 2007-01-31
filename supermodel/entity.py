@@ -2,15 +2,13 @@
     Entity baseclass, metaclass and descriptor
 """
 
+from sqlalchemy                     import Table, Integer, desc
+from sqlalchemy.ext.assignmapper    import assign_mapper
+from supermodel.statements          import Statement
+from supermodel.fields              import Field
+
 import sys
-from sqlalchemy import Table, Integer, relation, desc
-from sqlalchemy.orm.properties import ColumnProperty
-
-from sqlalchemy.ext.assignmapper import assign_mapper
-
 import supermodel
-from supermodel.statements import Statement
-from supermodel.fields import Field
 
 
 __all__ = ['Entity']

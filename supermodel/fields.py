@@ -1,5 +1,5 @@
-from sqlalchemy import Column
-from supermodel.statements import Statement
+from sqlalchemy             import Column
+from supermodel.statements  import Statement
 
 
 class Field(object):
