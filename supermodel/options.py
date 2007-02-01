@@ -24,12 +24,13 @@ class UsingOptions(object):
                                 from the existing database table
             tablename:          Specify a custom tablename
             shortnames:         Usually tablenames include the full
-                                module-path to the entity, but separated
-                                by underscores ("_"), eg.:
-                                "project1_model_MyEntity", for an entity named
+                                module-path to the entity, but lower-cased and
+                                separated by underscores ("_"), eg.:
+                                "project1_model_myentity", for an entity named
                                 "MyEntity" in the module "project1.model".
-                                If shortnames is true, the tablename will just
-                                be the entity's classname, ie. "MyEntity".
+                                If shortnames is True, the tablename will just
+                                be the entity's classname lower-cased, 
+                                ie. "myentity".
             auto_primarykey:    If given as string, it will represent the
                                 auto-primary-key's column name
                                 if bool(auto_primarykey) evaluates

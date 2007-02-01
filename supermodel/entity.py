@@ -39,7 +39,7 @@ class Entity(object):
             # setup misc options here (like tablename etc.)
             desc.setup_options()
             
-            # create table & assign mapper
+            # create table & assign (empty) mapper
             desc.setup()
             
             # try to setup all uninitialized relationships
@@ -70,7 +70,6 @@ class EntityDescriptor(object):
         # I'm not sure if this is a safe practice. It works but...?
 #        setattr(self.module, entity.__name__, entity)
         self.metadata = getattr(self.module, 'metadata', supermodel.metadata)
-        self.initialized = False
         self.autoload = None
         self.auto_primarykey = True
         self.shortnames = False
@@ -100,21 +99,19 @@ class EntityDescriptor(object):
             Create tables, keys, columns that have been specified so far
             and assign a mapper. Will be called when an instance of the
             entity is created or a mapper is needed to access one or many
-            instances of the entity.
+            instances of the entity. This *doesn't* initialize relations.
         """
         
-        if not self.primary_keys and self.auto_primarykey:
-            self.create_auto_primary_key()
-        
-        if not self.entity.mapper:
-            self.setup_mapper()
-        
+        self.setup_mapper()
+       
+        # This marks all relations of the entity (or, at least those which 
+        # have been added so far by statements) as being uninitialized
         EntityDescriptor.uninitialized_rels.update(
             self.relationships.values())
     
     def setup_mapper(self):
         """
-            Initializes and assign a mapper to the given entity,
+            Initializes and assign an (empty!) mapper to the given entity,
             which needs a table defined, so it calls setup_table.
         """
         if self.entity.mapper:
@@ -151,6 +148,10 @@ class EntityDescriptor(object):
         if self.entity.table:
             return
         
+        if not self.autoload:
+            if not self.primary_keys and self.auto_primarykey:
+                self.create_auto_primary_key()
+
         # create list of columns and constraints
         args = [field.column for field in self.fields.values()] \
                     + self.constraints
@@ -197,7 +198,7 @@ class EntityDescriptor(object):
         if table:
             table.append_constraint(constraint)
         
-    def get_inverse_relation(self, rel):
+    def get_inverse_relation(self, rel, reverse=False):
         """Return the inverse relation of rel, if any, None otherwise."""
 
         matching_rel = None
@@ -213,7 +214,15 @@ class EntityDescriptor(object):
                             "keyword."
                             % (rel.name, rel.entity.__name__) 
                           )
+        # When a matching inverse is found, we check that it has only
+        # one relation matching as its own inverse. We don't need the result
+        # of the method though. But we do need to be careful not to start an
+        # infinite recursive loop.
+        if matching_rel and not reverse:
+            rel.entity._descriptor.get_inverse_relation(matching_rel, True)
+            
         return matching_rel
+
 
     @classmethod
     def setup_relationships(cls):
