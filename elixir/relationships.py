@@ -1,3 +1,37 @@
+'''
+This module provides support for defining relationships between your Elixir 
+entities.  The supported relationship types are as follows:
+
+    `belongs_to`
+    ------------
+    Describes the child's side of a parent-child relationship.  For example, 
+    a `Pet` object may belong to its owner, who is a `Person.`  This could be
+    expressed like so:
+                
+        class Pet(Entity):
+            belongs_to('owner', of_kind='Person', inverse='pets')
+    
+    You must specify the 'kind' of object that you are relating to using the
+    of_kind keyword argument.  Additionally, if you plan on defining the other
+    side of the relationship, you should specify the name of the relationship
+    on the other side using the 'inverse' keyword argument.
+
+
+    `has_one`
+    ---------
+    TODO.
+    
+
+    `has_many`
+    ----------
+    TODO.
+
+
+    `has_and_belongs_to_many`
+    -------------------------
+    TODO.
+'''
+
 from sqlalchemy         import relation, ForeignKeyConstraint, Column, \
                                Table, and_
 from elixir.statements  import Statement
@@ -17,7 +51,7 @@ __all__ = [
 
 class Relationship(object):
     '''
-    Base class for relationships
+    Base class for relationships.
     '''
     
     def __init__(self, entity, name, *args, **kwargs):
@@ -150,6 +184,10 @@ class Relationship(object):
 
 
 class BelongsTo(Relationship):
+    '''
+    
+    '''
+    
     
     def create_keys(self):
         '''

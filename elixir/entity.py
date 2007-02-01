@@ -18,7 +18,16 @@ DEFAULT_AUTO_PRIMARYKEY_TYPE = Integer
 
 class Entity(object):
     '''
-    The base class for all entities
+    The base class for all entities.  All Elixir model objects should inherit
+    from this class.  Statements can appear within the body of the definition 
+    of an entity to define its fields, relationships, and other options.  Here
+    is an example:
+    
+        class Person(Entity):
+            has_field('name', Unicode(128))
+            has_field('birthdate', DateTime, default=datetime.now)
+    
+    For further information, please refer to the provided examples or tutorial.
     '''
     
     class __metaclass__(type):
