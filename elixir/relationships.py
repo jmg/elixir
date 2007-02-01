@@ -1,16 +1,24 @@
-from sqlalchemy             import relation, ForeignKeyConstraint, \
-                                   Column, Table, and_
-from supermodel.statements  import Statement
-from supermodel.fields      import Field
-from supermodel.entity      import EntityDescriptor
+from sqlalchemy         import relation, ForeignKeyConstraint, Column, \
+                               Table, and_
+from elixir.statements  import Statement
+from elixir.fields      import Field
+from elixir.entity      import EntityDescriptor
 
 import sys
 
 
+__all__ = [
+    'belongs_to',
+    'has_one',
+    'has_many',
+    'has_and_belongs_to_many'
+]
+
+
 class Relationship(object):
-    """
-        Base class for relationships
-    """
+    '''
+    Base class for relationships
+    '''
     
     def __init__(self, entity, name, *args, **kwargs):
         self.name = name
@@ -20,12 +28,15 @@ class Relationship(object):
         self.entity = entity
         self._target = None
         
+        self.initialized = False
+        self.secondary = None
         self._inverse = None
+        self.foreign_key = None
+        
         self.foreign_key = kwargs.pop('foreign_key', None)
         if self.foreign_key and not isinstance(self.foreign_key, list):
             self.foreign_key = [self.foreign_key]
         
-        #CHECKME: is it of any use to store it somewhere?
         self.property = None # sqlalchemy property
         
         self.args = args
@@ -35,32 +46,27 @@ class Relationship(object):
         self.entity._descriptor.relationships[self.name] = self
     
     def create_keys(self):
-        """
-            Subclasses (ie. concrete relationships) may
-            override this method to create foreign keys
-        """
-        pass
+        '''
+        Subclasses (ie. concrete relationships) may override this method to 
+        create foreign keys.
+        '''
     
     def create_tables(self):
-        """
-            Subclasses (ie. concrete relationships) may
-            override this method to create secondary tables
-        """
-        pass
+        '''
+        Subclasses (ie. concrete relationships) may override this method to 
+        create secondary tables.
+        '''
     
     def create_properties(self):
-        """
-            Subclasses (ie. concrete relationships) may
-            override this method to add properties to the
-            involved entities
-        """
-        pass
+        '''
+        Subclasses (ie. concrete relationships) may override this method to add 
+        properties to the involved entities.
+        '''
     
     def setup(self):
-        """
-            Sets up the relationship, creates foreign keys
-            and secondary tables
-        """
+        '''
+        Sets up the relationship, creates foreign keys and secondary tables.
+        '''
         
         if not self.target:
             return False
@@ -87,6 +93,7 @@ class Relationship(object):
             try:
                 self._target = getattr(module, classname)
             except AttributeError:
+                # TODO: don't use exceptions for logic here!
                 # This is ugly but we need it because the class which is
                 # currently being defined (we have to keep in mind we are in 
                 # its metaclass code) is not yet available in the module
@@ -141,12 +148,15 @@ class Relationship(object):
                (self.inverse_name == other.name or not self.inverse_name) and \
                (other.inverse_name == self.name or not other.inverse_name)
 
+
 class BelongsTo(Relationship):
+    
     def create_keys(self):
-        """
-            Find all primary keys on the target and create
-            foreign keys on the source accordingly 
-        """
+        '''
+        Find all primary keys on the target and create foreign keys on the 
+        source accordingly.
+        '''
+        
         source_desc = self.entity._descriptor
         target_desc = self.target._descriptor
         
@@ -232,9 +242,9 @@ class HasMany(HasOne):
 
 
 class HasAndBelongsToMany(Relationship):
+    
     def __init__(self, entity, name, *args, **kwargs):
-        self.user_tablename = kwargs.pop('tablename', None)
-        self.secondary = None
+        self.tablename = kwargs.pop('tablename', None)
         super(HasAndBelongsToMany, self).__init__(entity, name, *args, **kwargs)
     
     def create_tables(self):
@@ -290,32 +300,21 @@ class HasAndBelongsToMany(Relationship):
                     ForeignKeyConstraint(fk_colnames, fk_refcols,
                                          name=desc.tablename + '_fk', 
                                          use_alter=True))
-
-            if self.user_tablename:
-                tablename = self.user_tablename
+        
+            # In the table name code below, we use the name of the relation
+            # for the first entity (instead of the name of its primary key), 
+            # so that we can have two many-to-many relations between the same
+            # objects without having a table name collision. On the other hand,
+            # we use the name of the primary key for the second entity 
+            # (instead of the inverse relation's name) so that a many-to-many
+            # relation can be defined without inverse.
+            if not self.tablename:
+                e2_pk_name = '_'.join([key.column.name for key in
+                                       e2_desc.primary_keys])
+                tablename = "%s_%s__%s_%s" % (e1_desc.tablename, self.name,
+                                              e2_desc.tablename, e2_pk_name)
             else:
-                # We use the name of the relation for the first entity 
-                # (instead of the name of its primary key), so that we can 
-                # have two many-to-many relations between the same objects 
-                # without having a table name collision. 
-                source_part = "%s_%s" % (e1_desc.tablename, self.name)
-
-                # And we use the name of the primary key for the second entity
-                # when there is no inverse, so that a many-to-many relation 
-                # can be defined without an inverse.
-                if self.inverse:
-                    e2_name = self.inverse.name
-                else:
-                    e2_name = '_'.join([key.column.name for key in
-                                        e2_desc.primary_keys])
-                target_part = "%s_%s" % (e2_desc.tablename, e2_name)
-
-                # we need to keep the table name consistent (independant of 
-                # whether this relation or its inverse is setup first)
-                if self.inverse and e1_desc.tablename < e2_desc.tablename:
-                    tablename = "%s__%s" % (target_part, source_part)
-                else:
-                    tablename = "%s__%s" % (source_part, target_part)
+                tablename = self.tablename
 
             args = columns + constraints
             self.secondary = Table(tablename, e1_desc.metadata, *args)
@@ -327,17 +326,14 @@ class HasAndBelongsToMany(Relationship):
             kwargs['primaryjoin'] = and_(*self.primaryjoin_clauses)
             kwargs['secondaryjoin'] = and_(*self.secondaryjoin_clauses)
 
-        self.property = relation(self.target, secondary=self.secondary,
-                                 uselist=True, **kwargs)
-        self.entity.mapper.add_property(self.name, self.property)
+        m = self.entity.mapper
+        #FIXME: using post_update systematically is *really* not good
+        m.add_property(self.name,
+                       relation(self.target, secondary=self.secondary,
+                                uselist=True, **kwargs))
 
-    def is_inverse(self, other):
-        return super(HasAndBelongsToMany, self).is_inverse(other) and \
-               (self.user_tablename == other.user_tablename or 
-                (not self.user_tablename and not other.user_tablename))
 
-belongs_to = Statement(BelongsTo)
-has_one = Statement(HasOne)
-has_many = Statement(HasMany)
+belongs_to              = Statement(BelongsTo)
+has_one                 = Statement(HasOne)
+has_many                = Statement(HasMany)
 has_and_belongs_to_many = Statement(HasAndBelongsToMany)
-

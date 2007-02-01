@@ -10,7 +10,7 @@ classifiers = """
 
 from setuptools import setup, find_packages
 
-setup(name="SuperModel",
+setup(name="Elixir",
       version="0.0.1",
       description="Declarative Mapper for SQLAlchemy",
       author="",
@@ -19,7 +19,7 @@ setup(name="SuperModel",
       install_requires = [
           "SQLAlchemy >= 0.3.0"
       ],
-      packages=['supermodel',
-                'supermodel.tests'],
+      packages=['elixir',
+                'elixir.tests'],
       classifiers=classifiers,
       test_suite = 'nose.collector')

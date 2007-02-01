@@ -4,9 +4,8 @@
 
 import sqlalchemy
 
-from sqlalchemy.types import *
-from supermodel import *
-from supermodel import metadata, objectstore
+from sqlalchemy.types   import *
+from elixir             import *
 
 
 class Person(Entity):

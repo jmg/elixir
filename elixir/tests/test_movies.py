@@ -3,9 +3,9 @@
 """
 
 import nose
+
 from sqlalchemy import create_engine
-from supermodel import *
-from supermodel import metadata, objectstore
+from elixir     import *
 
 
 class Director(Entity):

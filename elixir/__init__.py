@@ -1,28 +1,27 @@
-"""
-    SuperModel
+'''
+Elixir
     
-    A declarative layer on top of SQLAlchemy
-"""
+A declarative layer on top of SQLAlchemy
+'''
 
 import sqlalchemy
-from sqlalchemy.types import *
 
-from supermodel.entity import Entity, EntityDescriptor
-from supermodel.fields import Field, has_field, with_fields
-from supermodel.relationships import belongs_to, has_one, has_many, \
-                                     has_and_belongs_to_many
-from supermodel.options import using_options
+from sqlalchemy.ext.sessioncontext  import SessionContext
+from sqlalchemy.types               import *
+from elixir.options                 import using_options
+from elixir.entity                  import Entity, EntityDescriptor
+from elixir.fields                  import Field, has_field, with_fields
+from elixir.relationships           import belongs_to, has_one, has_many, \
+                                           has_and_belongs_to_many
 
-import sqlalchemy
-from sqlalchemy.ext.sessioncontext import SessionContext
 
 __all__ = ['Entity', 'Field', 'has_field', 'with_fields', 'belongs_to', 'has_one',
-           'has_many', 'has_and_belongs_to_many', 'using_options',
-           'create_all', 'drop_all'] + sqlalchemy.types.__all__
+           'has_many', 'has_and_belongs_to_many', 'using_options', 'create_all', 
+           'drop_all', 'metadata', 'objectstore'] + sqlalchemy.types.__all__
 
 
 # connect
-metadata = sqlalchemy.DynamicMetaData('supermodel')
+metadata = sqlalchemy.DynamicMetaData('elixir')
 
 try:
     objectstore = sqlalchemy.objectstore

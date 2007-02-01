@@ -1,12 +1,7 @@
-"""
-    DSL-syntax helper
-"""
-
-class Statement(object):
-    
-    """
-        Simple DSL statement
-    """
+class Statement(object):    
+    '''
+    A 'statement' object represents a DSL term.
+    '''
     
     statements = []
     
@@ -18,7 +13,10 @@ class Statement(object):
     
     @classmethod
     def process(cls, entity):
-        """apply all statements to the given entity"""
+        '''
+        Apply all statements to the given entity.
+        '''
+        
         for statement, args, kwargs in Statement.statements:
             statement.target(entity, *args, **kwargs)
         Statement.statements = []

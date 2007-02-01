@@ -1,7 +1,7 @@
 from turbogears.database    import metadata, session
-from supermodel             import Unicode, DateTime, String, Integer
-from supermodel             import Entity, has_field, using_options
-from supermodel             import has_many, belongs_to, has_and_belongs_to_many
+from elixir                 import Unicode, DateTime, String, Integer
+from elixir                 import Entity, has_field, using_options
+from elixir                 import has_many, belongs_to, has_and_belongs_to_many
 from sqlalchemy             import ForeignKey
 from datetime               import datetime
 

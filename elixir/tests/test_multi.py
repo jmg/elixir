@@ -3,11 +3,9 @@
 """
 
 import sqlalchemy
-
-from sqlalchemy.types import *
-from supermodel import *
-from supermodel import metadata, objectstore
 import datetime
+
+from elixir import *
 
 #TODO: test multi-col-pk VS many2many selfref
 

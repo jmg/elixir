@@ -4,8 +4,7 @@
 
 import nose
 from sqlalchemy import create_engine
-from supermodel import *
-from supermodel import metadata, objectstore
+from elixir     import *
 
 
 class Record(Entity):
@@ -56,5 +55,4 @@ class TestOptions(object):
         assert records[3].year >= records[4].year
         assert records[0].year == 2005
         assert records[-1].year == 1989
-        
         

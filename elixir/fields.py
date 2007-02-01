@@ -1,8 +1,15 @@
 from sqlalchemy             import Column
-from supermodel.statements  import Statement
+from elixir.statements      import Statement
+
+__all__ = [
+    'has_field',
+    'with_fields',
+    'Field'
+]
 
 
 class Field(object):
+    
     def __init__(self, type, *args, **kwargs):
         self.colname = kwargs.pop('colname', None)
         self.type = type
@@ -13,7 +20,9 @@ class Field(object):
     
     @property
     def column(self):
-        """Returns the corresponding sqlalchemy-column"""
+        '''
+        Returns the corresponding sqlalchemy-column
+        '''
     
         if hasattr(self, '_column'):
             return self._column
@@ -24,23 +33,20 @@ class Field(object):
 
 
 class HasField(object):
-    """
-        Specifies one field of an entity
-    """
-
+    '''
+    Specifies one field of an entity
+    '''
+    
     def __init__(self, entity, name, *args, **kwargs):
         field = Field(*args, **kwargs)
         field.colname = name
         entity._descriptor.add_field(field)
 
-has_field = Statement(HasField)
-
 
 class WithFields(object):
-    
-    """
-        Specifies all fields of an entity at once
-    """
+    '''
+    Specifies all fields of an entity at once
+    '''
     
     def __init__(self, entity, *args, **fields):
         columns = list()
@@ -51,5 +57,6 @@ class WithFields(object):
                 field.colname = colname
             desc.add_field(field)
 
-with_fields = Statement(WithFields)
 
+has_field   = Statement(HasField)
+with_fields = Statement(WithFields)
