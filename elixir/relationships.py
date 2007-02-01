@@ -116,18 +116,16 @@ class Relationship(object):
         if not self._target:
             path = self.of_kind.rsplit('.', 1)
             classname = path.pop()
-
-            # full qualified entity name?
+            
             if path:
+                # do we have a fully qualified entity name?
                 module = sys.modules[path.pop()]
-            # if not, try the same module as the source
             else: 
+                # if not, try the same module as the source
                 module = self.entity._descriptor.module
             
-            try:
-                self._target = getattr(module, classname)
-            except AttributeError:
-                # TODO: don't use exceptions for logic here!
+            self._target = getattr(module, classname, None)
+            if not self._target:
                 # This is ugly but we need it because the class which is
                 # currently being defined (we have to keep in mind we are in 
                 # its metaclass code) is not yet available in the module

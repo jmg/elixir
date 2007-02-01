@@ -32,19 +32,16 @@ class Entity(object):
     
     class __metaclass__(type):
         def __init__(cls, name, bases, dict_):
-            try:
-                desc = cls._descriptor = EntityDescriptor(cls)
-                EntityDescriptor.current = desc
-            except NameError:
-                # TODO - do what the comment says.
-                # happens only for the base class itself
-                #CHECKME: checking explicitely for the name 'Entity' seem 
-                # cleaner to me because it's more explicit and we wouldn't 
-                # rely on code position which is always subject to change
-                return 
+            # only process subclasses of Entity, not Entity itself
+            if bases[0] is object: return
             
+            # create the entity descriptor
+            desc = cls._descriptor = EntityDescriptor(cls)
+            EntityDescriptor.current = desc
+            
+            # process statements
             Statement.process(cls)
-
+            
             # setup misc options here (like tablename etc.)
             desc.setup_options()
             
