@@ -26,11 +26,10 @@ from elixir.fields                  import Field, has_field, with_fields
 from elixir.relationships           import belongs_to, has_one, has_many, \
                                            has_and_belongs_to_many
 
-
-__all__ = ['Entity', 'Field', 'has_field', 'with_fields', 'belongs_to', 'has_one',
-           'has_many', 'has_and_belongs_to_many', 'using_options', 'create_all', 
-           'drop_all', 'metadata', 'objectstore'] + sqlalchemy.types.__all__
-
+__all__ = ['Entity', 'Field', 'has_field', 'with_fields', 'belongs_to', 
+           'has_one', 'has_many', 'has_and_belongs_to_many', 'using_options', 
+           'create_all', 'drop_all', 'metadata', 'objectstore'] + \
+          sqlalchemy.types.__all__
 
 # connect
 metadata = sqlalchemy.DynamicMetaData('elixir')

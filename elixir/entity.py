@@ -61,9 +61,11 @@ class EntityDescriptor(object):
     current = None
     
     def __init__(self, entity):
+        entity.table = None
+        entity.mapper = None
+
         self.entity = entity
         self.primary_keys = list()
-        self.order_by = None
         self.fields = dict()
         self.relationships = dict()
         self.constraints = list()
@@ -73,15 +75,17 @@ class EntityDescriptor(object):
         # property ugliness. The problem is that this workaround is ugly too.
         # I'm not sure if this is a safe practice. It works but...?
 #        setattr(self.module, entity.__name__, entity)
+
+        # set default value for options
         self.metadata = getattr(self.module, 'metadata', elixir.metadata)
         self.autoload = None
-        self.auto_primarykey = True
-        self.shortnames = False
         self.tablename = None
+        self.shortnames = False
+        self.auto_primarykey = True
+        self.order_by = None
         self.extension = None
-        
-        entity.table = None
-        entity.mapper = None
+        self.mapper_options = dict()
+        self.table_options = dict()
     
     def setup_options(self):
         '''
@@ -100,10 +104,10 @@ class EntityDescriptor(object):
     
     def setup(self):
         '''
-        Create tables, keys, columns that have been specified so far and assign 
-        a mapper. Will be called when an instance of the entity is created or a 
-        mapper is needed to access one or many instances of the entity.
-        This *doesn't* initialize relations.
+        Create tables, keys, columns that have been specified so far and 
+        assign a mapper. Will be called when an instance of the entity is 
+        created or a mapper is needed to access one or many instances of the 
+        entity. This *doesn't* initialize relations.
         '''
         
         self.setup_mapper()
@@ -124,19 +128,9 @@ class EntityDescriptor(object):
         session = getattr(self.module, 'session', elixir.objectstore)
         table = self.setup_table()
         
-        kwargs = dict()
+        kwargs = self.mapper_options
         if self.order_by:
-            if isinstance(self.order_by, basestring):
-                self.order_by = [self.order_by]
-            
-            order = list()
-            for field in self.order_by:
-                col = self.fields[field.strip('-')].column
-                if field.startswith('-'):
-                    col = desc(col)
-                order.append(col)
-            
-            kwargs['order_by'] = order
+            kwargs['order_by'] = self.translate_order_by(self.order_by)
         
         if self.extension:
             kwargs['extension'] = self.extension
@@ -144,10 +138,23 @@ class EntityDescriptor(object):
         assign_mapper(session.context, self.entity, table, **kwargs)
         elixir.metadatas.add(self.metadata)
     
+    def translate_order_by(self, order_by):
+        if isinstance(order_by, basestring):
+            order_by = [order_by]
+        
+        order = list()
+        for field in order_by:
+            col = self.fields[field.strip('-')].column
+            if field.startswith('-'):
+                col = desc(col)
+            order.append(col)
+            
+        return order
+
     def setup_table(self):
         '''
-        Create a SQLAlchemy table-object with all columns that have been defined
-        up to this point.
+        Create a SQLAlchemy table-object with all columns that have been 
+        defined up to this point.
         '''
         
         if self.entity.table:
@@ -162,8 +169,8 @@ class EntityDescriptor(object):
                     + self.constraints
         
         # specify options
-        kwargs = dict()
-        
+        kwargs = self.table_options
+
         if self.autoload:
             kwargs['autoload'] = True
         
@@ -196,7 +203,6 @@ class EntityDescriptor(object):
         if table:
             table.append_column(field.column)
     
-    #FIXME: to remove. it's better to just use SA directly
     def add_constraint(self, constraint):
         self.constraints.append(constraint)
         

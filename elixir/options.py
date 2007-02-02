@@ -47,24 +47,30 @@ class UsingOptions(object):
                             optionally lead by a minus (descending order).
                         
         * extension:        Use one or more MapperExtensions.
+        * mapper_options:   Pass additional keyword arguments to the entity
+                            mapper.
+        * table_options:    Pass additional keyword arguments to the entity 
+                            table.
     '''
     
-    options = [
+    valid_options = (
         'metadata',
         'autoload',
-        'auto_primarykey',
         'tablename',
         'shortnames',
+        'auto_primarykey',
         'order_by',
-        'extension'
-    ]
+        'extension',
+        'mapper_options',
+        'table_options'
+    )
     
     def __init__(self, entity, *args, **kwargs):
         desc = entity._descriptor
         
-        for i in UsingOptions.options:
-            if kwargs.has_key(i):
-                setattr(desc, i, kwargs[i])
+        for kwarg in kwargs:
+            if kwarg in UsingOptions.valid_options:
+                setattr(desc, kwarg, kwargs[kwarg])
 
 
 using_options = Statement(UsingOptions)

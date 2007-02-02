@@ -273,13 +273,22 @@ class HasOne(Relationship):
 class HasMany(HasOne):
     uselist = True
 
+    def create_properties(self):
+        if 'order_by' in self.kwargs:
+            self.kwargs['order_by'] = \
+                self.target._descriptor.translate_order_by(
+                    self.kwargs['order_by'])
+
+        super(HasMany, self).create_properties()
+
 
 class HasAndBelongsToMany(Relationship):
     def __init__(self, entity, name, *args, **kwargs):
         self.user_tablename = kwargs.pop('tablename', None)
         self.secondary = None
-        super(HasAndBelongsToMany, self).__init__(entity, name, *args, **kwargs)
-    
+        super(HasAndBelongsToMany, self).__init__(entity, name, 
+                                                  *args, **kwargs)
+
     def create_tables(self):
         if self.inverse:
             if self.inverse.secondary:
@@ -369,6 +378,10 @@ class HasAndBelongsToMany(Relationship):
         if self.target is self.entity:
             kwargs['primaryjoin'] = and_(*self.primaryjoin_clauses)
             kwargs['secondaryjoin'] = and_(*self.secondaryjoin_clauses)
+
+        if 'order_by' in kwargs:
+            kwargs['order_by'] = \
+                self.target._descriptor.translate_order_by(kwargs['order_by'])
 
         self.property = relation(self.target, secondary=self.secondary,
                                  uselist=True, **kwargs)
