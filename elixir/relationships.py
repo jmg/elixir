@@ -11,7 +11,9 @@ entities.  The supported relationship types are as follows:
 Describes the child's side of a parent-child relationship.  For example, 
 a `Pet` object may belong to its owner, who is a `Person.`  This could be
 expressed like so:
-            
+
+::
+
     class Pet(Entity):
         belongs_to('owner', of_kind='Person', inverse='pets')
 

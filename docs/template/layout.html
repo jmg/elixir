@@ -11,16 +11,15 @@ def initialize(t):
        t.title = 'Untitled'
    t.doc_title = g.index_document['title']
    t.home_url = g.organization_url or g.blog_url or g.trac_url
-   t.home_title = g.organization
+   t.home_title = 'Elixir'
 ?>
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"
-      xmlns:py="http://purl.org/kid/ns#"
-      py:def="layout">
+      xmlns:py="http://purl.org/kid/ns#" py:def="layout">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 
-    <title>${title}</title>	
+    <title>${home_title} - ${title}</title>	
 
     <link rel="stylesheet" type="text/css" href="elixir.css"/>
     <link py:if="generator.syndication_url" 
@@ -36,26 +35,26 @@ def initialize(t):
     <h1><a href="${home_url}">${home_title}</a></h1>
     
     <ul id="navigation">
-        <li class="${'index.html'== destfile and 'active' or ''}">
+        <li class="${'index.html'== destfile and 'active' or None}">
             <a href="index.html"
                title="Project Home / Index">${doc_title}</a>
         </li>
-        <li class="${destfile.startswith('tutorial') and 'active' or ''}">
+        <li class="${destfile.startswith('tutorial') and 'active' or None}">
             <a href="tutorial.html"
                title="Tutorial">Tutorial</a>
         </li>
-        <li class="${destfile.startswith('examples') and 'active' or ''}">
+        <li class="${destfile.startswith('examples') and 'active' or None}">
             <a href="examples.html"
                title="Examples">Examples</a>
         </li>
-        <li class="${destfile.startswith('module') and 'active' or ''}">
+        <li class="${destfile.startswith('module') and 'active' or None}">
             <a href="module-index.html" 
                title="${doc_title.lower()} package and module reference">
                Modules</a>
         </li>
-        <li class="${destfile.startswith('about') and 'active' or ''} last">
+        <li class="${destfile.startswith('about ') and 'active' or None}last">
             <a href="${home_url}about.html">
-                About ${home_title}
+                About
             </a>
         </li>
     </ul>

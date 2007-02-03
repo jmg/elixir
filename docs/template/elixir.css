@@ -21,6 +21,11 @@ h1 {
     font-weight: bold;
 }
 
+.section h1 {
+    margin: 1em 0 0.5em;
+    font-size: 1.5em;
+}
+
 h2 {
     font-size: 1.5em;
     color: #2767D3;
@@ -99,6 +104,20 @@ hr {
     border-top: 1px solid #2767D3;
 }
 
+.footnote-reference,
+.fn-backref {
+    font-size: 0.5em;
+    vertical-align: super;
+    border: none;
+}
+
+.footnote {
+    font-size: 0.8em;
+    font-style: italic;
+    color: #666;
+    border-top: 1px solid #B483F1;
+}
+
 .pudge-member-parent-link {
     font-style: italic;
 }
@@ -108,6 +127,10 @@ hr {
     padding-right: 6px;
     font-weight: bold;
     color: #D1AFFA;
+}
+
+ul.simple {
+    list-style: square;
 }
 
 ul#navigation,

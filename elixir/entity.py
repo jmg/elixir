@@ -32,6 +32,9 @@ class Entity(object):
             has_field('name', Unicode(128))
             has_field('birthdate', DateTime, default=datetime.now)
     
+    Please note, that if you don't specify any primary keys, Elixir will
+    automatically create one called ``id``.
+    
     For further information, please refer to the provided examples or
     tutorial.
     '''
