@@ -25,7 +25,7 @@
     </span>
   </div>
   
-  <div py:if="tg_flash" class="flash" py:content="tg_flash"></div>
+  <div py:if="value_of('tg_flash', None)" class="flash" py:content="tg_flash"></div>
 
   <div py:replace="[item.text]+item[:]"/>
 </body>
