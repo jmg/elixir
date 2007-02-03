@@ -20,14 +20,15 @@ import sqlalchemy
 
 from sqlalchemy.ext.sessioncontext  import SessionContext
 from sqlalchemy.types               import *
-from elixir.options                 import using_options
+from elixir.options                 import *
 from elixir.entity                  import Entity, EntityDescriptor
 from elixir.fields                  import Field, has_field, with_fields
 from elixir.relationships           import belongs_to, has_one, has_many, \
                                            has_and_belongs_to_many
 
-__all__ = ['Entity', 'Field', 'has_field', 'with_fields', 'belongs_to', 
-           'has_one', 'has_many', 'has_and_belongs_to_many', 'using_options', 
+__all__ = ['Entity', 'Field', 'has_field', 'with_fields', 
+           'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many', 
+           'using_options', 'using_table_options', 'using_mapper_options',
            'create_all', 'drop_all', 'metadata', 'objectstore'] + \
           sqlalchemy.types.__all__
 

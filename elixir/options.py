@@ -1,7 +1,9 @@
 from elixir.statements import Statement
 
 __all__ = [
-    'using_options'
+    'using_options',
+    'using_table_options',
+    'using_mapper_options',
 ]
 
 
@@ -47,10 +49,6 @@ class UsingOptions(object):
                             optionally lead by a minus (descending order).
                         
         * extension:        Use one or more MapperExtensions.
-        * mapper_options:   Pass additional keyword arguments to the entity
-                            mapper.
-        * table_options:    Pass additional keyword arguments to the entity 
-                            table.
     '''
     
     valid_options = (
@@ -61,8 +59,6 @@ class UsingOptions(object):
         'auto_primarykey',
         'order_by',
         'extension',
-        'mapper_options',
-        'table_options'
     )
     
     def __init__(self, entity, *args, **kwargs):
@@ -73,4 +69,37 @@ class UsingOptions(object):
                 setattr(desc, kwarg, kwargs[kwarg])
 
 
+class UsingTableOptions(object):
+    '''
+    The 'using_table_options' DSL statement allows you to set up some 
+    additional options on your entity table. It is meant only to handle the 
+    options which are not supported directly by the 'using_options' statement.
+    By opposition to the 'using_options' statement, these options are passed 
+    directly to the underlying SQLAlchemy Table object (as keyword arguments) 
+    without any processing.
+    
+    For further information, please refer to the SQLAlchemy documentation.
+    '''
+    
+    def __init__(self, entity, *args, **kwargs):
+        entity._descriptor.table_options = kwargs
+
+
+class UsingMapperOptions(object):
+    '''
+    The 'using_mapper_options' DSL statement allows you to set up some 
+    additional options on your entity mapper. It is meant only to handle the 
+    options which are not supported directly by the 'using_options' statement.
+    By opposition to the 'using_options' statement, these options are passed 
+    directly to the underlying SQLAlchemy mapper (as keyword arguments) 
+    without any processing.
+    
+    For further information, please refer to the SQLAlchemy documentation.
+    '''
+    
+    def __init__(self, entity, *args, **kwargs):
+        entity._descriptor.mapper_options = kwargs
+
 using_options = Statement(UsingOptions)
+using_table_options = Statement(UsingTableOptions)
+using_mapper_options = Statement(UsingMapperOptions)
