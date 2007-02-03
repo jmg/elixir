@@ -1,6 +1,8 @@
 class Statement(object):    
     '''
-    A 'statement' object represents a DSL term.
+    DSL-style syntax
+    
+    A ``Statement`` object represents a DSL term.
     '''
     
     statements = []

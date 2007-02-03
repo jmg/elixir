@@ -1,5 +1,5 @@
 '''
-Elixir
+Elixir package
     
 A declarative layer on top of SQLAlchemy, which is intended to replace the
 ActiveMapper SQLAlchemy extension, and the TurboEntity project.  Elixir is a
@@ -11,9 +11,9 @@ Elixir does not intend to replace SQLAlchemy's core features, but instead
 focuses on providing a simpler syntax for defining model objects when you do
 not need the full expressiveness of SQLAlchemy's manual mapper definitions.
 
-For an example of how to use Elixir, please refer to the examples directory and
-the unit tests.  The examples directory includes a TurboGears application with
-full identity support called 'videostore'.
+For an example of how to use Elixir, please refer to the examples directory
+and the unit tests. The examples directory includes a TurboGears application
+with full identity support called 'videostore'.
 '''
 
 import sqlalchemy
@@ -51,11 +51,11 @@ except AttributeError:
 metadatas = set()
 
 def create_all():
-    """Create all necessary tables for all declared entities"""
+    'Create all necessary tables for all declared entities'
     for md in metadatas:
         md.create_all()
 
 def drop_all():
-    """Drop all tables for all declared entities"""
+    'Drop all tables for all declared entities'
     for md in metadatas:
         md.drop_all()

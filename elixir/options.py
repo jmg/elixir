@@ -14,6 +14,8 @@ class UsingOptions(object):
     more.  To specify an option, simply supply the option as a keyword 
     argument onto the statement, as follows:
     
+    ::
+    
         class Person(Entity):
             has_field('name', Unicode(64))
             using_options(shortnames=True, order_by='name')

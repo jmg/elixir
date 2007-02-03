@@ -1,0 +1,205 @@
+
+body {
+    margin: 0;
+    padding: 0;
+	background: #DDE6FA url('images/background.jpg') repeat-x top left;
+	font: medium/150% "Trebuchet MS", "Bitstream Vera Sans", sans-serif;
+	color: #444;
+}
+
+#logo {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+h1 {
+    margin: 0 0 0 -0.5em;
+    padding: 0;
+    font-size: 3.0em;
+    color: #89AFF9;
+    font-weight: bold;
+}
+
+h2 {
+    font-size: 1.5em;
+    color: #2767D3;
+}
+
+h4 {
+    font-size: 1em;
+    margin: 0;
+}
+
+h4.pudge-member-page-subheading {
+    margin: -0.5em 0 0 1em;
+    color: #6B2CB8;
+    font-size: 1.3em;
+    font-weight: normal;
+    font-style: italic;
+}
+
+ul.pudge-module-index,
+ul.pudge-module-index li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+ul.pudge-module-index li li {
+    margin-left: 0.5em;
+}
+
+h1 tt {
+    font-weight: bold;
+}
+
+tt, pre {
+    font: 1em monospace;
+}
+
+pre {
+    background-color: #FFF;
+    border-left: 4px solid #D1AFFA;
+    padding: 0.2em 0.5em;
+    color: #203E7B;
+}
+
+img {
+    border: none;
+}
+
+a {
+    font-weight: bold;
+    font-size: 1em;
+    color: #2767D3;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: #224FAC;
+}
+
+p a {
+    border-bottom: 1px solid #B483F1;
+}
+
+p a:hover {
+    text-decoration: none;
+    border-color: #6830AC;
+}
+
+small {
+    font-size: 0.8em;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #2767D3;
+}
+
+.pudge-member-parent-link {
+    font-style: italic;
+}
+
+.prefix {
+    font-style: oblique;
+    padding-right: 6px;
+    font-weight: bold;
+    color: #D1AFFA;
+}
+
+ul#navigation,
+ul#navigation li {
+    list-style: none;
+    display: block;
+    margin: 0;
+    padding: 0;
+}
+
+ul#navigation {
+    position: absolute;
+    top: 32px;
+    right: 8px;
+}
+
+ul#navigation li {
+    display: inline;
+    float: left;
+}
+
+ul#navigation li a {
+    text-decoration: none;
+    color: #D0DFFD;
+    font-weight: bold;
+    font-size: 14px;
+    padding: 0 1em;
+    border-right: 1px solid #2767D3;
+}
+
+ul#navigation li.last a {
+    border-right: none;
+}
+
+ul#navigation li a:hover {
+    color: #FFF;
+}
+
+ul#navigation li.active a {
+    color: #FFF;
+}
+
+#content {
+    margin: 96px 64px;
+}
+
+#pudge-section-nav {
+    position: absolute;
+    top: 69px;
+    right: 0;
+}
+
+#pudge-section-nav ul,
+#pudge-section-nav ul li {
+    display: block;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+#pudge-section-nav ul li {
+    display: inline;
+    float: left;
+    font-size: 0.7em;
+    padding-left: 1px;
+}
+
+#pudge-section-nav ul li span {
+    color: #444;
+}
+
+#pudge-section-nav ul li span,
+#pudge-section-nav ul li a {
+    display: block;
+    width: 8em;
+    height: 1.5em;
+    font-size: 1em;
+    line-height: 1.5em;
+    background: #D0DFFD;
+    text-align: center;
+    color: #2767D3;
+}
+
+#pudge-section-nav ul li span {
+    color: #86A9F6;
+}
+
+#pudge-section-nav ul li a:hover {
+    background: #E7EDFB;
+    color: #113AAC;
+}
+
+.pudge-section {
+    margin-left: 2em;
+}
