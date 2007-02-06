@@ -50,14 +50,40 @@ What does this snippet do? First of all it connects to an SQLite-database
 ``Entity``-baseclass). This entity will hold three fields:
 
 - ``title``: holds up to 30 unicode chars, which represent the movie's title
-- ``year``:  an integer does fine here
-- ``description``: this could be the plot, reviews, comments, what you
-  want. You can of course leave it empty for the one or other movie, if you
-  don't need it there.
+- ``year``:  an integer containing the year the movie was released
+- ``description``: this could be a plot summary, a review, or any long string
+  of text that you like.
 
 The ``__repr__()``-method below is totally unrelated to Elixir, it just tells
 the python interpreter to print objects in a human-readable way. It's nice to
-have, but fully optional.
+have, but fully optional.  We have put this into our model so that we can 
+easily trace what is happening in an interactive python interpreter.
+
+Also, please note that elixir currently provide two different ways to declare
+the fields on your entities. We have not decided yet on which one we like best,
+or if we will always keep both. The other way to declare your fields is using
+the ``has_field`` statement, rather than the ``with_fields`` statement.  The
+``Movie`` example above can be declared using the ``has_field`` statement like
+so:
+
+::
+
+    from elixir import *
+
+    metadata.connect("sqlite:///movies.sqlite")
+
+    class Movie(Entity):
+        has_field('title', Unicode(30))
+        has_field('year', Integer)
+        has_field('description', Unicode)
+        
+        def __repr__(self):
+            return '<Movie "%s" (%d)>' % (self.title, self.year)
+
+
+If you have a strong preference for one syntax over the other, please let us
+know so that we can make a good decision before our final stable release!
+
 
 .. [#] This assumes you have `pysqlite <http://pysqlite.org/>`_
        installed. You may use any other database instead, as long as it's
@@ -91,7 +117,9 @@ by typing:
 
     >>> objectstore.flush()
 
-Now we want to see a list of all the movies in our database, type:
+This will tell SQLAlchemy to generate all of the SQL to insert the Movie into
+the database, and then execute that SQL. Now, to see a list of all the movies 
+in our database, simply type:
 
 ::
 
@@ -103,7 +131,7 @@ Not many, but exactly what we expected. Close the interpreter now and delete
 in the next step.
     
 .. [#] Make sure, you're running your interpreter from the directory where you
-       saved the ``model.py``.
+       saved the ``model.py`` file.
 .. [#] If you're using any other DBMS than SQLite, just drop the created table
        (most probably something like ``DROP TABLE model_movie;``).
 
