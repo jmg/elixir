@@ -29,7 +29,7 @@ not need the full expressiveness of SQLAlchemy's manual mapper definitions.
 """,
       author="",
       author_email="",
-      url="http://supermodel.ematia.de",
+      url="http://elixir.ematia.de",
       install_requires = [
           "SQLAlchemy >= 0.3.0"
       ],

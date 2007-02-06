@@ -2,6 +2,13 @@
 Elixir
 ======
 
+------------------
+Declarative Mapper
+------------------
+
+This is work in progress
+------------------------
+
 Elixir is a declarative layer on top of `SQLAlchemy
 <http://www.sqlalchemy.org/>`_, which is intended to replace the `ActiveMapper
 <http://cleverdevil.org/computing/35/>`_ SQLAlchemy extension, and the

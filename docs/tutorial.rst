@@ -2,6 +2,10 @@
 Tutorial
 ========
 
+---------
+Diving in
+---------
+
 1. Installation
 ---------------
         
@@ -13,7 +17,7 @@ already have the Elixir package installed. If not, do so by typing [#]_:
 
     easy_install Elixir
 
-.. [#] If you also don't have "``easy_install``" yet, please visit the
+.. [#] If you don't even have "``easy_install``" yet, please visit the
        `EasyInstall website
        <http://peak.telecommunity.com/DevCenter/EasyInstall>`_ first and find
        out how to use it (it's pretty easy, like the name promises).
