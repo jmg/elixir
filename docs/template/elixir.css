@@ -227,18 +227,21 @@ ul#navigation li.active a {
     margin-left: 2em;
 }
 
-table {
-    border-collapse: collapse;
+table.docutils {
+    border: none;
+    border-spacing: 1px;
+    font-size: 0.9em;
 }
 
-th {
-    padding: 2px 0 2px 5px;
+table.docutils th, td {
     text-align: left;
-    border: 1px solid #444;
-	  background: #89AFF9;
+    padding: 0.5em;
+    background-color: #F8F8FF;
+    border: 1px solid #FFF;
 }
 
-td {
-	  padding: 2px 0 2px 5px;
-	  background: #FFF;
+table.docutils th {
+    background-color: #2767D3;
+    border-color: #113AAC;
+    color: #FFF;
 }
