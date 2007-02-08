@@ -27,10 +27,10 @@ Authors
 If you would like to contact the authors directly:
 
 Daniel Haus 
-    daniel.haus@ematia.de / website: http://ematia.de
+    http://www.danielhaus.de
 
 Gaëtan de Menten 
-    gdementen@openhex.com / website: http://openhex.com
+    http://openhex.com
 
 Jonathan LaCour 
-    jonathan@cleverdevil.org / website: http://cleverdevil.org
+    http://cleverdevil.org

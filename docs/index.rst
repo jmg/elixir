@@ -33,10 +33,10 @@ For a weekend's worth of work, it wasn't half bad, and gained a little bit of
 traction in the wild.  But, over time, it became clear that ActiveMapper 
 needed a lot of work to stabilize and become more useful.
 
-Later that year, `Daniel Haus <http://www.ematia.de>`_ released his own layer
-on top of SQLAlchemy, called `TurboEntity <http://turboentity.ematia.de>`_. 
+Later that year, `Daniel Haus <http://ematia.de>`_ released his own layer on
+top of SQLAlchemy, called `TurboEntity <http://turboentity.ematia.de>`_.
 TurboEntity solved some of the problems of ActiveMapper, and took a slightly
-different approach to the problem.  TurboEntity also began to gain some ground
+different approach to the problem. TurboEntity also began to gain some ground
 and it became clear to both Daniel and Jonathan that they needed to work
 together.
 
