@@ -1,12 +1,9 @@
 from sqlalchemy             import Column
 from elixir.statements      import Statement
 
-__all__ = [
-    'has_field',
-    'with_fields',
-    'Field'
-]
+__all__ = ['has_field', 'with_fields', 'Field']
 
+__pudge_all__ = __all__
 
 class Field(object):
     '''

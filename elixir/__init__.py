@@ -32,6 +32,9 @@ __all__ = ['Entity', 'Field', 'has_field', 'with_fields',
            'create_all', 'drop_all', 'metadata', 'objectstore'] + \
           sqlalchemy.types.__all__
 
+__pudge_all__ = ['create_all', 'drop_all', 'metadata', 'objectstore']
+
+
 # connect
 metadata = sqlalchemy.DynamicMetaData('elixir')
 

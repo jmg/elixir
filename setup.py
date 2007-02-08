@@ -30,6 +30,7 @@ not need the full expressiveness of SQLAlchemy's manual mapper definitions.
       author="",
       author_email="",
       url="http://elixir.ematia.de",
+      license = "MIT License",
       install_requires = [
           "SQLAlchemy >= 0.3.0"
       ],

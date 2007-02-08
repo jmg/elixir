@@ -13,6 +13,8 @@ import elixir
 
 __all__ = ['Entity']
 
+__pudge_all__ = __all__
+
 DEFAULT_AUTO_PRIMARYKEY_NAME = "id"
 DEFAULT_AUTO_PRIMARYKEY_TYPE = Integer
 

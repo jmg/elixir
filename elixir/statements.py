@@ -1,3 +1,5 @@
+__pudge_all__ = []
+
 class Statement(object):    
     '''
     DSL-style syntax

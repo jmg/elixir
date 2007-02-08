@@ -4,12 +4,9 @@
 
 from elixir.statements import Statement
 
-__all__ = [
-    'using_options',
-    'using_table_options',
-    'using_mapper_options',
-]
+__all__ = ['using_options', 'using_table_options', 'using_mapper_options']
 
+__pudge_all__ = __all__
 
 class UsingOptions(object):
     '''
