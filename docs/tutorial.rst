@@ -250,9 +250,10 @@ necessary secondary tables.
 You have created a simple model with some entities and set up some
 relationships between them. Now that you've seen how it basically works, take
 a closer look at Elixir's `API-docs <module-index.html>`_, `examples
-<examples.html>`_ and `testcases <module-elixir.tests.html>`_, which come with
-the source distribution, and see how to create other types of relationships
-and fine tweak Elixir's options to your liking.
+<examples.html>`_ and `testcases
+<http://elixir.ematia.de/svn/elixir/trunk/tests/>`_, which come with the
+source distribution, and see how to create other types of relationships and
+fine tweak Elixir's options to your liking.
 
 To learn more about the available datatypes, how to retrieve and modify data
 and about lower level features please consult `SQLAlchemy's detailed
