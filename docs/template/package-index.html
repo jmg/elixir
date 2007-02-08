@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<?python
+def initialize(t):
+    t.index_document = t.generator.index_document
+    t.title = t.index_document['title'] + " -- Module Reference"
+?>
+<div xmlns="http://www.w3.org/1999/xhtml" 
+     xmlns:py="http://purl.org/kid/ns#"
+     py:extends="'layout.html', 'common.html'"
+     py:strip="">
+  
+  <h1 class="pudge-member-page-heading">
+    ${index_document['title']}
+  </h1>
+  <h4 class="pudge-member-page-subheading">
+    Module Reference
+  </h4>
+  
+  <h2>Packages and Modules</h2>
+  
+  ${module_index_table(browser.modules(recursive=0), qualified_names=1)}
+  
+</div>
