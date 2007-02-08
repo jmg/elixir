@@ -23,10 +23,11 @@ different approach to the problem.  TurboEntity also began to gain some ground
 and it became clear to both Daniel and Jonathan that they needed to work
 together.
 
-Around the same time, Gaëtan de Menten contacted both Jonathan and Daniel to
-reveal that he had been working on his own layer as well.  A few weeks later,
-all three agreed to work together to create a replacement for TurboEntity and
-ActiveMapper using their collective experience and knowledge.
+Around the same time, `Gaëtan de Menten <http://openhex.com>`_ contacted both
+Jonathan and Daniel to reveal that he had been working on his own layer as 
+well.  A few weeks later, all three agreed to work together to create a 
+replacement for TurboEntity and ActiveMapper using their collective experience
+and knowledge.
 
 
 --------

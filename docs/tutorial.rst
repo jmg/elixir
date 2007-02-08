@@ -2,6 +2,8 @@
 Tutorial
 ========
 
+.. CHECKME: this is not rendered?
+
 ---------
 Diving in
 ---------
@@ -9,18 +11,21 @@ Diving in
 1. Installation
 ---------------
         
-To show you how Elixir can help to increase your productivity, we will now
-create a small and simple model. Before we start please make sure that you
-already have the Elixir package installed. If not, do so by typing [#]_:
+The first step is, of course, to install Elixir. For that purpose, please see 
+the `download page <download.html>`_.
 
-::
-
-    easy_install Elixir
-
-.. [#] If you don't even have "``easy_install``" yet, please visit the
-       `EasyInstall website
-       <http://peak.telecommunity.com/DevCenter/EasyInstall>`_ first and find
-       out how to use it (it's pretty easy, like the name promises).
+.. To show you how Elixir can help to increase your productivity, we will now
+.. create a small and simple model. Before we start please make sure that you
+.. already have the Elixir package installed. If not, do so by typing [#]_:
+.. 
+.. ::
+.. 
+..     easy_install Elixir
+.. 
+.. .. [#] If you don't even have "``easy_install``" yet, please visit the
+..        `EasyInstall website
+..        <http://peak.telecommunity.com/DevCenter/EasyInstall>`_ first and find
+..        out how to use it (it's pretty easy, like the name promises).
 
 2. A very simple model
 ----------------------

@@ -39,6 +39,10 @@ def initialize(t):
             <a href="index.html"
                title="Project Home / Index">${doc_title}</a>
         </li>
+        <li class="${destfile.startswith('download') and 'active' or None}">
+            <a href="download.html"
+               title="Download">Download</a>
+        </li>
         <li class="${destfile.startswith('tutorial') and 'active' or None}">
             <a href="tutorial.html"
                title="Tutorial">Tutorial</a>
@@ -52,10 +56,9 @@ def initialize(t):
                title="${doc_title.lower()} package and module reference">
                Modules</a>
         </li>
-        <li class="${destfile.startswith('about ') and 'active' or None}last">
-            <a href="${home_url}about.html">
-                About
-            </a>
+        <li class="${destfile.startswith('contact ') and 'active' or None}last">
+            <a href="contact.html"
+               title="Contact">Contact</a>
         </li>
     </ul>
 
