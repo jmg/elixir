@@ -34,8 +34,7 @@ not need the full expressiveness of SQLAlchemy's manual mapper definitions.
       install_requires = [
           "SQLAlchemy >= 0.3.0"
       ],
-      packages=['elixir',
-                'elixir.tests'],
+      packages=['elixir'],
       classifiers=classifiers,
       extras_require = {
         'pudge': ["docutils>=0.4", "elementtree>=1.2.6", "kid>=0.9", 
