@@ -107,6 +107,5 @@ class WithFields(object):
                 field.colname = colname
             desc.add_field(field)
 
-
-has_field   = Statement(HasField)
+has_field = Statement(HasField)
 with_fields = Statement(WithFields)

@@ -4,38 +4,88 @@ Relationships
 =============
 
 This module provides support for defining relationships between your Elixir 
-entities.  The supported relationship types are as follows:
+entities.  Elixir supports the following types of relationships: belongs_to_,
+has_one_, has_many_ and has_and_belongs_to_many_. For all types of 
+relationships, you **must** specify the 'kind' of object you are relating to 
+using the ``of_kind`` keyword argument. 
+
+Additionally, if you want a bidirectionnal relationship, you should define the
+inverse relationship on the other entity explicitely (as opposed to 
+SQLAlchemy's backref definitions). In non-ambiguous situations, Elixir will 
+match relationships together automatically. If there are several relationships
+of the same type between two entities, Elixir is not able to determine which 
+relationship is the inverse of which, so you have to disambiguate the 
+situation by giving the name of the inverse relationship in the ``inverse`` 
+keyword argument.
+
+Here is a detailed explanation of each relation type:
 
 `belongs_to`
 ------------
+
 Describes the child's side of a parent-child relationship.  For example, 
-a `Pet` object may belong to its owner, who is a `Person.`  This could be
+a `Pet` object may belong to its owner, who is a `Person`.  This could be
 expressed like so:
 
 ::
 
     class Pet(Entity):
-        belongs_to('owner', of_kind='Person', inverse='pets')
-
-You must specify the 'kind' of object that you are relating to using the
-of_kind keyword argument.  Additionally, if you plan on defining the other
-side of the relationship, you should specify the name of the relationship
-on the other side using the 'inverse' keyword argument.
-
+        belongs_to('owner', of_kind='Person')
 
 `has_one`
 ---------
-TODO.
 
+Describes the parent's side of a parent-child relationship when there is only
+one child.  For example, a `Car` object has one gear stick, which is 
+represented as a `GearStick` object. This could be expressed like so:
+
+::
+
+    class Car(Entity):
+        has_one('gear_stick', of_kind='GearStick', inverse='car')
+
+    class GearStick(Entity):
+        belongs_to('car', of_kind='Car')
+
+Note that an ``has_one`` relationship **cannot exist** without a corresponding 
+``belongs_to`` relationship in the other way. 
 
 `has_many`
 ----------
-TODO.
 
+Describes the parent's side of a parent-child relationship when there can be
+several children.  For example, a `Person` object has many children, each of
+them being a `Person`. This could be expressed like so:
+
+::
+
+    class Person(Entity):
+        belongs_to('parent', of_kind='Person')
+        has_many('children', of_kind='Person')
+
+Note that an ``has_many`` relationship **cannot exist** without a 
+corresponding ``belongs_to`` relationship in the other way. 
 
 `has_and_belongs_to_many`
 -------------------------
-TODO.
+
+Describes a relationship in which one kind of entity can be related to several
+objects of the other kind but the objects of that other kind can be related to
+several objects of the first kind.  For example, an `Article` can have several
+tags, but the same `Tag` can be used on several articles.
+
+::
+
+    class Article(Entity):
+        has_and_belongs_to_many('tags', of_kind='Tag')
+
+    class Tag(Entity):
+        has_and_belongs_to_many('articles', of_kind='Article')
+
+Note that you don't necessarily need to define the inverse relationship.  In
+our example, even though we want tags to be usables on several articles, we 
+might not be interested in which articles correspond to a particular tag.  In
+that case, we could have omitted the `Tag` side of the relationship.
 '''
 
 from sqlalchemy         import relation, ForeignKeyConstraint, Column, \
@@ -72,13 +122,14 @@ class Relationship(object):
         #CHECKME: is it of any use to store it somewhere?
         self.property = None # sqlalchemy property
         
+        #TODO: unused for now
         self.args = args
         self.kwargs = kwargs
         
         #CHECKME: is this useful?
         self.entity._descriptor.relationships[self.name] = self
     
-    def create_keys(self):
+    def create_keys(self, autoload=False):
         '''
         Subclasses (ie. concrete relationships) may override this method to 
         create foreign keys.
@@ -186,7 +237,7 @@ class BelongsTo(Relationship):
     '''
     
     
-    def create_keys(self):
+    def create_keys(self, autoload=False):
         '''
         Find all primary keys on the target and create foreign keys on the 
         source accordingly.
@@ -197,8 +248,8 @@ class BelongsTo(Relationship):
         
         if self.foreign_key:
             self.foreign_key = [source_desc.fields[k]
-                                    for k in self.foreign_key 
-                                        if isinstance(k, basestring)]
+                                   for k in self.foreign_key 
+                                       if isinstance(k, basestring)]
             return
         
         fk_refcols = list()
@@ -253,7 +304,7 @@ class BelongsTo(Relationship):
 class HasOne(Relationship):
     uselist = False
 
-    def create_keys(self):
+    def create_keys(self, autoload=False):
         # make sure the inverse is set up because it creates the
         # foreign key we'll need
         self.inverse.setup()

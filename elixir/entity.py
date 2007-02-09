@@ -44,7 +44,8 @@ class Entity(object):
     class __metaclass__(type):
         def __init__(cls, name, bases, dict_):
             # only process subclasses of Entity, not Entity itself
-            if bases[0] is object: return
+            if bases[0] is object:
+                return
             
             # create the entity descriptor
             desc = cls._descriptor = EntityDescriptor(cls)
