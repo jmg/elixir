@@ -12,12 +12,13 @@ different statements that you can use to declare fields:
 -----------
 The `has_field` statement allows you to define fields one at a time.
 
-The first argument is the name of the field, the second is its type, and
-following this any number of keyword arguments can be specified for
-additional behavior. The keyword arguments are passed on to the SQLAlchemy
-``Column`` object. Please refer to the SQLAlchemy ``Column`` object's
-documentation for further detail about which keyword arguments are
-supported.
+The first argument is the name of the field, the second is its type. Following
+these, any number of keyword arguments can be specified for additional 
+behavior. The keyword arguments are passed on to the SQLAlchemy
+``Column`` object. Please refer to the `SQLAlchemy Column object's
+documentation <http://www.sqlalchemy.org/docs/docstrings.myt
+#docstrings_sqlalchemy.schema_Column>`_ for further detail about which 
+keyword arguments are supported.
 
 Here is a quick example of how to use ``has_field``.
 
@@ -33,11 +34,11 @@ Here is a quick example of how to use ``has_field``.
 The `with_fields` statement allows you to define fields all at once.
 
 Each keyword argument to this statement represents one field, which should
-be a `Field` object. The first argument to a Field object is its type, and
-following this any number of keyword arguments can be specified for
+be a `Field` object. The first argument to a Field object is its type. 
+Following it, any number of keyword arguments can be specified for
 additional behavior. The keyword arguments are passed on to the SQLAlchemy
-``Column`` object. Please refer to the SQLAlchemy ``Column`` object's
-documentation for further detail about which keyword arguments are
+``Column`` object. Please refer to the `SQLAlchemy Column object's
+documentation`_ for further detail about which keyword arguments are
 supported.
 
 Here is a quick example of how to use ``with_fields``.

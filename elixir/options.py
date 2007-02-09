@@ -19,6 +19,7 @@ argument onto the statement, as follows:
 
     class Person(Entity):
         has_field('name', Unicode(64))
+
         using_options(shortnames=True, order_by='name')
 
 The list of supported arguments are as follows:
@@ -40,7 +41,7 @@ The list of supported arguments are as follows:
 |                     | "project1.model".  If shortnames is True, the     |
 |                     | tablename will just be the entity's classname     |
 |                     | lower-cased, ie. "myentity".                      |
-+---------------------+---------------------------------------------------+            
++---------------------+---------------------------------------------------+
 | ``auto_primarykey`` | If given as string, it will represent the         |
 |                     | auto-primary-key's column name.  If this option   |
 |                     | is True, it will allow auto-creation of a primary |

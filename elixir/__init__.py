@@ -34,7 +34,6 @@ __all__ = ['Entity', 'Field', 'has_field', 'with_fields',
 
 __pudge_all__ = ['create_all', 'drop_all', 'metadata', 'objectstore']
 
-
 # connect
 metadata = sqlalchemy.DynamicMetaData('elixir')
 

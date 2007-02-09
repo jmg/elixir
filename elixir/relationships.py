@@ -5,18 +5,38 @@ Relationships
 
 This module provides support for defining relationships between your Elixir 
 entities.  Elixir supports the following types of relationships: belongs_to_,
-has_one_, has_many_ and has_and_belongs_to_many_. For all types of 
-relationships, you **must** specify the 'kind' of object you are relating to 
-using the ``of_kind`` keyword argument. 
+has_one_, has_many_ and has_and_belongs_to_many_. 
+
+The first argument to all those statements is the name of the relationship, the
+second is the 'kind' of object you are relating to (it is usually given using
+the ``of_kind`` keyword). 
 
 Additionally, if you want a bidirectionnal relationship, you should define the
-inverse relationship on the other entity explicitly (as opposed to 
-SQLAlchemy's backref definitions). In non-ambiguous situations, Elixir will 
+inverse relationship on the other entity explicitly (as opposed to how
+SQLAlchemy's backrefs are defined). In non-ambiguous situations, Elixir will 
 match relationships together automatically. If there are several relationships
 of the same type between two entities, Elixir is not able to determine which 
 relationship is the inverse of which, so you have to disambiguate the 
 situation by giving the name of the inverse relationship in the ``inverse`` 
 keyword argument.
+
+Following these "common" arguments, any number of additional keyword arguments
+can be specified for advanced behavior. The keyword arguments are passed on to 
+the SQLAlchemy ``relation`` function. Please refer to the `SQLAlchemy relation 
+function's documentation <http://www.sqlalchemy.org/docs/adv_datamapping.myt
+#advdatamapping_properties_relationoptions>`_ for further detail about which 
+keyword arguments are supported, but you should keep in mind, the following 
+keyword arguments are taken care of by Elixir and should not be used: 
+``uselist``, ``remote_side``, ``primaryjoin`` and ``secondaryjoin``.
+
+.. _order_by:
+
+Also, as for standard SQLAlchemy relations, the ``order_by`` keyword argument 
+can be used to sort the results given by accessing a relation field (this only
+makes sense for has_many and has_and_belongs_to_many relationships). The value
+of that argument is different though: you can either use a string or a list of 
+strings, each corresponding to the name of a field in the target entity. These
+field names can optionally be prefixed by a minus (for descending order).
 
 Here is a detailed explanation of each relation type:
 
@@ -31,6 +51,11 @@ expressed like so:
 
     class Pet(Entity):
         belongs_to('owner', of_kind='Person')
+
+Behind the scene, assuming the primary key of the `Person` entity is 
+an integer column named `id`, the ``belongs_to`` relationship will 
+automatically add an integer column named `owner_id` to the entity, with a 
+foreign key referencing the `id` column of the `Person` entity.
 
 `has_one`
 ---------
@@ -48,7 +73,8 @@ represented as a `GearStick` object. This could be expressed like so:
         belongs_to('car', of_kind='Car')
 
 Note that an ``has_one`` relationship **cannot exist** without a corresponding 
-``belongs_to`` relationship in the other way. 
+``belongs_to`` relationship in the other way. This is because the ``has_one``
+relationship needs the foreign_key created by the ``belongs_to`` relationship.
 
 `has_many`
 ----------
@@ -64,7 +90,9 @@ them being a `Person`. This could be expressed like so:
         has_many('children', of_kind='Person')
 
 Note that an ``has_many`` relationship **cannot exist** without a 
-corresponding ``belongs_to`` relationship in the other way. 
+corresponding ``belongs_to`` relationship in the other way. This is because the
+``has_one`` relationship needs the foreign_key created by the ``belongs_to`` 
+relationship.
 
 `has_and_belongs_to_many`
 -------------------------
@@ -82,10 +110,19 @@ tags, but the same `Tag` can be used on several articles.
     class Tag(Entity):
         has_and_belongs_to_many('articles', of_kind='Article')
 
+Behind the scene, the ``has_and_belongs_to_many`` relationship will 
+automatically create an intermediate table to host its data.
+
 Note that you don't necessarily need to define the inverse relationship.  In
 our example, even though we want tags to be usable on several articles, we 
 might not be interested in which articles correspond to a particular tag.  In
 that case, we could have omitted the `Tag` side of the relationship.
+
+In addition to the order_by_ keyword argument, and the other keyword arguments
+inherited from SQLAlchemy, ``has_and_belongs_to_many`` relationships accept an
+optional ``tablename`` keyword argument, used to specify a custom name for the
+intermediary table which will be created.
+
 '''
 
 from sqlalchemy         import relation, ForeignKeyConstraint, Column, \
