@@ -53,8 +53,6 @@ The list of supported arguments are as follows:
 |                     | list of strings, composed of the field name,      |
 |                     | optionally lead by a minus (descending order).    |
 +---------------------+---------------------------------------------------+
-| ``extension``       | Use one or more MapperExtensions.                 |
-+---------------------+---------------------------------------------------+
 
 For examples, please refer to the examples and unit tests.
 
@@ -97,7 +95,6 @@ class UsingOptions(object):
         'shortnames',
         'auto_primarykey',
         'order_by',
-        'extension',
     )
     
     def __init__(self, entity, *args, **kwargs):

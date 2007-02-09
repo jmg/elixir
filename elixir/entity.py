@@ -95,7 +95,6 @@ class EntityDescriptor(object):
         self.shortnames = False
         self.auto_primarykey = True
         self.order_by = None
-        self.extension = None
         self.mapper_options = dict()
         self.table_options = dict()
     
@@ -143,9 +142,6 @@ class EntityDescriptor(object):
         kwargs = self.mapper_options
         if self.order_by:
             kwargs['order_by'] = self.translate_order_by(self.order_by)
-        
-        if self.extension:
-            kwargs['extension'] = self.extension
         
         assign_mapper(session.context, self.entity, table, **kwargs)
         elixir.metadatas.add(self.metadata)
