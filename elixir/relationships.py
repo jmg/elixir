@@ -10,7 +10,7 @@ relationships, you **must** specify the 'kind' of object you are relating to
 using the ``of_kind`` keyword argument. 
 
 Additionally, if you want a bidirectionnal relationship, you should define the
-inverse relationship on the other entity explicitely (as opposed to 
+inverse relationship on the other entity explicitly (as opposed to 
 SQLAlchemy's backref definitions). In non-ambiguous situations, Elixir will 
 match relationships together automatically. If there are several relationships
 of the same type between two entities, Elixir is not able to determine which 
@@ -83,7 +83,7 @@ tags, but the same `Tag` can be used on several articles.
         has_and_belongs_to_many('articles', of_kind='Article')
 
 Note that you don't necessarily need to define the inverse relationship.  In
-our example, even though we want tags to be usables on several articles, we 
+our example, even though we want tags to be usable on several articles, we 
 might not be interested in which articles correspond to a particular tag.  In
 that case, we could have omitted the `Tag` side of the relationship.
 '''
