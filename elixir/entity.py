@@ -6,6 +6,7 @@ from sqlalchemy                     import Table, Integer, desc
 from sqlalchemy.ext.assignmapper    import assign_mapper
 from elixir.statements              import Statement
 from elixir.fields                  import Field
+from elixir.options                 import options_defaults
 
 import sys
 import elixir
@@ -17,51 +18,6 @@ __pudge_all__ = __all__
 
 DEFAULT_AUTO_PRIMARYKEY_NAME = "id"
 DEFAULT_AUTO_PRIMARYKEY_TYPE = Integer
-
-class Entity(object):
-    '''
-    The base class for all entities
-    
-    All Elixir model objects should inherit from this class. Statements can
-    appear within the body of the definition of an entity to define its
-    fields, relationships, and other options.
-    
-    Here is an example:
-
-    ::
-    
-        class Person(Entity):
-            has_field('name', Unicode(128))
-            has_field('birthdate', DateTime, default=datetime.now)
-    
-    Please note, that if you don't specify any primary keys, Elixir will
-    automatically create one called ``id``.
-    
-    For further information, please refer to the provided examples or
-    tutorial.
-    '''
-    
-    class __metaclass__(type):
-        def __init__(cls, name, bases, dict_):
-            # only process subclasses of Entity, not Entity itself
-            if bases[0] is object:
-                return
-            
-            # create the entity descriptor
-            desc = cls._descriptor = EntityDescriptor(cls)
-            EntityDescriptor.current = desc
-            
-            # process statements
-            Statement.process(cls)
-            
-            # setup misc options here (like tablename etc.)
-            desc.setup_options()
-            
-            # create table & assign (empty) mapper
-            desc.setup()
-            
-            # try to setup all uninitialized relationships
-            EntityDescriptor.setup_relationships()
 
 
 class EntityDescriptor(object):
@@ -89,14 +45,15 @@ class EntityDescriptor(object):
 #        setattr(self.module, entity.__name__, entity)
 
         # set default value for options
-        self.metadata = getattr(self.module, 'metadata', elixir.metadata)
-        self.autoload = None
-        self.tablename = None
-        self.shortnames = False
-        self.auto_primarykey = True
         self.order_by = None
-        self.mapper_options = dict()
-        self.table_options = dict()
+        self.tablename = None
+        self.metadata = getattr(self.module, 'metadata', elixir.metadata)
+
+        for option in ('autoload', 'shortnames', 'auto_primarykey'):
+            setattr(self, option, options_defaults[option])
+
+        for option_dict in ('mapper_options', 'table_options'):
+            setattr(self, option_dict, options_defaults[option_dict].copy())
     
     def setup_options(self):
         '''
@@ -121,12 +78,20 @@ class EntityDescriptor(object):
         entity. This *doesn't* initialize relations.
         '''
         
+        if elixir.delay_setup:
+            elixir.delayed_entities.add(self)
+            return
+
+        self.setup_table()
         self.setup_mapper()
        
         # This marks all relations of the entity (or, at least those which 
         # have been added so far by statements) as being uninitialized
         EntityDescriptor.uninitialized_rels.update(
             self.relationships.values())
+
+        # try to setup all uninitialized relationships
+        EntityDescriptor.setup_relationships()
     
     def setup_mapper(self):
         '''
@@ -137,13 +102,13 @@ class EntityDescriptor(object):
             return
         
         session = getattr(self.module, 'session', elixir.objectstore)
-        table = self.setup_table()
         
         kwargs = self.mapper_options
         if self.order_by:
             kwargs['order_by'] = self.translate_order_by(self.order_by)
         
-        assign_mapper(session.context, self.entity, table, **kwargs)
+        assign_mapper(session.context, self.entity, self.entity.table, 
+                      **kwargs)
         elixir.metadatas.add(self.metadata)
     
     def translate_order_by(self, order_by):
@@ -156,7 +121,6 @@ class EntityDescriptor(object):
             if field.startswith('-'):
                 col = desc(col)
             order.append(col)
-            
         return order
 
     def setup_table(self):
@@ -182,9 +146,8 @@ class EntityDescriptor(object):
         if self.autoload:
             kwargs['autoload'] = True
         
-        table = Table(self.tablename, self.metadata, *args, **kwargs)
-        self.entity.table = table
-        return table
+        self.entity.table = Table(self.tablename, self.metadata, 
+                                  *args, **kwargs)
     
     def create_auto_primary_key(self):
         '''
@@ -231,7 +194,7 @@ class EntityDescriptor(object):
                 else:
                     raise Exception(
                             "Several relations match as inverse of the '%s' "
-                            "relation in class '%s'. You should specify "
+                            "relation in entity '%s'. You should specify "
                             "inverse relations manually by using the inverse "
                             "keyword."
                             % (rel.name, rel.entity.__name__) 
@@ -245,10 +208,52 @@ class EntityDescriptor(object):
             
         return matching_rel
 
-
     @classmethod
     def setup_relationships(cls):
         for relationship in list(EntityDescriptor.uninitialized_rels):
             if relationship.setup():
                 EntityDescriptor.uninitialized_rels.remove(relationship)
+
+
+class Entity(object):
+    '''
+    The base class for all entities
+    
+    All Elixir model objects should inherit from this class. Statements can
+    appear within the body of the definition of an entity to define its
+    fields, relationships, and other options.
+    
+    Here is an example:
+
+    ::
+    
+        class Person(Entity):
+            has_field('name', Unicode(128))
+            has_field('birthdate', DateTime, default=datetime.now)
+    
+    Please note, that if you don't specify any primary keys, Elixir will
+    automatically create one called ``id``.
+    
+    For further information, please refer to the provided examples or
+    tutorial.
+    '''
+    
+    class __metaclass__(type):
+        def __init__(cls, name, bases, dict_):
+            # only process subclasses of Entity, not Entity itself
+            if bases[0] is object:
+                return
+            
+            # create the entity descriptor
+            desc = cls._descriptor = EntityDescriptor(cls)
+            EntityDescriptor.current = desc
+            
+            # process statements
+            Statement.process(cls)
+            
+            # setup misc options here (like tablename etc.)
+            desc.setup_options()
+            
+            # create table & assign (empty) mapper
+            desc.setup()
 

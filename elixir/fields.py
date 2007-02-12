@@ -1,4 +1,6 @@
 '''
+Field statements for Elixir entities
+
 ======
 Fields
 ======

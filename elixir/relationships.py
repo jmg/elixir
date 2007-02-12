@@ -1,4 +1,6 @@
 '''
+Relationship statements for Elixir entities
+
 =============
 Relationships
 =============
@@ -27,7 +29,8 @@ function's documentation <http://www.sqlalchemy.org/docs/adv_datamapping.myt
 #advdatamapping_properties_relationoptions>`_ for further detail about which 
 keyword arguments are supported, but you should keep in mind, the following 
 keyword arguments are taken care of by Elixir and should not be used: 
-``uselist``, ``remote_side``, ``primaryjoin`` and ``secondaryjoin``.
+``uselist``, ``remote_side``, ``secondary``, ``primaryjoin`` and 
+``secondaryjoin``.
 
 .. _order_by:
 
@@ -56,6 +59,10 @@ Behind the scene, assuming the primary key of the `Person` entity is
 an integer column named `id`, the ``belongs_to`` relationship will 
 automatically add an integer column named `owner_id` to the entity, with a 
 foreign key referencing the `id` column of the `Person` entity.
+
+In addition to the keyword arguments inherited from SQLAlchemy, ``belongs_to``
+relationships accept an optional ``colname`` keyword argument, used to specify
+a custom name for the column which will be created.
 
 `has_one`
 ---------
@@ -91,7 +98,7 @@ them being a `Person`. This could be expressed like so:
 
 Note that an ``has_many`` relationship **cannot exist** without a 
 corresponding ``belongs_to`` relationship in the other way. This is because the
-``has_one`` relationship needs the foreign_key created by the ``belongs_to`` 
+``has_one`` relationship needs the foreign key created by the ``belongs_to`` 
 relationship.
 
 `has_and_belongs_to_many`
@@ -163,10 +170,10 @@ class Relationship(object):
         self.args = args
         self.kwargs = kwargs
         
-        #CHECKME: is this useful?
         self.entity._descriptor.relationships[self.name] = self
+        self.setup_done = False
     
-    def create_keys(self, autoload=False):
+    def create_keys(self):
         '''
         Subclasses (ie. concrete relationships) may override this method to 
         create foreign keys.
@@ -192,9 +199,14 @@ class Relationship(object):
         if not self.target:
             return False
         
+        if self.setup_done:
+            return True
+
+#        FIXME: this should only happen if the relation was not setup already
         self.create_keys()
         self.create_tables()
         self.create_properties()
+        self.setup_done = True
         
         return True
     
@@ -273,8 +285,13 @@ class BelongsTo(Relationship):
     
     '''
     
+    def __init__(self, entity, name, *args, **kwargs):
+        self.colname = kwargs.pop('colname', None)
+        if self.colname and not isinstance(self.colname, list):
+            self.colname = [self.colname]
+        super(BelongsTo, self).__init__(entity, name, *args, **kwargs)
     
-    def create_keys(self, autoload=False):
+    def create_keys(self):
         '''
         Find all primary keys on the target and create foreign keys on the 
         source accordingly.
@@ -283,46 +300,90 @@ class BelongsTo(Relationship):
         source_desc = self.entity._descriptor
         target_desc = self.target._descriptor
         
+        #FIXME: this is buggy, because it seems 
+        # like the field is used for two different purpose. 
+        # FK is what?
+
+        # convert strings to Field instances
         if self.foreign_key:
             self.foreign_key = [source_desc.fields[k]
                                    for k in self.foreign_key 
                                        if isinstance(k, basestring)]
             return
-        
-        fk_refcols = list()
-        fk_colnames = list()
 
         self.foreign_key = list()
         self.primaryjoin_clauses = list()
 
-        for key in target_desc.primary_keys:
-            pk_col = key.column
+        if source_desc.autoload:
+            if not self.colname:
+                raise Exception(
+                        "Entity '%s' is autoloaded but relation '%s' has no "
+                        "column name specified. You should specify it by "
+                        "using the colname keyword."
+                        % (self.entity.__name__, self.name)
+                      )
 
-            colname = '%s_%s' % (self.name, pk_col.name)
-            # we use a Field here instead of using a Column directly 
-            # because of add_field 
-            field = Field(pk_col.type, colname=colname, index=True)
-            source_desc.add_field(field)
+            #TODO: test if this works when colname is a list
+            for colname in self.colname:
+                for col in self.entity.table.columns:
+                    if col.name == colname:
+                        # We need to take the first foreign key, but 
+                        # foreign_keys is an util.OrderedSet which doesn't 
+                        # support indexation.
+                        fk_iter = iter(col.foreign_keys)
+                        fk = fk_iter.next()
+                        self.primaryjoin_clauses.append(col == fk.column)
 
-            self.foreign_key.append(field)
+            if not self.primaryjoin_clauses:
+                raise Exception("Column '%s' not found in table '%s'" 
+                                % (self.colname, self.entity.table.name))
+        else:
+            fk_refcols = list()
+            fk_colnames = list()
 
-            # build the list of local columns which will be part of
-            # the foreign key
-            fk_colnames.append(colname)
+            if self.colname and \
+               len(self.colname) != len(target_desc.primary_keys):
+                raise Exception(
+                        "The number of column names provided in the colname "
+                        "keyword argument of the '%s' relationship of the "
+                        "'%s' entity is not the same as the number of columns "
+                        "of the primary key of '%s'."
+                        % (self.name, self.entity.__name__, 
+                           self.target.__name__)
+                      )
 
-            # build the list of columns the foreign key will point to
-            fk_refcols.append(target_desc.tablename + '.' + pk_col.name)
+            for key_num, key in enumerate(target_desc.primary_keys):
+                pk_col = key.column
 
-            # build up the primary join. This is needed when you have several
-            # belongs_to relations between two objects
-            self.primaryjoin_clauses.append(field.column == pk_col)
-        
-        # TODO: better constraint-naming?
-        #CHECKME: do we really need use_alter systematically?
-        source_desc.add_constraint(ForeignKeyConstraint(
-                                        fk_colnames, fk_refcols,
-                                        name=self.name +'_fk',
-                                        use_alter=True))
+                if self.colname:
+                    colname = self.colname[key_num]
+                else:
+                    colname = '%s_%s' % (self.name, pk_col.name)
+
+                # we use a Field here instead of using a Column directly 
+                # because of add_field 
+                field = Field(pk_col.type, colname=colname, index=True)
+                source_desc.add_field(field)
+
+                self.foreign_key.append(field)
+
+                # build the list of local columns which will be part of
+                # the foreign key
+                fk_colnames.append(colname)
+
+                # build the list of columns the foreign key will point to
+                fk_refcols.append(target_desc.tablename + '.' + pk_col.name)
+
+                # build up the primary join. This is needed when you have 
+                # several belongs_to relations between two objects
+                self.primaryjoin_clauses.append(field.column == pk_col)
+            
+            # TODO: better constraint-naming?
+            #CHECKME: do we really need use_alter systematically?
+            source_desc.add_constraint(ForeignKeyConstraint(
+                                            fk_colnames, fk_refcols,
+                                            name=self.name +'_fk',
+                                            use_alter=True))
     
     def create_properties(self):
         kwargs = self.kwargs
@@ -341,7 +402,7 @@ class BelongsTo(Relationship):
 class HasOne(Relationship):
     uselist = False
 
-    def create_keys(self, autoload=False):
+    def create_keys(self):
         # make sure the inverse is set up because it creates the
         # foreign key we'll need
         self.inverse.setup()
@@ -349,7 +410,14 @@ class HasOne(Relationship):
     def create_properties(self):
         kwargs = self.kwargs
         
+        #TODO: for now, we don't break any test if we remove those 3 lines.
+        # So, we should either complete the selfref test to prove that they
+        # are indeed useful, or remove them. It might be they are indeed
+        # useless because of the primaryjoin, and that the remote_side is
+        # already setup in the other way (belongs_to).
         if self.entity is self.target:
+            #FIXME: this won't work for autoloaded relations
+            # so I need to change the type of foreign_key 
             kwargs['remote_side'] = [field.column
                                         for field in self.inverse.foreign_key]
         
@@ -375,18 +443,18 @@ class HasMany(HasOne):
 class HasAndBelongsToMany(Relationship):
     def __init__(self, entity, name, *args, **kwargs):
         self.user_tablename = kwargs.pop('tablename', None)
-        self.secondary = None
+        self.secondary_table = None
         super(HasAndBelongsToMany, self).__init__(entity, name, 
                                                   *args, **kwargs)
 
     def create_tables(self):
         if self.inverse:
-            if self.inverse.secondary:
-                self.secondary = self.inverse.secondary
+            if self.inverse.secondary_table:
+                self.secondary_table = self.inverse.secondary_table
                 self.primaryjoin_clauses = self.inverse.secondaryjoin_clauses
                 self.secondaryjoin_clauses = self.inverse.primaryjoin_clauses
 
-        if not self.secondary:
+        if not self.secondary_table:
             e1_desc = self.entity._descriptor
             e2_desc = self.target._descriptor
             
@@ -460,7 +528,7 @@ class HasAndBelongsToMany(Relationship):
                     tablename = "%s__%s" % (source_part, target_part)
 
             args = columns + constraints
-            self.secondary = Table(tablename, e1_desc.metadata, *args)
+            self.secondary_table = Table(tablename, e1_desc.metadata, *args)
     
     def create_properties(self):
         kwargs = self.kwargs
@@ -473,7 +541,7 @@ class HasAndBelongsToMany(Relationship):
             kwargs['order_by'] = \
                 self.target._descriptor.translate_order_by(kwargs['order_by'])
 
-        self.property = relation(self.target, secondary=self.secondary,
+        self.property = relation(self.target, secondary=self.secondary_table,
                                  uselist=True, **kwargs)
         self.entity.mapper.add_property(self.name, self.property)
 

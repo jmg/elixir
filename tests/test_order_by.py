@@ -2,7 +2,6 @@
     test options
 """
 
-import nose
 from sqlalchemy import create_engine
 from elixir     import *
 
@@ -31,6 +30,7 @@ class Genre(Entity):
 class TestOptions(object):
     def setup(self):
         engine = create_engine('sqlite:///')
+#        engine.echo = True
         metadata.connect(engine)
         create_all()
     
@@ -56,12 +56,15 @@ class TestOptions(object):
         objectstore.clear()
 
     def teardown(self):
+        # we don't use cleanup_all because setup and teardown are called for 
+        # each test, and since the class is not redefined, it will not be
+        # reinitialized so we can't kill it
         drop_all()
     
     def test_mapper_order_by(self):
         records = Record.select()
 
-        print "-year, title"
+        print "-year, +title"
         for record in records:
             print record
 
@@ -73,13 +76,14 @@ class TestOptions(object):
     def test_has_many_order_by(self):
         records = Artist.get_by(name="Dream Theater").records
 
-        print "+year, title"
+        print "+year, -title"
         for record in records:
             print record
 
         assert records[0].year == 1989
         assert records[2].year <= records[5].year
         assert records[3].year <= records[4].year
+        assert records[-1].title == 'Octavarium'
         assert records[-1].year == 2005
 
     def test_has_and_belongs_to_many_order_by(self):

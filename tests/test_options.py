@@ -27,6 +27,6 @@ class TestOptions(object):
         create_all()
     
     def teardown(self):
-        drop_all()
+        cleanup_all()
     
        

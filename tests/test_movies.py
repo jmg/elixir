@@ -7,7 +7,6 @@ import nose
 from sqlalchemy import create_engine
 from elixir     import *
 
-
 class Director(Entity):
     with_fields(
         name = Field(Unicode(60))
@@ -62,7 +61,7 @@ class TestMovies(object):
         create_all()
     
     def teardown(self):
-        drop_all()
+        cleanup_all()
     
     def test_bidirectional(self):
         brunner = Movie(title="Blade Runner", year=1982)

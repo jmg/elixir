@@ -29,10 +29,13 @@ from elixir.relationships           import belongs_to, has_one, has_many, \
 __all__ = ['Entity', 'Field', 'has_field', 'with_fields', 
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many', 
            'using_options', 'using_table_options', 'using_mapper_options',
-           'create_all', 'drop_all', 'metadata', 'objectstore'] + \
+           'options_defaults', 'metadata', 'objectstore',
+           'create_all', 'drop_all', 'setup_all', 'cleanup_all', 
+           'delay_setup'] + \
           sqlalchemy.types.__all__
 
-__pudge_all__ = ['create_all', 'drop_all', 'metadata', 'objectstore']
+__pudge_all__ = ['create_all', 'drop_all', 'metadata', 'objectstore', 
+                 'delay_setup', 'setup_all']
 
 # connect
 metadata = sqlalchemy.DynamicMetaData('elixir')
@@ -61,3 +64,30 @@ def drop_all():
     'Drop all tables for all declared entities'
     for md in metadatas:
         md.drop_all()
+
+delayed_entities = set()
+delay_setup = False
+
+def setup_all():
+    '''Setup the table and mapper for all entities which have been delayed.
+    
+    This should be used in conjunction with setting ``delay_setup`` to ``True``
+    before defining your entities.
+    '''
+    global delay_setup
+    delay_setup = False
+    for entity in delayed_entities:
+        entity.setup()
+    delayed_entities.clear()
+    create_all()
+
+def cleanup_all():
+    drop_all()
+    for md in metadatas:
+        md.clear()
+    metadatas.clear()
+    EntityDescriptor.uninitialized_rels.clear()
+
+    objectstore.clear()
+    sqlalchemy.clear_mappers()
+

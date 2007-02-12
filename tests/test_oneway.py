@@ -7,14 +7,15 @@ import nose
 from sqlalchemy import create_engine
 from elixir     import *
 
+#FIXME: this shouldn't be necessary. cleanup_all should handle it. The problem
+# is that with this damn dynamic behavior, we can't easily re-setup the 
+# entities once they've been setup once
+metadata.clear()
 
 class Person(Entity):
     with_fields(
         name = Field(Unicode(30))
     )
-    
-    using_options(shortnames=True, order_by="name")
-
 
 class Animal(Entity):
     with_fields(
@@ -23,8 +24,6 @@ class Animal(Entity):
     )
     
     belongs_to('owner', of_kind='Person')
-    
-    using_options(shortnames=True, order_by="name")
 
 
 class TestOneWay(object):
@@ -34,7 +33,7 @@ class TestOneWay(object):
         create_all()
     
     def teardown(self):
-        drop_all()
+        cleanup_all()
     
     def test_oneway(self):
         santa = Person(name="Santa Claus")

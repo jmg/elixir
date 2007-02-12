@@ -23,7 +23,7 @@ class TestHasField(object):
         create_all()
     
     def teardown(self):
-        drop_all()
+        cleanup_all()
     
     def test_hasfield(self):
         homer = Person(firstname="Homer", surname="Simpson")
