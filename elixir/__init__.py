@@ -74,13 +74,13 @@ def setup_all():
     This should be used in conjunction with setting ``delay_setup`` to ``True``
     before defining your entities.
     '''
-    global delay_setup
-    delay_setup = False
     for entity in delayed_entities:
         entity.setup_table()
     for entity in delayed_entities:
         entity.setup_mapper()
     delayed_entities.clear()
+    # try to setup all uninitialized relationships
+    EntityDescriptor.setup_relationships()
     create_all()
 
 def cleanup_all():

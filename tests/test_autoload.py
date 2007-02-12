@@ -31,6 +31,15 @@ animal_table.create()
 
 elixir.delay_setup = True
 
+class Animal(Entity):
+#    has_field('name', String(15))
+#    has_field('color', String(15))
+    
+    belongs_to('owner', of_kind='Person', colname='owner_id')
+    belongs_to('feeder', of_kind='Person', colname='feeder_id')
+
+    using_options(autoload=True, shortnames=True)
+
 class Person(Entity):
 #    has_field('name', Unicode(32))
     
@@ -45,14 +54,6 @@ class Person(Entity):
             s += '  * pet: %s\n' % pet.name
         return s
 
-class Animal(Entity):
-#    has_field('name', String(15))
-#    has_field('color', String(15))
-    
-    belongs_to('owner', of_kind='Person', colname='owner_id')
-    belongs_to('feeder', of_kind='Person', colname='feeder_id')
-
-    using_options(autoload=True, shortnames=True)
 
 elixir.delay_setup = False
 

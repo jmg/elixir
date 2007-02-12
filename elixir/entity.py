@@ -84,11 +84,13 @@ class EntityDescriptor(object):
 
         self.setup_table()
         self.setup_mapper()
+
+        # try to setup all uninitialized relationships
+        EntityDescriptor.setup_relationships()
     
     def setup_mapper(self):
         '''
-        Initializes and assign an (empty!) mapper to the given entity, which 
-        needs a table defined, so it calls setup_table.
+        Initializes and assign an (empty!) mapper to the given entity, the.
         '''
         if self.entity.mapper:
             return
@@ -108,8 +110,6 @@ class EntityDescriptor(object):
         EntityDescriptor.uninitialized_rels.update(
             self.relationships.values())
 
-        # try to setup all uninitialized relationships
-        EntityDescriptor.setup_relationships()
     
     def translate_order_by(self, order_by):
         if isinstance(order_by, basestring):
