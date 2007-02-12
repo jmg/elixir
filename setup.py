@@ -1,15 +1,5 @@
 from setuptools import setup, find_packages
 
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python",
-    "Topic :: Database :: Front-Ends",
-    "Topic :: Software Development :: Libraries :: Python Modules"
-]
-
 setup(name="Elixir",
       version="0.1.0",
       description="Declarative Mapper for SQLAlchemy",
@@ -29,15 +19,23 @@ not need the full expressiveness of SQLAlchemy's manual mapper definitions.
 Elixir is intended to replace the ActiveMapper SQLAlchemy extension, and the 
 TurboEntity project.  
 """,
-      author="",
-      author_email="",
+      author="Gaetan de Menten, Daniel Haus and Jonathan LaCour",
+      author_email="sqlelixir@googlegroups.com",
       url="http://elixir.ematia.de",
       license = "MIT License",
       install_requires = [
           "SQLAlchemy >= 0.3.0"
       ],
       packages=['elixir'],
-      classifiers=classifiers,
+      classifiers=[
+          "Development Status :: 3 - Alpha",
+          "Intended Audience :: Developers",
+          "License :: OSI Approved :: MIT License",
+          "Operating System :: OS Independent",
+          "Programming Language :: Python",
+          "Topic :: Database :: Front-Ends",
+          "Topic :: Software Development :: Libraries :: Python Modules"
+      ],
       extras_require = {
         'pudge': ["docutils>=0.4", "elementtree>=1.2.6", "kid>=0.9", 
                   "Pygments==dev,>=0.7dev-r2661", "pudge==dev,>=0.1.3dev-r134", 
