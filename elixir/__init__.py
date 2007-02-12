@@ -34,8 +34,8 @@ __all__ = ['Entity', 'Field', 'has_field', 'with_fields',
            'delay_setup'] + \
           sqlalchemy.types.__all__
 
-__pudge_all__ = ['create_all', 'drop_all', 'metadata', 'objectstore', 
-                 'delay_setup', 'setup_all']
+__pudge_all__ = ['create_all', 'drop_all', 'setup_all', 'cleanup_all',
+                 'metadata', 'objectstore', 'delay_setup']
 
 # connect
 metadata = sqlalchemy.DynamicMetaData('elixir')
@@ -82,6 +82,8 @@ def setup_all():
     create_all()
 
 def cleanup_all():
+    '''Drop table and clear mapper for all entities, and clear all metadatas.
+    '''
     drop_all()
     for md in metadatas:
         md.clear()
