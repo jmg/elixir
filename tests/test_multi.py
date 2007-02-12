@@ -101,7 +101,7 @@ class TestMultiHasAndBelongsToMany(object):
         assert good in articles[0].editor_tags
 
 if __name__ == '__main__':
-    test = TestMulti()
+    test = TestMultiBelongsTo()
     test.setup()
     test.test_belongs_to_multi_ref()
     test.teardown()

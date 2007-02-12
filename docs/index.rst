@@ -2,9 +2,6 @@
 Elixir
 ======
 
-Warning: this is a work in progress
------------------------------------
-
 -----
 About
 -----
@@ -65,8 +62,3 @@ extension.  But, before we submit elixir for inclusion within SQLAlchemy, we
 want the opportunity to solicit feedback and contributions from users to make
 sure that we have ironed out any bugs, missing features, syntax changes, or
 documentation deficiencies.
-
-The primary things we would like to resolve before we make our first stable
-and official release are:
-
-- TODO
