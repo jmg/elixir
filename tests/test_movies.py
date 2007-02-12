@@ -2,8 +2,6 @@
     simple test case
 """
 
-import nose
-
 from sqlalchemy import create_engine
 from elixir     import *
 

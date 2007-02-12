@@ -2,15 +2,8 @@
     simple test case
 """
 
-import nose
-
 from sqlalchemy import create_engine
 from elixir     import *
-
-#FIXME: this shouldn't be necessary. cleanup_all should handle it. The problem
-# is that with this damn dynamic behavior, we can't easily re-setup the 
-# entities once they've been setup once
-metadata.clear()
 
 class Person(Entity):
     with_fields(
