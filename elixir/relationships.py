@@ -163,7 +163,6 @@ class Relationship(object):
         if self.foreign_key and not isinstance(self.foreign_key, list):
             self.foreign_key = [self.foreign_key]
         
-        #CHECKME: is it of any use to store it somewhere?
         self.property = None # sqlalchemy property
         
         #TODO: unused for now
@@ -171,7 +170,6 @@ class Relationship(object):
         self.kwargs = kwargs
         
         self.entity._descriptor.relationships[self.name] = self
-        self.setup_done = False
     
     def create_keys(self):
         '''
@@ -199,14 +197,12 @@ class Relationship(object):
         if not self.target:
             return False
         
-        if self.setup_done:
+        if self.property:
             return True
 
-#        FIXME: this should only happen if the relation was not setup already
         self.create_keys()
         self.create_tables()
         self.create_properties()
-        self.setup_done = True
         
         return True
     
@@ -300,13 +296,11 @@ class BelongsTo(Relationship):
         source_desc = self.entity._descriptor
         target_desc = self.target._descriptor
         
-        #FIXME: this is buggy, because it seems 
-        # like the field is used for two different purpose. 
-        # FK is what?
-
-        # convert strings to Field instances
+        # convert strings to column instances
         if self.foreign_key:
-            self.foreign_key = [source_desc.fields[k]
+            #FIXME: this will fail. Because if we specify a foreign_key
+            # as argument, it will not create the necessary column
+            self.foreign_key = [source_desc.fields[k].column
                                    for k in self.foreign_key 
                                        if isinstance(k, basestring)]
             return
@@ -365,7 +359,7 @@ class BelongsTo(Relationship):
                 field = Field(pk_col.type, colname=colname, index=True)
                 source_desc.add_field(field)
 
-                self.foreign_key.append(field)
+                self.foreign_key.append(field.column)
 
                 # build the list of local columns which will be part of
                 # the foreign key
@@ -389,8 +383,12 @@ class BelongsTo(Relationship):
         kwargs = self.kwargs
         
         if self.entity is self.target:
+#            print self.target._descriptor.primary_keys
+            #FIXME: this doesn't work for autoload, because primary_keys is
+            #empty
             cols = [k.column for k in self.target._descriptor.primary_keys]
             kwargs['remote_side'] = cols
+#            print "cols", self.name, cols
 
         kwargs['primaryjoin'] = and_(*self.primaryjoin_clauses)
         kwargs['uselist'] = False
@@ -410,16 +408,14 @@ class HasOne(Relationship):
     def create_properties(self):
         kwargs = self.kwargs
         
-        #TODO: for now, we don't break any test if we remove those 3 lines.
+        #TODO: for now, we don't break any test if we remove those 2 lines.
         # So, we should either complete the selfref test to prove that they
         # are indeed useful, or remove them. It might be they are indeed
         # useless because of the primaryjoin, and that the remote_side is
         # already setup in the other way (belongs_to).
         if self.entity is self.target:
-            #FIXME: this won't work for autoloaded relations
-            # so I need to change the type of foreign_key 
-            kwargs['remote_side'] = [field.column
-                                        for field in self.inverse.foreign_key]
+            kwargs['remote_side'] = self.inverse.foreign_key
+            print "kwargs", self.name, kwargs
         
         kwargs['primaryjoin'] = and_(*self.inverse.primaryjoin_clauses)
         kwargs['uselist'] = self.uselist

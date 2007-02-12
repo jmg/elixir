@@ -84,14 +84,6 @@ class EntityDescriptor(object):
 
         self.setup_table()
         self.setup_mapper()
-       
-        # This marks all relations of the entity (or, at least those which 
-        # have been added so far by statements) as being uninitialized
-        EntityDescriptor.uninitialized_rels.update(
-            self.relationships.values())
-
-        # try to setup all uninitialized relationships
-        EntityDescriptor.setup_relationships()
     
     def setup_mapper(self):
         '''
@@ -110,6 +102,14 @@ class EntityDescriptor(object):
         assign_mapper(session.context, self.entity, self.entity.table, 
                       **kwargs)
         elixir.metadatas.add(self.metadata)
+
+        # This marks all relations of the entity (or, at least those which 
+        # have been added so far by statements) as being uninitialized
+        EntityDescriptor.uninitialized_rels.update(
+            self.relationships.values())
+
+        # try to setup all uninitialized relationships
+        EntityDescriptor.setup_relationships()
     
     def translate_order_by(self, order_by):
         if isinstance(order_by, basestring):
