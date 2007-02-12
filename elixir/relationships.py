@@ -383,12 +383,11 @@ class BelongsTo(Relationship):
         kwargs = self.kwargs
         
         if self.entity is self.target:
-#            print self.target._descriptor.primary_keys
-            #FIXME: this doesn't work for autoload, because primary_keys is
-            #empty
-            cols = [k.column for k in self.target._descriptor.primary_keys]
+            if self.entity._descriptor.autoload:
+                cols = [col for col in self.target.table.primary_key.columns]
+            else:
+                cols = [k.column for k in self.target._descriptor.primary_keys]
             kwargs['remote_side'] = cols
-#            print "cols", self.name, cols
 
         kwargs['primaryjoin'] = and_(*self.primaryjoin_clauses)
         kwargs['uselist'] = False
