@@ -78,6 +78,7 @@ def setup_all():
     delay_setup = False
     for entity in delayed_entities:
         entity.setup_table()
+    for entity in delayed_entities:
         entity.setup_mapper()
     delayed_entities.clear()
     create_all()
