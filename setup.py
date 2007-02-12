@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-classifiers = """
+classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
@@ -8,10 +8,10 @@ classifiers = """
     "Programming Language :: Python",
     "Topic :: Database :: Front-Ends",
     "Topic :: Software Development :: Libraries :: Python Modules"
-"""
+]
 
 setup(name="Elixir",
-      version="0.0.1",
+      version="0.1.0",
       description="Declarative Mapper for SQLAlchemy",
       long_description="""
 Elixir
