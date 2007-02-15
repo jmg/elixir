@@ -11,8 +11,6 @@ class Statement(object):
     A ``Statement`` object represents a DSL term.
     '''
     
-    statements = dict()
-    
     def __init__(self, target):
         self.target = target
     
