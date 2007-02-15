@@ -85,11 +85,9 @@ class Field(object):
         Returns the corresponding sqlalchemy-column
         '''
     
-        if hasattr(self, '_column'):
-            return self._column
-        
-        self._column = Column(self.colname, self.type,
-                              *self.args, **self.kwargs)
+        if not hasattr(self, '_column'):
+            self._column = Column(self.colname, self.type,
+                                  *self.args, **self.kwargs)
         return self._column
 
 

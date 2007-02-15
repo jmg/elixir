@@ -33,11 +33,23 @@ class EntityDescriptor(object):
         entity.mapper = None
 
         self.entity = entity
+        self.module = sys.modules[entity.__module__]
+
         self.primary_keys = list()
+
+        self.parent = None
+        for base in entity.__bases__:
+            if issubclass(base, Entity):
+                if self.parent:
+                    raise Exception('%s entity inherits from several entities, '
+                                    'which is not supported' 
+                                    % self.entity.__name__)
+                else:
+                    self.parent = base
+
         self.fields = dict()
         self.relationships = dict()
         self.constraints = list()
-        self.module = sys.modules[entity.__module__]
 
         #CHECKME: this is a workaround for the "current" descriptor/target
         # property ugliness. The problem is that this workaround is ugly too.
@@ -49,7 +61,8 @@ class EntityDescriptor(object):
         self.tablename = None
         self.metadata = getattr(self.module, 'metadata', elixir.metadata)
 
-        for option in ('autoload', 'shortnames', 'auto_primarykey'):
+        for option in ('inheritance', 'autoload', 'shortnames', 
+                       'auto_primarykey'):
             setattr(self, option, options_defaults[option])
 
         for option_dict in ('mapper_options', 'table_options'):
@@ -57,11 +70,13 @@ class EntityDescriptor(object):
     
     def setup_options(self):
         '''
-        Setup any values that might depend on using_options (the tablename)
+        Setup any values that might depend on using_options. For example, the 
+        tablename or the metadata.
         '''
-        
+        elixir.metadatas.add(self.metadata)
+
         entity = self.entity
-        
+
         if not self.tablename:
             if self.shortnames:
                 self.tablename = entity.__name__.lower()
@@ -75,9 +90,9 @@ class EntityDescriptor(object):
         Create tables, keys, columns that have been specified so far and 
         assign a mapper. Will be called when an instance of the entity is 
         created or a mapper is needed to access one or many instances of the 
-        entity. This *doesn't* initialize relations.
+        entity. It will try to initialize the entity's relationships (along 
+        with any delayed relationship) but some of them might be delayed.
         '''
-        
         if elixir.delay_setup:
             elixir.delayed_entities.add(self)
             return
@@ -85,31 +100,13 @@ class EntityDescriptor(object):
         self.setup_table()
         self.setup_mapper()
 
-        # try to setup all uninitialized relationships
-        EntityDescriptor.setup_relationships()
-    
-    def setup_mapper(self):
-        '''
-        Initializes and assign an (empty!) mapper to the given entity, the.
-        '''
-        if self.entity.mapper:
-            return
-        
-        session = getattr(self.module, 'session', elixir.objectstore)
-        
-        kwargs = self.mapper_options
-        if self.order_by:
-            kwargs['order_by'] = self.translate_order_by(self.order_by)
-        
-        assign_mapper(session.context, self.entity, self.entity.table, 
-                      **kwargs)
-        elixir.metadatas.add(self.metadata)
-
         # This marks all relations of the entity (or, at least those which 
         # have been added so far by statements) as being uninitialized
         EntityDescriptor.uninitialized_rels.update(
             self.relationships.values())
 
+        # try to setup all uninitialized relationships
+        EntityDescriptor.setup_relationships()
     
     def translate_order_by(self, order_by):
         if isinstance(order_by, basestring):
@@ -123,15 +120,57 @@ class EntityDescriptor(object):
             order.append(col)
         return order
 
+    def setup_mapper(self):
+        '''
+        Initializes and assign an (empty!) mapper to the entity.
+        '''
+        if self.entity.mapper:
+            return
+        
+        session = getattr(self.module, 'session', elixir.objectstore)
+        
+        kwargs = self.mapper_options
+        if self.order_by:
+            kwargs['order_by'] = self.translate_order_by(self.order_by)
+        
+        if self.parent:
+            if self.inheritance == 'single':
+                # at this point, we don't know whether the parent relationships
+                # have already been processed or not
+                kwargs['inherits'] = self.parent.mapper
+
+        assign_mapper(session.context, self.entity, self.entity.table, 
+                      **kwargs)
+
+
     def setup_table(self):
         '''
         Create a SQLAlchemy table-object with all columns that have been 
         defined up to this point.
         '''
-        
         if self.entity.table:
             return
         
+        if self.parent:
+            if self.inheritance == 'single':
+                # reuse the parent's table
+                self.entity.table = self.parent.table 
+                self.primary_keys = self.parent._descriptor.primary_keys
+
+                # re-add the entity fields to the parent entity (so that they
+                # added to the parent's table (whether the parent's table
+                # is setup already or not).
+                for field in self.fields.itervalues():
+                    self.parent._descriptor.add_field(field)
+
+                return
+#            elif self.inheritance == 'concrete':
+                # do not reuse parent table, but copy all fields
+                # the problem is that, at this points, all "plain" fields
+                # are known, but not those generated by relations
+#                for field in self.fields.itervalues():
+#                    self.add_field(field)
+
         if not self.autoload:
             if not self.primary_keys and self.auto_primarykey:
                 self.create_auto_primary_key()
@@ -145,7 +184,7 @@ class EntityDescriptor(object):
 
         if self.autoload:
             kwargs['autoload'] = True
-        
+       
         self.entity.table = Table(self.tablename, self.metadata, 
                                   *args, **kwargs)
     
@@ -243,7 +282,7 @@ class Entity(object):
             # only process subclasses of Entity, not Entity itself
             if bases[0] is object:
                 return
-            
+
             # create the entity descriptor
             desc = cls._descriptor = EntityDescriptor(cls)
             EntityDescriptor.current = desc

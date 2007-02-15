@@ -22,9 +22,8 @@ from sqlalchemy.ext.sessioncontext  import SessionContext
 from sqlalchemy.types               import *
 from elixir.options                 import *
 from elixir.entity                  import Entity, EntityDescriptor
-from elixir.fields                  import Field, has_field, with_fields
-from elixir.relationships           import belongs_to, has_one, has_many, \
-                                           has_and_belongs_to_many
+from elixir.fields                  import *
+from elixir.relationships           import *
 
 __all__ = ['Entity', 'Field', 'has_field', 'with_fields', 
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many', 
@@ -78,9 +77,15 @@ def setup_all():
         entity.setup_table()
     for entity in delayed_entities:
         entity.setup_mapper()
+
+    # setup all relationships
+    for entity in delayed_entities:
+        for rel in entity.relationships.itervalues():
+            rel.setup()
+
     delayed_entities.clear()
-    # try to setup all uninitialized relationships
-    EntityDescriptor.setup_relationships()
+
+    # issue the "CREATE" SQL statements
     create_all()
 
 def cleanup_all():

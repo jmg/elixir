@@ -31,6 +31,11 @@ The list of supported arguments are as follows:
 +---------------------+-------------------------------------------------------+
 | Option Name         | Description                                           |
 +=====================+=======================================================+
+| ``inheritance``     | Specify the type of inheritance this entity must use. |
+|                     | It can be one of ``single``, ``concrete`` or          |
+|                     | ``multi``.                                            |
+|                     | **For now, only the single type is implemented.**     |
++---------------------+-------------------------------------------------------+
 | ``metadata``        | Specify a custom MetaData                             |
 +---------------------+-------------------------------------------------------+
 | ``autoload``        | Automatically load column definitions from the        |
@@ -99,6 +104,7 @@ __all__ = ['using_options', 'using_table_options', 'using_mapper_options',
 __pudge_all__ = ['options_defaults']
 
 options_defaults = dict(
+    inheritance='single',
     autoload=None,
     shortnames=False,
     auto_primarykey=True,
@@ -108,6 +114,7 @@ options_defaults = dict(
 
 class UsingOptions(object):    
     valid_options = (
+        'inheritance',
         'metadata',
         'autoload',
         'tablename',

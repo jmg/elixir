@@ -12,6 +12,9 @@ class Statement(object):
     '''
     
     def __init__(self, target):
+        '''
+        target is the class which will handle this statement
+        '''
         self.target = target
     
     def __call__(self, *args, **kwargs):
@@ -26,6 +29,6 @@ class Statement(object):
         Apply all statements to the given entity.
         '''
         # loop over all statements in the class's statement list 
-        # and apply them
+        # and apply them, i.e. instanciate the corresponding classes
         for statement, args, kwargs in getattr(entity, STATEMENTS):
             statement.target(entity, *args, **kwargs)

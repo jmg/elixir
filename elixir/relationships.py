@@ -60,9 +60,37 @@ an integer column named `id`, the ``belongs_to`` relationship will
 automatically add an integer column named `owner_id` to the entity, with a 
 foreign key referencing the `id` column of the `Person` entity.
 
-In addition to the keyword arguments inherited from SQLAlchemy, ``belongs_to``
-relationships accept an optional ``colname`` keyword argument, used to specify
-a custom name for the column which will be created.
+In addition to the keyword arguments inherited from SQLAlchemy's relation 
+function, ``belongs_to`` relationships accept the following optional arguments
+which will be directed to the created column:
+
++----------------------+------------------------------------------------------+
+| Option Name          | Description                                          |
++======================+======================================================+
+| ``colname``          | Specify a custom column name.                        |
++----------------------+------------------------------------------------------+
+| ``nullable``         | True if this column should allow nulls. Defaults to  |
+|                      | True unless this column is a primary key column.     |
++----------------------+------------------------------------------------------+
+| ``column_kwargs``    | A dictionary holding any other keyword argument you  |
+|                      | might want to pass to the Column.                    |
++----------------------+------------------------------------------------------+
+
+The following optional arguments are also supported to customize the
+ForeignKeyConstraint that is created:
+
++----------------------+------------------------------------------------------+
+| Option Name          | Description                                          |
++======================+======================================================+
+| ``use_alter``        | If True, SQLAlchemy will add the constraint in a     |
+|                      | second SQL statement (as opposed to within the       |
+|                      | create table statement). This permits to define      |
+|                      | tables with a circular foreign key dependency        |
+|                      | between them.                                        |
++----------------------+------------------------------------------------------+
+| ``constraint_kwargs``| A dictionary holding any other keyword argument you  |
+|                      | might want to pass to the Constraint.                |
++----------------------+------------------------------------------------------+
 
 `has_one`
 ---------
@@ -283,6 +311,14 @@ class BelongsTo(Relationship):
     
     def __init__(self, entity, name, *args, **kwargs):
         self.colname = kwargs.pop('colname', None)
+        self.column_kwargs = kwargs.pop('column_kwargs', {})
+        if 'nullable' in kwargs:
+            self.column_kwargs['nullable'] = kwargs.pop('nullable')
+
+        self.constraint_kwargs = kwargs.pop('constraint_kwargs', {})
+        if 'use_alter' in kwargs:
+            self.contraint_kwargs['use_alter'] = kwargs.pop('use_alter')
+        
         if self.colname and not isinstance(self.colname, list):
             self.colname = [self.colname]
         super(BelongsTo, self).__init__(entity, name, *args, **kwargs)
@@ -356,7 +392,8 @@ class BelongsTo(Relationship):
 
                 # we use a Field here instead of using a Column directly 
                 # because of add_field 
-                field = Field(pk_col.type, colname=colname, index=True)
+                field = Field(pk_col.type, colname=colname, index=True, 
+                              **self.column_kwargs)
                 source_desc.add_field(field)
 
                 self.foreign_key.append(field.column)
@@ -366,23 +403,23 @@ class BelongsTo(Relationship):
                 fk_colnames.append(colname)
 
                 # build the list of columns the foreign key will point to
-                fk_refcols.append(target_desc.tablename + '.' + pk_col.name)
+                fk_refcols.append("%s.%s" % (target_desc.entity.table.name,
+                                             pk_col.name))
 
                 # build up the primary join. This is needed when you have 
                 # several belongs_to relations between two objects
                 self.primaryjoin_clauses.append(field.column == pk_col)
             
             # TODO: better constraint-naming?
-            #CHECKME: do we really need use_alter systematically?
             source_desc.add_constraint(ForeignKeyConstraint(
                                             fk_colnames, fk_refcols,
                                             name=self.name +'_fk',
-                                            use_alter=True))
+                                            **self.constraint_kwargs))
     
     def create_properties(self):
         kwargs = self.kwargs
         
-        if self.entity is self.target:
+        if self.entity.table is self.target.table:
             if self.entity._descriptor.autoload:
                 cols = [col for col in self.target.table.primary_key.columns]
             else:
@@ -453,6 +490,14 @@ class HasAndBelongsToMany(Relationship):
             e1_desc = self.entity._descriptor
             e2_desc = self.target._descriptor
             
+            if e1_desc.autoload:
+                if not self.user_tablename:
+                    raise Exception(
+                        "Entity '%s' is autoloaded but relation '%s' has no "
+                        "secondary table name specified. You should specify "
+                        "it by using the tablename keyword."
+                        % (self.entity.__name__, self.name)
+                    )
             columns = list()
             constraints = list()
 
@@ -490,11 +535,9 @@ class HasAndBelongsToMany(Relationship):
                     join_list.append(col == pk_col)
                 
                 # TODO: better constraint-naming?
-                #CHECKME: do we really need use_alter systematically?
                 constraints.append(
                     ForeignKeyConstraint(fk_colnames, fk_refcols,
-                                         name=desc.tablename + '_fk', 
-                                         use_alter=True))
+                                         name=desc.tablename + '_fk'))
 
             if self.user_tablename:
                 tablename = self.user_tablename
@@ -523,6 +566,7 @@ class HasAndBelongsToMany(Relationship):
                     tablename = "%s__%s" % (source_part, target_part)
 
             args = columns + constraints
+            
             self.secondary_table = Table(tablename, e1_desc.metadata, *args)
     
     def create_properties(self):
@@ -544,6 +588,7 @@ class HasAndBelongsToMany(Relationship):
         return super(HasAndBelongsToMany, self).is_inverse(other) and \
                (self.user_tablename == other.user_tablename or 
                 (not self.user_tablename and not other.user_tablename))
+
 
 belongs_to              = Statement(BelongsTo)
 has_one                 = Statement(HasOne)
