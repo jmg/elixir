@@ -39,7 +39,7 @@ class EntityDescriptor(object):
 
         self.parent = None
         for base in entity.__bases__:
-            if issubclass(base, Entity):
+            if issubclass(base, Entity) and base is not Entity:
                 if self.parent:
                     raise Exception('%s entity inherits from several entities, '
                                     'which is not supported' 

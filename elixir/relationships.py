@@ -451,7 +451,6 @@ class HasOne(Relationship):
         # already setup in the other way (belongs_to).
         if self.entity is self.target:
             kwargs['remote_side'] = self.inverse.foreign_key
-            print "kwargs", self.name, kwargs
         
         kwargs['primaryjoin'] = and_(*self.inverse.primaryjoin_clauses)
         kwargs['uselist'] = self.uselist

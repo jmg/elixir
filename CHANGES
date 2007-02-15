@@ -1,0 +1,20 @@
+0.1.1
+- Per a suggestion on the mailing list, look at the calling stack frame to
+  ensure that we apply statements to the proper class.  We now attach the
+  statement list to the class itself, rather than attaching it to a global
+  list that is neither threadsafe, nor safe when doing nested class 
+  definition.  Also added a test to validate that this works.
+- implemented singletable non-polymorphic inheritance
+- added support for the nullable and column_kwargs kwargs on BelongsTo
+  relationships (forwarded to the SA Column).
+- added support for the use_alter and constraint_kwargs kwargs on BelongsTo
+  relationships (forwarded to SA ForeignKeyConstraint).
+    -> removed the systematic use_alter on BelongsTo relations since it
+       can now be specified only when needed.
+    -> removed it from HasAndBelongsToMany relations, since I think a
+       circular foreign key dependency can't happen with those relations.
+- corrected some docstrings
+
+0.1.0 - 2007-02-12
+initial release
+
