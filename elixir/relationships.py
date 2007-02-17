@@ -221,10 +221,10 @@ class Relationship(object):
         '''
         Sets up the relationship, creates foreign keys and secondary tables.
         '''
-        
+
         if not self.target:
             return False
-        
+
         if self.property:
             return True
 
@@ -239,14 +239,14 @@ class Relationship(object):
         if not self._target:
             path = self.of_kind.rsplit('.', 1)
             classname = path.pop()
-            
+
             if path:
                 # do we have a fully qualified entity name?
                 module = sys.modules[path.pop()]
             else: 
                 # if not, try the same module as the source
                 module = self.entity._descriptor.module
-            
+
             self._target = getattr(module, classname, None)
             if not self._target:
                 # This is ugly but we need it because the class which is
@@ -266,17 +266,22 @@ class Relationship(object):
     
     @property
     def inverse(self):
-        #TODO: we should use a different value for when an inverse was searched
-        # for but none was found than when it hasn't been searched for yet so
-        # that we don't do the whole search again
         if not self._inverse:
             if self.inverse_name:
                 desc = self.target._descriptor
-                inverse = desc.relationships[self.inverse_name]
+                # we use all_relationships so that relationships from parent
+                # entities are included too
+                inverse = desc.all_relationships.get(self.inverse_name, None)
+                if inverse is None:
+                    raise Exception(
+                              "Couldn't find a relationship named '%s' in "
+                              "entity '%s' or its parent entities." 
+                              % (self.inverse_name, self.target.__name__)
+                          )
                 assert self.match_type_of(inverse)
             else:
                 inverse = self.target._descriptor.get_inverse_relation(self)
-        
+
             if inverse:
                 self._inverse = inverse
                 inverse._inverse = self
@@ -437,8 +442,19 @@ class HasOne(Relationship):
     uselist = False
 
     def create_keys(self):
-        # make sure the inverse is set up because it creates the
-        # foreign key we'll need
+        # make sure the inverse exists
+        if self.inverse is None:
+            raise Exception(
+                      "Couldn't find any relationship in '%s' which "
+                      "match as inverse of the '%s' relationship "
+                      "defined in the '%s' entity. If you are using "
+                      "inheritance you "
+                      "might need to specify inverse relationships "
+                      "manually by using the inverse keyword."
+                      % (self.target.__name__, self.name,
+                         self.entity.__name__)
+                  )
+        # make sure it is set up because it creates the foreign key we'll need
         self.inverse.setup()
     
     def create_properties(self):
@@ -449,7 +465,7 @@ class HasOne(Relationship):
         # are indeed useful, or remove them. It might be they are indeed
         # useless because of the primaryjoin, and that the remote_side is
         # already setup in the other way (belongs_to).
-        if self.entity is self.target:
+        if self.entity.table is self.target.table:
             kwargs['remote_side'] = self.inverse.foreign_key
         
         kwargs['primaryjoin'] = and_(*self.inverse.primaryjoin_clauses)

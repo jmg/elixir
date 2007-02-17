@@ -41,8 +41,8 @@ class EntityDescriptor(object):
         for base in entity.__bases__:
             if issubclass(base, Entity) and base is not Entity:
                 if self.parent:
-                    raise Exception('%s entity inherits from several entities, '
-                                    'which is not supported' 
+                    raise Exception('%s entity inherits from several entities,'
+                                    ' and this is not supported.' 
                                     % self.entity.__name__)
                 else:
                     self.parent = base
@@ -61,8 +61,8 @@ class EntityDescriptor(object):
         self.tablename = None
         self.metadata = getattr(self.module, 'metadata', elixir.metadata)
 
-        for option in ('inheritance', 'autoload', 'shortnames', 
-                       'auto_primarykey'):
+        for option in ('inheritance', 
+                       'autoload', 'shortnames', 'auto_primarykey'):
             setattr(self, option, options_defaults[option])
 
         for option_dict in ('mapper_options', 'table_options'):
@@ -136,7 +136,10 @@ class EntityDescriptor(object):
         if self.parent:
             if self.inheritance == 'single':
                 # at this point, we don't know whether the parent relationships
-                # have already been processed or not
+                # have already been processed or not. Some of them might be, 
+                # some other might not.
+                if not self.parent.mapper:
+                    self.parent._descriptor.setup_mapper()
                 kwargs['inherits'] = self.parent.mapper
 
         assign_mapper(session.context, self.entity, self.entity.table, 
@@ -154,11 +157,14 @@ class EntityDescriptor(object):
         if self.parent:
             if self.inheritance == 'single':
                 # reuse the parent's table
+                if not self.parent.table:
+                    self.parent._descriptor.setup_table()
+                    
                 self.entity.table = self.parent.table 
                 self.primary_keys = self.parent._descriptor.primary_keys
 
-                # re-add the entity fields to the parent entity (so that they
-                # added to the parent's table (whether the parent's table
+                # re-add the entity fields to the parent entity so that they
+                # are added to the parent's table (whether the parent's table
                 # is setup already or not).
                 for field in self.fields.itervalues():
                     self.parent._descriptor.add_field(field)
@@ -244,8 +250,17 @@ class EntityDescriptor(object):
         # infinite recursive loop.
         if matching_rel and not reverse:
             rel.entity._descriptor.get_inverse_relation(matching_rel, True)
-            
+
         return matching_rel
+
+    @property
+    def all_relationships(self):
+        if self.parent:
+            res = self.parent._descriptor.all_relationships
+        else:
+            res = dict()
+        res.update(self.relationships)
+        return res
 
     @classmethod
     def setup_relationships(cls):
