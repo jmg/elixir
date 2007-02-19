@@ -126,7 +126,7 @@ them being a `Person`. This could be expressed like so:
 
 Note that an ``has_many`` relationship **cannot exist** without a 
 corresponding ``belongs_to`` relationship in the other way. This is because the
-``has_one`` relationship needs the foreign key created by the ``belongs_to`` 
+``has_many`` relationship needs the foreign key created by the ``belongs_to`` 
 relationship.
 
 `has_and_belongs_to_many`
