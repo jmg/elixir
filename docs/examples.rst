@@ -43,7 +43,7 @@ support authorization using identity, you can use this model as a basis:
     class Group(Entity):
         has_field('group_id', Integer, primary_key=True)
         has_field('group_name', Unicode(16), unique=True)
-        has_field('display_name', Unicode(255)),
+        has_field('display_name', Unicode(255))
         has_field('created', DateTime, default=datetime.now)
         has_and_belongs_to_many('users', of_kind='User', inverse='groups')
         has_and_belongs_to_many('permissions', of_kind='Permission', inverse='groups')
@@ -76,3 +76,4 @@ support authorization using identity, you can use this model as a basis:
 
 More Elixir examples are coming soon, and we would appreciate any additional
 sample applications that you could provide to illustrate more complex mappings.
+
