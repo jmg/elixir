@@ -8,6 +8,11 @@ from elixir.statements              import Statement
 from elixir.fields                  import Field
 from elixir.options                 import options_defaults
 
+try:
+    set
+except NameError:
+    from sets import Set as set
+
 import sys
 import elixir
 
@@ -262,11 +267,11 @@ class EntityDescriptor(object):
         res.update(self.relationships)
         return res
 
-    @classmethod
     def setup_relationships(cls):
         for relationship in list(EntityDescriptor.uninitialized_rels):
             if relationship.setup():
                 EntityDescriptor.uninitialized_rels.remove(relationship)
+    setup_relationships = classmethod(setup_relationships)
 
 
 class Entity(object):

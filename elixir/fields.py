@@ -79,7 +79,6 @@ class Field(object):
         self.args = args
         self.kwargs = kwargs
     
-    @property
     def column(self):
         '''
         Returns the corresponding sqlalchemy-column
@@ -89,6 +88,7 @@ class Field(object):
             self._column = Column(self.colname, self.type,
                                   *self.args, **self.kwargs)
         return self._column
+    column = property(column)
 
 
 class HasField(object):

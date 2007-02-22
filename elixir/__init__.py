@@ -25,6 +25,11 @@ from elixir.entity                  import Entity, EntityDescriptor
 from elixir.fields                  import *
 from elixir.relationships           import *
 
+try:
+    set
+except NameError:
+    from sets import Set as set
+
 __all__ = ['Entity', 'Field', 'has_field', 'with_fields', 
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many', 
            'using_options', 'using_table_options', 'using_mapper_options',

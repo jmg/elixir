@@ -234,7 +234,6 @@ class Relationship(object):
         
         return True
     
-    @property
     def target(self):
         if not self._target:
             path = self.of_kind.rsplit('.', 1)
@@ -263,8 +262,8 @@ class Relationship(object):
                     return None
         
         return self._target
+    target = property(target)
     
-    @property
     def inverse(self):
         if not self._inverse:
             if self.inverse_name:
@@ -287,6 +286,7 @@ class Relationship(object):
                 inverse._inverse = self
         
         return self._inverse
+    inverse = property(inverse)
     
     def match_type_of(self, other):
         t1, t2 = type(self), type(other)
