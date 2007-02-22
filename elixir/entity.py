@@ -64,6 +64,7 @@ class EntityDescriptor(object):
         # set default value for options
         self.order_by = None
         self.tablename = None
+        self.table_args = list()
         self.metadata = getattr(self.module, 'metadata', elixir.metadata)
 
         for option in ('inheritance', 
@@ -188,7 +189,7 @@ class EntityDescriptor(object):
 
         # create list of columns and constraints
         args = [field.column for field in self.fields.values()] \
-                    + self.constraints
+                    + self.constraints + self.table_args
         
         # specify options
         kwargs = self.table_options

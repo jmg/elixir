@@ -8,9 +8,9 @@ Options
 This module provides DSL statements for defining options on your Elixir
 entities.  There are three different kinds of options that can be set 
 up, and for this there are three different statements: using_options_,
-using_table_options_ and using_mapper_options_. Alternatively, options can be
-set on all Elixir entities by modifying the `options_defaults` dictionary
-before defining any entity.
+using_table_options_ and using_mapper_options_. 
+Alternatively, options can be set on all Elixir entities by modifying the 
+`options_defaults` dictionary before defining any entity.
 
 `using_options`
 ---------------
@@ -69,18 +69,21 @@ The list of supported arguments are as follows:
 
 For examples, please refer to the examples and unit tests.
 
-
 `using_table_options`
 ---------------------
 The 'using_table_options' DSL statement allows you to set up some 
 additional options on your entity table. It is meant only to handle the 
 options which are not supported directly by the 'using_options' statement.
 By opposition to the 'using_options' statement, these options are passed 
-directly to the underlying SQLAlchemy Table object (as keyword arguments) 
-without any processing.
+directly to the underlying SQLAlchemy Table object (both non-keyword arguments
+and keyword arguments) without any processing.
 
-For further information, please refer to the `SQLAlchemy table's documentation <http://www.sqlalchemy.org/docs/docstrings.myt
+For further information, please refer to the `SQLAlchemy table's documentation
+<http://www.sqlalchemy.org/docs/docstrings.myt
 #docstrings_sqlalchemy.schema_Table>`_.
+
+You might also be interested in the section about `constraints 
+<http://www.sqlalchemy.org/docs/metadata.myt#metadata_constraints>`_.
 
 `using_mapper_options`
 ----------------------
@@ -133,6 +136,7 @@ class UsingOptions(object):
 
 class UsingTableOptions(object):    
     def __init__(self, entity, *args, **kwargs):
+        entity._descriptor.table_args = list(args)
         entity._descriptor.table_options.update(kwargs)
 
 

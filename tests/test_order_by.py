@@ -27,7 +27,7 @@ class Genre(Entity):
     has_and_belongs_to_many('records', of_kind='Record', 
                             order_by='-title')
     
-class TestOptions(object):
+class TestOrderBy(object):
     def setup(self):
         engine = create_engine('sqlite:///')
 #        engine.echo = True

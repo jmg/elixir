@@ -6,6 +6,10 @@
   list that is neither threadsafe, nor safe when doing nested class 
   definition.  Also added a test to validate that this works.
 - implemented singletable non-polymorphic inheritance
+- added support to pass non-keyword arguments to tables. You just pass
+  them to the using_table_options statement and they will be forwarded to the
+  table along with the keyword arguments. This can be used to set table 
+  constraints.
 - added support for the nullable and column_kwargs kwargs on BelongsTo
   relationships (forwarded to the SA Column).
 - added support for the use_alter and constraint_kwargs kwargs on BelongsTo
