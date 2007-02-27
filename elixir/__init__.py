@@ -45,6 +45,7 @@ __pudge_all__ = ['create_all', 'drop_all', 'setup_all', 'cleanup_all',
 metadata = sqlalchemy.DynamicMetaData('elixir')
 
 try:
+    # this only happens when the threadlocal extension is used
     objectstore = sqlalchemy.objectstore
 except AttributeError:
     # thread local SessionContext
