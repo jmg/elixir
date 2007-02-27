@@ -5,6 +5,9 @@
   statement list to the class itself, rather than attaching it to a global
   list that is neither threadsafe, nor safe when doing nested class 
   definition.  Also added a test to validate that this works.
+- fixed foreign key names on MySQL (and possibly other) databases by 
+  making sure the generated name is unique for the whole database, and not
+  only for the table on which it applies.
 - implemented singletable non-polymorphic inheritance
 - added support to pass non-keyword arguments to tables. You just pass
   them to the using_table_options statement and they will be forwarded to the

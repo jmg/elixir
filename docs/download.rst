@@ -16,6 +16,13 @@ You can install the Elixir package by simply typing [#]_:
         <http://peak.telecommunity.com/DevCenter/EasyInstall>`_ first and find
         out how to use it (it's pretty easy, like the name promises).
 
+
+Releases
+--------
+
+Each release is also available for standard download on the `Cheese Shop
+<http://cheeseshop.python.org/pypi/Elixir/>`_
+
 Development Version
 -------------------
 

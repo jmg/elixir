@@ -17,6 +17,29 @@ focuses on providing a simpler syntax for defining model objects when you do
 not need the full expressiveness of SQLAlchemy's manual mapper definitions.
 
 -------
+Example
+-------
+
+Here is a very short model definition example, so that you can see what the
+syntax look like. For some explanation and more complete examples, please have
+a look at the `tutorial <tutorial.html>`_ or at the 
+`examples page <examples.html>`_.
+
+::
+
+    class Person(Entity):
+        has_field('name', Unicode(255))
+
+        has_many('addresses', of_kind='Address')
+
+
+    class Address(Entity):
+        has_field('email', String(128))
+
+        belongs_to('person', of_kind='Person')
+
+
+-------
 History
 -------
 

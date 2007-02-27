@@ -415,10 +415,12 @@ class BelongsTo(Relationship):
                 # several belongs_to relations between two objects
                 self.primaryjoin_clauses.append(field.column == pk_col)
             
-            # TODO: better constraint-naming?
+            # In some databases (at lease MySQL) the constraint name needs to 
+            # be unique for the whole database, instead of per table.
+            fk_name = "%s_%s_fk" % (self.entity.table.name, self.name)
             source_desc.add_constraint(ForeignKeyConstraint(
                                             fk_colnames, fk_refcols,
-                                            name=self.name +'_fk',
+                                            name=fk_name,
                                             **self.constraint_kwargs))
     
     def create_properties(self):
@@ -513,14 +515,50 @@ class HasAndBelongsToMany(Relationship):
                         "it by using the tablename keyword."
                         % (self.entity.__name__, self.name)
                     )
+
+            # We use the name of the relation for the first entity 
+            # (instead of the name of its primary key), so that we can 
+            # have two many-to-many relations between the same objects 
+            # without having a table name collision. 
+            source_part = "%s_%s" % (e1_desc.tablename, self.name)
+
+            # And we use the name of the primary key for the second entity
+            # when there is no inverse, so that a many-to-many relation 
+            # can be defined without an inverse.
+            if self.inverse:
+                e2_name = self.inverse.name
+            else:
+                e2_name = '_'.join([key.column.name for key in
+                                    e2_desc.primary_keys])
+            target_part = "%s_%s" % (e2_desc.tablename, e2_name)
+            
+            if self.user_tablename:
+                tablename = self.user_tablename
+            else:
+                # we need to keep the table name consistent (independant of 
+                # whether this relation or its inverse is setup first)
+                if self.inverse and e1_desc.tablename < e2_desc.tablename:
+                    tablename = "%s__%s" % (target_part, source_part)
+                else:
+                    tablename = "%s__%s" % (source_part, target_part)
+
+            # In some databases (at lease MySQL) the constraint names need 
+            # to be unique for the whole database, instead of per table.
+            source_fk_name = "%s_fk" % source_part
+            if self.inverse:
+                target_fk_name = "%s_fk" % target_part
+            else:
+                target_fk_name = "%s_inverse_fk" % source_part
+
             columns = list()
             constraints = list()
 
             self.primaryjoin_clauses = list()
             self.secondaryjoin_clauses = list()
 
-            for num, desc, join_name in (('1', e1_desc, 'primary'), 
-                                         ('2', e2_desc, 'secondary')):
+            for num, desc, join_name, fk_name in (
+                    ('1', e1_desc, 'primary', source_fk_name), 
+                    ('2', e2_desc, 'secondary', target_fk_name)):
                 fk_colnames = list()
                 fk_refcols = list()
             
@@ -549,36 +587,10 @@ class HasAndBelongsToMany(Relationship):
                     join_list = getattr(self, join_name+'join_clauses')
                     join_list.append(col == pk_col)
                 
-                # TODO: better constraint-naming?
                 constraints.append(
                     ForeignKeyConstraint(fk_colnames, fk_refcols,
-                                         name=desc.tablename + '_fk'))
+                                         name=fk_name))
 
-            if self.user_tablename:
-                tablename = self.user_tablename
-            else:
-                # We use the name of the relation for the first entity 
-                # (instead of the name of its primary key), so that we can 
-                # have two many-to-many relations between the same objects 
-                # without having a table name collision. 
-                source_part = "%s_%s" % (e1_desc.tablename, self.name)
-
-                # And we use the name of the primary key for the second entity
-                # when there is no inverse, so that a many-to-many relation 
-                # can be defined without an inverse.
-                if self.inverse:
-                    e2_name = self.inverse.name
-                else:
-                    e2_name = '_'.join([key.column.name for key in
-                                        e2_desc.primary_keys])
-                target_part = "%s_%s" % (e2_desc.tablename, e2_name)
-
-                # we need to keep the table name consistent (independant of 
-                # whether this relation or its inverse is setup first)
-                if self.inverse and e1_desc.tablename < e2_desc.tablename:
-                    tablename = "%s__%s" % (target_part, source_part)
-                else:
-                    tablename = "%s__%s" % (source_part, target_part)
 
             args = columns + constraints
             
