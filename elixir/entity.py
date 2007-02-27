@@ -2,7 +2,7 @@
 Entity baseclass, metaclass and descriptor
 '''
 
-from sqlalchemy                     import Table, Integer, desc
+from sqlalchemy                     import Table, Integer, desc, deferred
 from sqlalchemy.ext.assignmapper    import assign_mapper
 from elixir.statements              import Statement
 from elixir.fields                  import Field
@@ -148,8 +148,17 @@ class EntityDescriptor(object):
                     self.parent._descriptor.setup_mapper()
                 kwargs['inherits'] = self.parent.mapper
 
-        assign_mapper(session.context, self.entity, self.entity.table, 
-                      **kwargs)
+        properties = dict()
+        for field in self.fields.itervalues():
+            if field.deferred:
+                group = None
+                if isinstance(field.deferred, basestring):
+                    group = field.deferred
+                properties[field.column.name] = deferred(field.column,
+                                                         group=group)
+
+        assign_mapper(session.context, self.entity, self.entity.table,
+                      properties=properties, **kwargs)
 
 
     def setup_table(self):
@@ -188,7 +197,7 @@ class EntityDescriptor(object):
                 self.create_auto_primary_key()
 
         # create list of columns and constraints
-        args = [field.column for field in self.fields.values()] \
+        args = [field.column for field in self.fields.itervalues()] \
                     + self.constraints + self.table_args
         
         # specify options

@@ -317,8 +317,8 @@ class BelongsTo(Relationship):
     def __init__(self, entity, name, *args, **kwargs):
         self.colname = kwargs.pop('colname', None)
         self.column_kwargs = kwargs.pop('column_kwargs', {})
-        if 'nullable' in kwargs:
-            self.column_kwargs['nullable'] = kwargs.pop('nullable')
+        if 'required' in kwargs:
+            self.column_kwargs['nullable'] = not kwargs.pop('required')
 
         self.constraint_kwargs = kwargs.pop('constraint_kwargs', {})
         if 'use_alter' in kwargs:

@@ -16,7 +16,28 @@ The `has_field` statement allows you to define fields one at a time.
 
 The first argument is the name of the field, the second is its type. Following
 these, any number of keyword arguments can be specified for additional 
-behavior. The keyword arguments are passed on to the SQLAlchemy
+behavior. The following arguments are supported:
+
++-------------------+---------------------------------------------------------+
+| Argument Name     | Description                                             |
++===================+=========================================================+
+| ``required``      | Specify whether or not this field can be set to None    |
+|                   | (left without a value). Defaults to ``False``, unless   | 
+|                   | the field is a primary key.                             |
++-------------------+---------------------------------------------------------+
+| ``deferred``      | Specify whether this particular column should be        |
+|                   | fetched by default (along with the other columns) when  |
+|                   | an instance of the entity is fetched from the database  | 
+|                   | or rather only later on when this particular column is  |
+|                   | first referenced. This can be useful when one wants to  |
+|                   | avoid loading a large text or binary field into memory  |
+|                   | when its not needed. Individual columns can be lazy     |
+|                   | loaded by themselves (by using ``deferred=True``)       |
+|                   | or placed into groups that lazy-load together (by using |
+|                   | ``deferred`` = `"group_name"`).                         |
++-------------------+---------------------------------------------------------+
+
+Any other keyword argument is passed on to the SQLAlchemy
 ``Column`` object. Please refer to the `SQLAlchemy Column object's
 documentation <http://www.sqlalchemy.org/docs/docstrings.myt
 #docstrings_sqlalchemy.schema_Column>`_ for further detail about which 
@@ -38,10 +59,8 @@ The `with_fields` statement allows you to define fields all at once.
 Each keyword argument to this statement represents one field, which should
 be a `Field` object. The first argument to a Field object is its type. 
 Following it, any number of keyword arguments can be specified for
-additional behavior. The keyword arguments are passed on to the SQLAlchemy
-``Column`` object. Please refer to the `SQLAlchemy Column object's
-documentation`_ for further detail about which keyword arguments are
-supported.
+additional behavior. The `with_fields` statement supports the same keyword 
+arguments than the `has_field` statement.
 
 Here is a quick example of how to use ``with_fields``.
 
@@ -73,6 +92,9 @@ class Field(object):
     
     def __init__(self, type, *args, **kwargs):
         self.colname = kwargs.pop('colname', None)
+        self.deferred = kwargs.pop('deferred', False)
+        if 'required' in kwargs:
+            kwargs['nullable'] = not kwargs.pop('required')
         self.type = type
         self.primary_key = kwargs.get('primary_key', False)
         
