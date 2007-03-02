@@ -1,0 +1,26 @@
+How to make a release:
+
+- change version in CHANGES and add release date
+- change version in setup.py
+- commit
+
+- make tag in subversion
+    "svn copy http://elixir.ematia.de/svn/elixir/trunk
+             http://elixir.ematia.de/svn/elixir/tags/%s" % version
+
+- build tar.gz, egg for 2.4 and 2.5.
+    On my system (python defaults to 2.4):
+    "python setup.py bdist_egg"
+    "python2.5 setup.py sdist bdist_egg upload"
+
+- log to pypi and send the 2.4 egg manually (or if somebody has another way,
+  I'd be glad to hear it).
+
+- announce release on those lists:
+    - Elixir <sqlelixir@googlegroups.com> 
+    - SQLAlchemy <sqlalchemy@googlegroups.com>
+    - TurboGears <turbogears@googlegroups.com>
+    - Python announce <python-announce-list@python.org>
+
+- announce it on freshmeat
+
