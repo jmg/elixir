@@ -4,6 +4,7 @@ Entity baseclass, metaclass and descriptor
 
 from sqlalchemy                     import Table, Integer, desc, deferred
 from sqlalchemy.ext.assignmapper    import assign_mapper
+from sqlalchemy.util                import OrderedDict
 from elixir.statements              import Statement
 from elixir.fields                  import Field
 from elixir.options                 import options_defaults
@@ -52,7 +53,7 @@ class EntityDescriptor(object):
                 else:
                     self.parent = base
 
-        self.fields = dict()
+        self.fields = OrderedDict()
         self.relationships = dict()
         self.constraints = list()
 

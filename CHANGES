@@ -1,3 +1,7 @@
+0.2.1
+- Applied patch from "Wavy" so that columns of a table are in the same order
+  as they were declared.
+
 0.2.0 - 2007-02-28
 - Applied patch from Robin Munn to make the code python 2.3 compatible
 - Per a suggestion on the mailing list, look at the calling stack frame to
