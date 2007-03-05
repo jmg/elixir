@@ -161,7 +161,6 @@ class EntityDescriptor(object):
         assign_mapper(session.context, self.entity, self.entity.table,
                       properties=properties, **kwargs)
 
-
     def setup_table(self):
         '''
         Create a SQLAlchemy table-object with all columns that have been 
@@ -258,8 +257,7 @@ class EntityDescriptor(object):
                             "relation in entity '%s'. You should specify "
                             "inverse relations manually by using the inverse "
                             "keyword."
-                            % (rel.name, rel.entity.__name__) 
-                          )
+                            % (rel.name, rel.entity.__name__))
         # When a matching inverse is found, we check that it has only
         # one relation matching as its own inverse. We don't need the result
         # of the method though. But we do need to be careful not to start an
@@ -269,7 +267,6 @@ class EntityDescriptor(object):
 
         return matching_rel
 
-    @property
     def all_relationships(self):
         if self.parent:
             res = self.parent._descriptor.all_relationships
@@ -277,6 +274,7 @@ class EntityDescriptor(object):
             res = dict()
         res.update(self.relationships)
         return res
+    all_relationships = property(all_relationships)
 
     def setup_relationships(cls):
         for relationship in list(EntityDescriptor.uninitialized_rels):
@@ -309,6 +307,7 @@ class Entity(object):
     '''
     
     class __metaclass__(type):
+
         def __init__(cls, name, bases, dict_):
             # only process subclasses of Entity, not Entity itself
             if bases[0] is object:

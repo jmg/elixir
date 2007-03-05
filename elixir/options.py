@@ -134,13 +134,15 @@ class UsingOptions(object):
                 setattr(desc, kwarg, kwargs[kwarg])
 
 
-class UsingTableOptions(object):    
+class UsingTableOptions(object):
+
     def __init__(self, entity, *args, **kwargs):
         entity._descriptor.table_args = list(args)
         entity._descriptor.table_options.update(kwargs)
 
 
 class UsingMapperOptions(object):
+
     def __init__(self, entity, *args, **kwargs):
         entity._descriptor.mapper_options.update(kwargs)
 

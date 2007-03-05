@@ -10,7 +10,7 @@ from elixir import metadata, objectstore
 import elixir
 import datetime
 
-# First create two tables (it would be better to user an external db)
+# First create the tables (it would be better to use an external db)
 engine = sqlalchemy.create_engine('sqlite:///')
 meta = BoundMetaData(engine)
 
@@ -28,17 +28,32 @@ animal_table = Table('animal', meta,
     Column('feeder_id', Integer, ForeignKey('person.id')))
 animal_table.create()
 
+category_table = Table('category', meta,
+    Column('name', String, primary_key=True))
+category_table.create()
+
+person_category_table = Table('person_category', meta,
+    Column('person_id', Integer, ForeignKey('person.id')),
+    Column('category_name', String, ForeignKey('category.name')))
+person_category_table.create()
+
+person_person_table = Table('person_person', meta,
+    Column('person_id1', Integer, ForeignKey('person.id')),
+    Column('person_id2', Integer, ForeignKey('person.id')))
+person_person_table.create()
+
 elixir.delay_setup = True
+elixir.options_defaults.update(dict(autoload=True, shortnames=True))
 
 class Person(Entity):
-#    has_field('name', Unicode(32))
-    
     belongs_to('father', of_kind='Person', colname='father_id')
     has_many('children', of_kind='Person')
     has_many('pets', of_kind='Animal', inverse='owner')
     has_many('animals', of_kind='Animal', inverse='feeder')
-    
-    using_options(autoload=True, shortnames=True)
+    has_and_belongs_to_many('categories', of_kind='Category', 
+                            tablename='person_category')
+    has_and_belongs_to_many('friends', of_kind='Person',
+                            tablename='person_person')
 
     def __str__(self):
         s = '%s\n' % self.name.encode('utf-8')  
@@ -46,16 +61,18 @@ class Person(Entity):
             s += '  * pet: %s\n' % pet.name
         return s
 
+
 class Animal(Entity):
-#    has_field('name', String(15))
-#    has_field('color', String(15))
-    
     belongs_to('owner', of_kind='Person', colname='owner_id')
     belongs_to('feeder', of_kind='Person', colname='feeder_id')
 
-    using_options(autoload=True, shortnames=True)
+
+class Category(Entity):
+    has_and_belongs_to_many('persons', of_kind='Person', 
+                            tablename='person_category')
 
 elixir.delay_setup = False
+elixir.options_defaults.update(dict(autoload=False, shortnames=False))
 
 #-----------
 
@@ -91,7 +108,7 @@ class TestAutoload(object):
         bart = Person(name="Bart")
         lisa = Person(name="Lisa")
         
-        grampa.children.append(homer)        
+        grampa.children.append(homer)
         homer.children.append(bart)
         lisa.father = homer
         
@@ -107,6 +124,45 @@ class TestAutoload(object):
         assert p in p.father.children
         assert p.father is Person.get_by(name="Abe")
         assert p is Person.get_by(name="Lisa").father
+
+    def test_autoload_has_and_belongs_to_many(self):
+        stupid = Category(name="Stupid")
+        simpson = Category(name="Simpson")
+        old = Category(name="Old")
+
+        grampa = Person(name="Abe", categories=[simpson, old])
+        homer = Person(name="Homer", categories=[simpson, stupid])
+        bart = Person(name="Bart")
+        lisa = Person(name="Lisa")
+        
+        simpson.persons.extend([bart, lisa])
+        
+        objectstore.flush()
+        objectstore.clear()
+        
+        c = Category.get_by(name="Simpson")
+        grampa = Person.get_by(name="Abe")
+        
+        print "Persons in the '%s' category: %s." % (
+                c.name, 
+                ", ".join(p.name for p in c.persons))
+        
+        assert len(c.persons) == 4
+        assert c in grampa.categories
+
+    def test_autoload_has_and_belongs_to_many_selfref(self):
+        barney = Person(name="Barney")
+        homer = Person(name="Homer", friends=[barney])
+        barney.friends.append(homer)
+
+        objectstore.flush()
+        objectstore.clear()
+        
+        homer = Person.get_by(name="Homer")
+        barney = Person.get_by(name="Barney")
+
+        assert homer in barney.friends
+        assert barney in homer.friends
 
 if __name__ == '__main__':
     test = TestAutoload()

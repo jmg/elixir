@@ -114,6 +114,7 @@ class Field(object):
 
 
 class HasField(object):
+
     def __init__(self, entity, name, *args, **kwargs):
         field = Field(*args, **kwargs)
         field.colname = name
@@ -121,6 +122,7 @@ class HasField(object):
 
 
 class WithFields(object):
+
     def __init__(self, entity, *args, **fields):
         columns = list()
         desc = entity._descriptor
