@@ -39,8 +39,7 @@ The list of supported arguments are as follows:
 | ``metadata``        | Specify a custom MetaData                             |
 +---------------------+-------------------------------------------------------+
 | ``autoload``        | Automatically load column definitions from the        |
-|                     | existing database table.  For now, it does **not**    |
-|                     | work for ``has_and_belongs_to_many`` relationships.   |
+|                     | existing database table.                              |
 |                     | Using autoloaded tables implies setting               |
 |                     | ``delay_setup`` to ``True`` before defining your      |
 |                     | entities.                                             |
@@ -61,6 +60,13 @@ The list of supported arguments are as follows:
 |                     | key if there's no primary key defined for the         |
 |                     | corresponding entity.  If this option is False,       |
 |                     | it will disallow auto-creation of a primary key.      |
++---------------------+-------------------------------------------------------+
+| ``version_id_col``  | If this option is True, it will create a version      |
+|                     | column automatically using the default name. If given |
+|                     | as string, it will create the column using that name. |
+|                     | This can be used to prevent concurrent modifications  |
+|                     | to the entity's table rows (i.e. it will raise an     |
+|                     | exception if it happens).                             |
 +---------------------+-------------------------------------------------------+
 | ``order_by``        | How to order select results. Either a string or a     |
 |                     | list of strings, composed of the field name,          |
@@ -111,6 +117,7 @@ options_defaults = dict(
     autoload=None,
     shortnames=False,
     auto_primarykey=True,
+    version_id_col=False,
     mapper_options=dict(),
     table_options=dict(),
 )
@@ -123,6 +130,7 @@ class UsingOptions(object):
         'tablename',
         'shortnames',
         'auto_primarykey',
+        'version_id_col',
         'order_by',
     )
     
@@ -132,6 +140,9 @@ class UsingOptions(object):
         for kwarg in kwargs:
             if kwarg in UsingOptions.valid_options:
                 setattr(desc, kwarg, kwargs[kwarg])
+            else:
+                raise Exception("'%s' is not a valid option for Elixir "
+                                "entities." % kwarg)
 
 
 class UsingTableOptions(object):

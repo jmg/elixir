@@ -1,8 +1,11 @@
-0.2.1
+0.3.0
 - Added support for autoloading/reflecting databases with
   has_and_belongs_to_many relationships. The tablename argument is now
   optional, but still recommended, otherwise you'll have to use the same exact
   name for your intermediary table than the one generated.
+- Added support for the "version_id_col" option on entities. This option adds 
+  a column to the table which will be used to prevent concurrent modifications
+  on any row of the entity's table (i.e. it will raise an error if it happens).
 - Made the colname argument optional for belongs_to relationships in
   autoloaded entities. It is only required to specify it if you have several
   belongs_to relationships between two entities/tables.
@@ -18,6 +21,7 @@
   a column-name conflict).
 - Actually make the code python 2.3 compatible (Robin's patch was based on
   0.1.0 while I had introduced more decorators in the trunk in the mean time).
+- Using invalid options on entities will now raise an exception
 - Some cleanup/useless code removal
 
 0.2.0 - 2007-02-28

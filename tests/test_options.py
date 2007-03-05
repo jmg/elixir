@@ -2,32 +2,61 @@
     test options
 """
 
-from sqlalchemy import create_engine, UniqueConstraint 
-from sqlalchemy.exceptions import SQLError
+from sqlalchemy import create_engine, create_session, UniqueConstraint 
+from sqlalchemy.exceptions import SQLError, ConcurrentModificationError 
 from elixir     import *
 
-#TODO: complete this test. 
-
-# The order_by option is already tested in test_order_by.py
-
-class Record(Entity):
-    with_fields(
-        title = Field(Unicode(30)),
-        artist = Field(Unicode(30)),
-        year = Field(Integer)
-    )
-    
-    using_options(tablename="records")
 
 class TestOptions(object):
     def setup(self):
         engine = create_engine('sqlite:///')
         metadata.connect(engine)
-        create_all()
-    
+
+    # this test is a rip-off SQLAlchemy's activemapper's update test
+    def test_version_id_col(self):
+        class Person(Entity):
+            has_field('name', Unicode(30))
+
+            using_options(version_id_col=True)
+
+        Person.table.create()
+
+        p1 = Person(name='Daniel')
+        objectstore.flush()
+        objectstore.clear()
+        
+        person = Person.select()[0]
+        person.name = 'Gaetan'
+        objectstore.flush()
+        objectstore.clear()
+        assert person.row_version == 2
+
+        person = Person.select()[0]
+        person.name = 'Jonathan'
+        objectstore.flush()
+        objectstore.clear()
+        assert person.row_version == 3
+
+        # check that a concurrent modification raises exception
+        p1 = Person.select()[0]
+        s1 = objectstore.session
+        s2 = create_session()
+        objectstore.context.current = s2
+        p2 = Person.select()[0]
+        p1.name = "Daniel"
+        p2.name = "Gaetan"
+        objectstore.flush()
+        try:
+            objectstore.context.current = s1
+            objectstore.flush()
+            assert False
+        except ConcurrentModificationError:
+            pass
+
     def teardown(self):
         cleanup_all()
-    
+
+
 class TestTableOptions(object):
     def setup(self):
         global Person
