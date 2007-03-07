@@ -69,8 +69,9 @@ which will be directed to the created column:
 +======================+======================================================+
 | ``colname``          | Specify a custom column name.                        |
 +----------------------+------------------------------------------------------+
-| ``nullable``         | True if this column should allow nulls. Defaults to  |
-|                      | True unless this column is a primary key column.     |
+| ``required``         | Specify whether or not this field can be set to None |
+|                      | (left without a value). Defaults to ``False``,       |
+|                      | unless the field is a primary key.                   |
 +----------------------+------------------------------------------------------+
 | ``column_kwargs``    | A dictionary holding any other keyword argument you  |
 |                      | might want to pass to the Column.                    |
@@ -320,7 +321,7 @@ class BelongsTo(Relationship):
 
         self.constraint_kwargs = kwargs.pop('constraint_kwargs', {})
         if 'use_alter' in kwargs:
-            self.contraint_kwargs['use_alter'] = kwargs.pop('use_alter')
+            self.constraint_kwargs['use_alter'] = kwargs.pop('use_alter')
 
         self.foreign_key = list()
         self.primaryjoin_clauses = list()
