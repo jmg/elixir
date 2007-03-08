@@ -89,9 +89,6 @@ ForeignKeyConstraint that is created:
 |                      | tables with a circular foreign key dependency        |
 |                      | between them.                                        |
 +----------------------+------------------------------------------------------+
-| ``cascade``          | If True, SQLAlchemy will add "ON DELETE CASCADE"     |
-|                      | to the Foreign Key Constraint.                       |
-+----------------------+------------------------------------------------------+
 | ``constraint_kwargs``| A dictionary holding any other keyword argument you  |
 |                      | might want to pass to the Constraint.                |
 +----------------------+------------------------------------------------------+
@@ -325,10 +322,7 @@ class BelongsTo(Relationship):
         self.constraint_kwargs = kwargs.pop('constraint_kwargs', {})
         if 'use_alter' in kwargs:
             self.constraint_kwargs['use_alter'] = kwargs.pop('use_alter')
-        
-        if kwargs.pop('cascade', False) is True:
-            self.constraint_kwargs['ondelete'] = 'cascade'
-        
+
         self.foreign_key = list()
         self.primaryjoin_clauses = list()
         super(BelongsTo, self).__init__(entity, name, *args, **kwargs)
