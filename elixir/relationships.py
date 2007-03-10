@@ -89,6 +89,10 @@ ForeignKeyConstraint that is created:
 |                      | tables with a circular foreign key dependency        |
 |                      | between them.                                        |
 +----------------------+------------------------------------------------------+
+| ``ondelete``         | Value for the foreign key constraint ondelete clause.|
+|                      | May be one of: ``cascade``, ``restrict``,            |
+|                      | ``set null``, or ``set default``.                    |
++----------------------+------------------------------------------------------+
 | ``constraint_kwargs``| A dictionary holding any other keyword argument you  |
 |                      | might want to pass to the Constraint.                |
 +----------------------+------------------------------------------------------+
@@ -322,7 +326,10 @@ class BelongsTo(Relationship):
         self.constraint_kwargs = kwargs.pop('constraint_kwargs', {})
         if 'use_alter' in kwargs:
             self.constraint_kwargs['use_alter'] = kwargs.pop('use_alter')
-
+        
+        if 'ondelete' in kwargs:
+            self.constraint_kwargs['ondelete'] = kwargs.pop('ondelete')
+        
         self.foreign_key = list()
         self.primaryjoin_clauses = list()
         super(BelongsTo, self).__init__(entity, name, *args, **kwargs)
