@@ -1,12 +1,13 @@
 How to make a release:
 
 - change version in CHANGES and add release date
+- change version in __version__ (elixir/__init__.py)
 - change version in setup.py
 - commit
 
 - make tag in subversion
     "svn copy http://elixir.ematia.de/svn/elixir/trunk
-             http://elixir.ematia.de/svn/elixir/tags/%s" % version
+              http://elixir.ematia.de/svn/elixir/tags/%s" % version
 
 - build tar.gz, egg for 2.4 and 2.5.
     On my system (python defaults to 2.4):
