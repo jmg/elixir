@@ -1,4 +1,7 @@
 0.3.0
+- Made the provided metadata not threadlocal. This could break things for you
+  in some rare case. Please see the (newly created) FAQ file for details about
+  this.
 - Added support for autoloading/reflecting databases with
   has_and_belongs_to_many relationships. The tablename argument is now
   optional, but still recommended, otherwise you'll have to use the same exact
