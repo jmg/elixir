@@ -20,12 +20,15 @@
   table inheritance (and we set a custom column name in one of them to avoid
   a column-name conflict).
 - Using invalid options on entities will now raise an exception
+- Added __version__
 - Fixed bug preventing having entities without any statement.
 - Fixed documentation for belongs_to relationships (the arguemnt is "required",
   not "nullable").
 - Fixed typo which broke the use_alter argument on belongs_to relationships.
 - Actually make the code python 2.3 compatible (Robin's patch was based on
   0.1.0 while I had introduced more decorators in the trunk in the mean time).
+- Fixed inheritance unit test to pass SQLAlchemy type check on relations
+  (introduced in SA 0.3.6)
 - Made some PEP8 tweaks in many places. Used the pep8 script provided with 
   Cheesecake.
 - Some cleanup/useless code removal

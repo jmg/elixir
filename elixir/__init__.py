@@ -30,6 +30,8 @@ try:
 except NameError:
     from sets import Set as set
 
+__version__ = '0.3.0'
+
 __all__ = ['Entity', 'Field', 'has_field', 'with_fields',
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many',
            'using_options', 'using_table_options', 'using_mapper_options',
@@ -42,7 +44,7 @@ __pudge_all__ = ['create_all', 'drop_all', 'setup_all', 'cleanup_all',
                  'metadata', 'objectstore', 'delay_setup']
 
 # connect
-metadata = sqlalchemy.DynamicMetaData('elixir')
+metadata = sqlalchemy.DynamicMetaData('elixir', threadlocal=False)
 
 try:
     # this only happens when the threadlocal extension is used
