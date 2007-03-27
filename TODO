@@ -24,6 +24,7 @@ Website/doc related
 
 - document SA/Elixir differences
 
+- RELEASE file shouldn't be included in the distribution
 
 Code related
 ------------
