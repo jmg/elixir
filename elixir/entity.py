@@ -295,6 +295,7 @@ class EntityMeta(type):
     """
     Entity meta class.
     """
+
     def __init__(cls, name, bases, dict_):
         # only process subclasses of Entity, not Entity itself
         if bases[0] is object:
