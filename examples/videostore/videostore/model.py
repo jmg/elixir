@@ -47,7 +47,7 @@ class Visit(Entity):
 
 class VisitIdentity(Entity):
     has_field('visit_key', String(40), primary_key=True)
-    has_field('user_id', Integer, ForeignKey('tg_user.user_id', name='user_id_fk', use_alter=True), index=True)
+    belongs_to('user', of_kind='User', colname='user_id', use_alter=True)
     using_options(tablename='visit_identity')
 
 class Group(Entity):
