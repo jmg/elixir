@@ -10,11 +10,11 @@ Website/doc related
   posted on the "group" page). Nobody will find them on the google page unless 
   they saw the initial announcement on the list.
 
-- extend tutorial !!! (but we shouldn't duplicate the FAQ though)
-	- Many2Many
-	- transactions
+- extend the tutorial !!! (but we shouldn't duplicate the FAQ though)
+    - Many2Many
+    - transactions
     ? autoload
-	? multi-thread
+    ? multi-thread
     ? multi-database
 
 - complete the FAQ, and possibly create a page on the website for it.
@@ -33,8 +33,8 @@ Code related
     cfr mailing list.
 
 - fix the backref attribute update before flush problem
-	cfr http://www.sqlalchemy.org/docs/datamapping.html#datamapping_relations_backreferences
-	cfr mailing list (message from andre felipe dias -- bi-directional relation)
+    cfr http://www.sqlalchemy.org/docs/datamapping.html#datamapping_relations_backreferences
+    cfr mailing list (message from andre felipe dias -- bi-directional relation)
     cfr my question on SA mailing list
     simply adding backrefs systematically is not a solution either (it breaks
     some tests -- I haven't had time to investigate the matter further yet).
@@ -54,7 +54,7 @@ Code related
 
 - we should probably pass some extra options to M2M relations, so that if one 
   of the referenced row is deleted, the M2M row is deleted too, or an error is
-  raised. The solution is probably to set all columns of the table is a
+  raised. The solution is probably to set all columns of the table as the
   primary_key and to allow specifying the ondelete clause for each side of the
   relationship.
     cfr http://www.postgresql.org/docs/8.2/interactive/ddl-constraints.html#DDL-CONSTRAINTS-FK
@@ -74,6 +74,10 @@ IDEAS
 The following items might or might not get implemented and probably need to be
 discussed before doing anything.
 
+- I'm not sure it would be worth it but we might want to put a section
+  "contributing" on the website. In that case it might be a good idea to point
+  to this file so that people know what can be done.
+
 - get rid of the assign_mapper stuff. This means we have to add all methods on
   the entity base class.
 
@@ -83,12 +87,12 @@ discussed before doing anything.
 
 - implement something like:
 
-	class A(Entity):
-		has_many('b', of_kind='B')
-		has_many('b_filtered', of_kind='B', filter="extra < 10")
-	class B(Entity):
-		has_field('extra', Integer)
-		belongs_to('a', of_kind='A')
+    class A(Entity):
+        has_many('b', of_kind='B')
+        has_many('b_filtered', of_kind='B', filter="extra < 10")
+    class B(Entity):
+        has_field('extra', Integer)
+        belongs_to('a', of_kind='A')
 
 - support primary_key mapper argument (and all other arguments which take
   column arguments in a generic way)
@@ -102,7 +106,7 @@ discussed before doing anything.
   in the current implementation (mostly in target).
 
 - add polymorphic references
-  For the syntax, I'd like something to have either belongs_to relationships
+  For the syntax, I'd like to have either belongs_to relationships
   without of_kind argument or with a special "constant" argument like:
     belongs_to('rel', of_kind=ANY_KIND)
   Maybe this would be better suited on SA side or in an addon to Elixir and
@@ -116,7 +120,7 @@ discussed before doing anything.
   instead of the acts_as_taggable Jonathan demonstrated
   
 - elixir on arbitrary selects. Shouldn't be hard...
-	cfr http://www.sqlalchemy.org/trac/ticket/502
+    cfr http://www.sqlalchemy.org/trac/ticket/502
 
 - somehow support things like described at:
   http://spyced.blogspot.com/2007/01/why-sqlalchemy-impresses-me.html
