@@ -5,7 +5,8 @@
 - Added support for autoloading/reflecting databases with
   has_and_belongs_to_many relationships. The tablename argument is now
   optional, but still recommended, otherwise you'll have to use the same exact
-  name for your intermediary table than the one generated.
+  name for your intermediary table than the one generated. You also _have to_
+  specify at least one of either local_side or remote_side argument.
 - Added support for the "version_id_col" option on entities. This option adds 
   a column to the table which will be used to prevent concurrent modifications
   on any row of the entity's table (i.e. it will raise an error if it happens).
@@ -13,7 +14,7 @@
   autoloaded entities. It is only required to specify it if you have several
   belongs_to relationships between two entities/tables.
 - Applied patch from "Wavy" so that columns of a table are in the same order
-  as they were declared.
+  as they were declared (this only works for the has_field statement).
 - Applied patch from Isaac Csandl to add an "ondelete" argument to
   belongs_to relationships. The content of that argument is forwarded to the
   foreign key constraint.
@@ -24,14 +25,20 @@
   a column-name conflict).
 - Using invalid options on entities will now raise an exception
 - Added __version__
+- Use an explicit metaclass for entities, so that people can define their own
+  base class.
+- Changed the approach to reflecting/autoloading belongs_to relationships.
+  This shouldn't change anything to how it's used but allowed me to factor
+  some code with has_and_belongs_to_many relationships.
 - Fixed bug preventing having entities without any statement.
 - Fixed documentation for belongs_to relationships (the arguemnt is "required",
   not "nullable").
 - Fixed typo which broke the use_alter argument on belongs_to relationships.
-- Actually make the code python 2.3 compatible (Robin's patch was based on
-  0.1.0 while I had introduced more decorators in the trunk in the mean time).
 - Fixed inheritance unit test to pass SQLAlchemy type check on relations
   (introduced in SA 0.3.6)
+- Fixed wrong field length is autoload test (it is not noticeable with sqlite).
+- Actually make the code python 2.3 compatible (Robin's patch was based on
+  0.1.0 while I had introduced more decorators in the trunk in the mean time).
 - Made some PEP8 tweaks in many places. Used the pep8 script provided with 
   Cheesecake.
 - Some cleanup/useless code removal

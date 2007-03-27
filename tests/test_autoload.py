@@ -22,7 +22,7 @@ person_table.create()
 
 animal_table = Table('animal', meta,
     Column('id', Integer, primary_key=True),
-    Column('name', String(15)),
+    Column('name', String(30)),
     Column('color', String(15)),
     Column('owner_id', Integer, ForeignKey('person.id')),
     Column('feeder_id', Integer, ForeignKey('person.id')))
@@ -46,14 +46,18 @@ elixir.delay_setup = True
 elixir.options_defaults.update(dict(autoload=True, shortnames=True))
 
 class Person(Entity):
-    belongs_to('father', of_kind='Person', colname='father_id')
+    belongs_to('father', of_kind='Person')
     has_many('children', of_kind='Person')
     has_many('pets', of_kind='Animal', inverse='owner')
     has_many('animals', of_kind='Animal', inverse='feeder')
     has_and_belongs_to_many('categories', of_kind='Category', 
                             tablename='person_category')
-    has_and_belongs_to_many('friends', of_kind='Person',
-                            tablename='person_person')
+    has_and_belongs_to_many('appreciate', of_kind='Person',
+                            tablename='person_person',
+                            local_side='person_id1')
+    has_and_belongs_to_many('isappreciatedby', of_kind='Person',
+                            tablename='person_person',
+                            local_side='person_id2')
 
     def __str__(self):
         s = '%s\n' % self.name.encode('utf-8')  
@@ -152,8 +156,7 @@ class TestAutoload(object):
 
     def test_autoload_has_and_belongs_to_many_selfref(self):
         barney = Person(name="Barney")
-        homer = Person(name="Homer", friends=[barney])
-        barney.friends.append(homer)
+        homer = Person(name="Homer", appreciate=[barney])
 
         objectstore.flush()
         objectstore.clear()
@@ -161,11 +164,12 @@ class TestAutoload(object):
         homer = Person.get_by(name="Homer")
         barney = Person.get_by(name="Barney")
 
-        assert homer in barney.friends
-        assert barney in homer.friends
+        assert barney in homer.appreciate
+        assert homer in barney.isappreciatedby
 
 if __name__ == '__main__':
     test = TestAutoload()
     test.setup()
-    test.test_autoload()
+    test.test_autoload_has_and_belongs_to_many_selfref()
+#    test.test_autoload()
     test.teardown()

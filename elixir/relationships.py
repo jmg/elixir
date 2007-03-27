@@ -158,10 +158,34 @@ our example, even though we want tags to be usable on several articles, we
 might not be interested in which articles correspond to a particular tag.  In
 that case, we could have omitted the `Tag` side of the relationship.
 
+If the entity containg your ``has_and_belongs_to_many`` relationship is 
+autoloaded, you **must** specify at least one of either the ``remote_side`` or
+``local_side`` argument.
+
 In addition to the order_by_ keyword argument, and the other keyword arguments
-inherited from SQLAlchemy, ``has_and_belongs_to_many`` relationships accept an
-optional ``tablename`` keyword argument, used to specify a custom name for the
-intermediary table which will be created.
+inherited from SQLAlchemy, ``has_and_belongs_to_many`` relationships accept 
+the following optional (keyword) arguments:
+
++--------------------+--------------------------------------------------------+
+| Option Name        | Description                                            |
++====================+========================================================+
+| ``tablename``      | Specify a custom name for the intermediary table. This |
+|                    | can be used both when the tables needs to be created   |
+|                    | and when the table is autoloaded/reflected from the    |
+|                    | database.                                              |
++--------------------+--------------------------------------------------------+
+| ``remote_side``    | A column name or list of column names specifying       |
+|                    | which column(s) in the intermediary table are used     |
+|                    | for the "remote" part of a self-referential            |
+|                    | relationship. This argument has an effect only when    |
+|                    | your entities are autoloaded.                          |
++--------------------+--------------------------------------------------------+
+| ``local_side``     | A column name or list of column names specifying       |
+|                    | which column(s) in the intermediary table are used     |
+|                    | for the "local" part of a self-referential             |
+|                    | relationship. This argument has an effect only when    |
+|                    | your entities are autoloaded.                          |
++--------------------+--------------------------------------------------------+
 
 '''
 
@@ -344,23 +368,17 @@ class BelongsTo(Relationship):
         target_desc = self.target._descriptor
 
         if source_desc.autoload:
-
             #TODO: test if this works when colname is a list
-            for colname in self.colname:
-                col_found = False
-                for col in self.entity.table.columns:
-                    if col.name == colname:
-                        # We need to take the first foreign key, but 
-                        # foreign_keys is an util.OrderedSet which doesn't 
-                        # support indexation.
-                        fk_iter = iter(col.foreign_keys)
-                        fk = fk_iter.next()
-                        self.primaryjoin_clauses.append(col == fk.column)
-                        col_found = True
-
-                if not col_found:
-                    raise Exception("Column '%s' not found in table '%s'" 
-                                    % (colname, self.entity.table.name))
+            if self.colname:
+                self.primaryjoin_clauses = \
+                    _build_join_clauses(self.entity.table, 
+                                        self.colname, None, 
+                                        self.target.table)[0]
+                if not self.primaryjoin_clauses:
+                    raise Exception(
+                        "Couldn't find a foreign key constraint in table "
+                        "'%s' using the following columns: %s."
+                        % (self.entity.table.name, ', '.join(self.colname)))
         else:
             fk_refcols = list()
             fk_colnames = list()
@@ -487,6 +505,12 @@ class HasAndBelongsToMany(Relationship):
 
     def __init__(self, entity, name, *args, **kwargs):
         self.user_tablename = kwargs.pop('tablename', None)
+        self.local_side = kwargs.pop('local_side', [])
+        if self.local_side and not isinstance(self.local_side, list):
+            self.local_side = [self.local_side]
+        self.remote_side = kwargs.pop('remote_side', [])
+        if self.remote_side and not isinstance(self.remote_side, list):
+            self.remote_side = [self.remote_side]
         self.secondary_table = None
         self.primaryjoin_clauses = list()
         self.secondaryjoin_clauses = list()
@@ -606,25 +630,21 @@ class HasAndBelongsToMany(Relationship):
 
         # In the case we have a self-reference, we need to build join clauses
         if self.entity is self.target:
-            joins = (self.primaryjoin_clauses, 
-                     self.secondaryjoin_clauses)
-            join_nr = 0
+            #CHECKME: maybe we should try even harder by checking if that 
+            # information was defined on the inverse relationship)
+            if not self.local_side and not self.remote_side:
+                raise Exception(
+                    "Self-referential has_and_belongs_to_many "
+                    "relationships in autoloaded entities need to have at "
+                    "least one of either 'local_side' or 'remote_side' "
+                    "argument specified. The '%s' relationship in the '%s' "
+                    "entity doesn't have either."
+                    % (self.name, self.entity.__name__))
 
-            # We loop through all the table constraints. The first
-            # ForeignKeyConstraint we find which points to the entity table 
-            # will be used to build the primary join and the second one for 
-            # the secondary join.
-            for constraint in self.secondary_table.constraints:
-                if isinstance(constraint, ForeignKeyConstraint):
-                    use_constraint = False
-                    for fk in constraint.elements:
-                        if fk.references(self.entity.table):
-                            use_constraint = True
-                    if use_constraint:
-                        for fk in constraint.elements:
-                            joins[join_nr].append(fk.parent == 
-                                                  fk.column)
-                        join_nr += 1
+            self.primaryjoin_clauses, self.secondaryjoin_clauses = \
+                _build_join_clauses(self.secondary_table, 
+                                    self.local_side, self.remote_side, 
+                                    self.entity.table)
 
     def create_properties(self):
         kwargs = self.kwargs
@@ -645,6 +665,50 @@ class HasAndBelongsToMany(Relationship):
         return super(HasAndBelongsToMany, self).is_inverse(other) and \
                (self.user_tablename == other.user_tablename or 
                 (not self.user_tablename and not other.user_tablename))
+
+
+def _build_join_clauses(local_table, local_cols1, local_cols2, target_table):
+    primary_join, secondary_join = [], []
+    cols1 = local_cols1[:]
+    cols1.sort()
+    cols1 = tuple(cols1)
+
+    if local_cols2 is not None:
+        cols2 = local_cols2[:]
+        cols2.sort()
+        cols2 = tuple(cols2)
+    else:
+        cols2 = None
+    constraint_map = {}
+    for constraint in local_table.constraints:
+        if isinstance(constraint, ForeignKeyConstraint):
+            use_constraint = False
+            fk_colnames = []
+            for fk in constraint.elements:
+                fk_colnames.append(fk.parent.name)
+                if fk.references(target_table):
+                    use_constraint = True
+            if use_constraint:
+                fk_colnames.sort()
+                constraint_map[tuple(fk_colnames)] = constraint
+
+    # Either the fk column names match explicitely with the columns given for
+    # one of the joins (primary or secondary), or we assume the current
+    # columns match because the columns for this join were not given and we
+    # know the other join is either not used (is None) or has an explicit 
+    # match.
+    for cols, constraint in constraint_map.iteritems():
+        if cols == cols1 or (cols != cols2 and 
+                             not cols1 and (cols2 in constraint_map or
+                                            cols2 is None)):
+            join = primary_join
+        elif cols == cols2 or (cols2 == () and cols1 in constraint_map):
+            join = secondary_join
+        else:
+            continue
+        for fk in constraint.elements:
+            join.append(fk.parent == fk.column)
+    return primary_join, secondary_join
 
 
 belongs_to = Statement(BelongsTo)

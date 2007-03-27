@@ -13,7 +13,8 @@ class Statement(object):
     
     def __init__(self, target):
         '''
-        target is the class which will handle this statement
+        target is the class which will handle this statement. For example, the
+        BelongsTo class handles the belongs_to statement.
         '''
         self.target = target
     

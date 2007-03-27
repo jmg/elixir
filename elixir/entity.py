@@ -291,6 +291,27 @@ class EntityDescriptor(object):
                 EntityDescriptor.uninitialized_rels.remove(relationship)
     setup_relationships = classmethod(setup_relationships)
 
+class EntityMeta(type):
+    """
+    Entity meta class.
+    """
+    def __init__(cls, name, bases, dict_):
+        # only process subclasses of Entity, not Entity itself
+        if bases[0] is object:
+            return
+
+        # create the entity descriptor
+        desc = cls._descriptor = EntityDescriptor(cls)
+        EntityDescriptor.current = desc
+        
+        # process statements
+        Statement.process(cls)
+        
+        # setup misc options here (like tablename etc.)
+        desc.setup_options()
+        
+        # create table & assign (empty) mapper
+        desc.setup()
 
 class Entity(object):
     '''
@@ -314,24 +335,6 @@ class Entity(object):
     For further information, please refer to the provided examples or
     tutorial.
     '''
-    
-    class __metaclass__(type):
 
-        def __init__(cls, name, bases, dict_):
-            # only process subclasses of Entity, not Entity itself
-            if bases[0] is object:
-                return
-
-            # create the entity descriptor
-            desc = cls._descriptor = EntityDescriptor(cls)
-            EntityDescriptor.current = desc
-            
-            # process statements
-            Statement.process(cls)
-            
-            # setup misc options here (like tablename etc.)
-            desc.setup_options()
-            
-            # create table & assign (empty) mapper
-            desc.setup()
+    __metaclass__ = EntityMeta
 
