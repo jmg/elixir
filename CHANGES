@@ -1,4 +1,4 @@
-0.3.0
+0.3.0 - 2007-03-27
 - Made the provided metadata not threadlocal. This could break things for you
   in some rare case. Please see the (newly created) FAQ file for details about
   this.
@@ -41,7 +41,7 @@
 - Fixed typo which broke the use_alter argument on belongs_to relationships.
 - Fixed inheritance unit test to pass SQLAlchemy type check on relations
   (introduced in SA 0.3.6)
-- Fixed wrong field length in autoload test (it is not noticeable with sqlite).
+- Fixed wrong field length in autoload test (it was not noticeable with sqlite).
 - Actually make the code python 2.3 compatible (Robin's patch was based on
   0.1.0 while I had introduced more decorators in the trunk in the mean time).
 

@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name="Elixir",
-      version="0.2.0",
+      version="0.3.0",
       description="Declarative Mapper for SQLAlchemy",
       long_description="""
 Elixir
