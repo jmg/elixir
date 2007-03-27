@@ -1,0 +1,16 @@
+-----
+About
+-----
+
+Elixir is a declarative layer on top of `SQLAlchemy 
+<http://www.sqlalchemy.org/>`_. It is a fairly thin wrapper, which provides 
+the ability to define model objects following the Active Record design 
+pattern, and using a DSL syntax similar to that of the Ruby on Rails 
+ActiveRecord system.
+
+Elixir does not intend to replace SQLAlchemy's core features, but instead
+focuses on providing a simpler syntax for defining model objects when you do
+not need the full expressiveness of SQLAlchemy's manual mapper definitions.
+
+See docs/index.rst for the history of the project and other miscellaneous
+information.
