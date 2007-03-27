@@ -47,8 +47,12 @@ class TestInheritance(object):
 
     def test_singletable_inheritance(self):
         homer = PersonExtended(firstname="Homer", surname="Simpson", age=36)
-        lisa = PersonExtended(firstname="Lisa", surname="Simpson", 
-                              parent=homer)
+        # lisa needs to be a Person object, not a PersonExtended object because
+        # the sister relationship points to a Person, not a PersonExtendend, so
+        # bart's sister must be a Person. This is to comply with SQLAlchemy's
+        # policy to prevent loading relationships with unintended types, unless 
+        # explicitly enabled (enable_typechecks=False).
+        lisa = Person(firstname="Lisa", surname="Simpson")
         bart = PersonExtended(firstname="Bart", surname="Simpson", 
                               parent=homer, sister=lisa)
 
@@ -59,9 +63,6 @@ class TestInheritance(object):
 
         assert p.sister.name == 'Lisa Simpson'
         assert p.parent.age == 36
-        # This doesn't work since the sister relation points to a Person 
-        # object, not a PersonExtended one.
-#        assert p.sister.parent == p.parent
 
         for p in Person.select():
             print p
