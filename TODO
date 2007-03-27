@@ -1,0 +1,131 @@
+TODO
+====
+
+Website/doc related
+-------------------
+
+- make a news page
+
+- make a page with "extras" (like the bindings for vim and textmate that were
+  posted on the "group" page). Nobody will find them on the google page unless 
+  they saw the initial announcement on the list.
+
+- extend tutorial !!! (but we shouldn't duplicate the FAQ though)
+	- Many2Many
+	- transactions
+    ? autoload
+	? multi-thread
+    ? multi-database
+
+- complete the FAQ, and possibly create a page on the website for it.
+
+- document basic Types (at least link to the SQLAlchemy page listing available
+  types)
+
+- document SA/Elixir differences
+
+
+Code related
+------------
+
+- implement other types of inheritance. Some of the work should be done on
+  SQLAlchemy's side.
+    cfr mailing list.
+
+- fix the backref attribute update before flush problem
+	cfr http://www.sqlalchemy.org/docs/datamapping.html#datamapping_relations_backreferences
+	cfr mailing list (message from andre felipe dias -- bi-directional relation)
+    cfr my question on SA mailing list
+    simply adding backrefs systematically is not a solution either (it breaks
+    some tests -- I haven't had time to investigate the matter further yet).
+
+- make elixir work with migrate (or vice-versa). 
+    cfr mailing list
+
+- test multi-col-primary-keys: we've implemented the functionality in many
+  places, but we do not have a single test for that case.
+
+- Pop relations' keyword arguments (and raise an exception) which would
+  conflict with those we generate
+
+- fix inherit VS no field in parent. You should be able to define a base
+  class, or even a chain of base classes with no fields, by simply inheriting
+  from Entity.
+
+- we should probably pass some extra options to M2M relations, so that if one 
+  of the referenced row is deleted, the M2M row is deleted too, or an error is
+  raised. The solution is probably to set all columns of the table is a
+  primary_key and to allow specifying the ondelete clause for each side of the
+  relationship.
+    cfr http://www.postgresql.org/docs/8.2/interactive/ddl-constraints.html#DDL-CONSTRAINTS-FK
+
+- Besides, the current system also has another case I don't like: if the user 
+  specifies an inverse (on one or both sides) but also set a table name on one
+  side (or two different table names), it will consider the relation as being 
+  different even though the user explicitly told it was the same. This should 
+  not happen. The system should rather throw an exception in that case. But 
+  this last part should be easilty fixable, I think (it'a a matter of tweaking
+  the is_inverse method of the HasAndBelongsToMany class)...
+
+
+IDEAS
+=====
+
+The following items might or might not get implemented and probably need to be
+discussed before doing anything.
+
+- get rid of the assign_mapper stuff. This means we have to add all methods on
+  the entity base class.
+
+- integrate the association proxy plugin
+
+- add __revision__ (+ svn property) to all elixir files?
+
+- implement something like:
+
+	class A(Entity):
+		has_many('b', of_kind='B')
+		has_many('b_filtered', of_kind='B', filter="extra < 10")
+	class B(Entity):
+		has_field('extra', Integer)
+		belongs_to('a', of_kind='A')
+
+- support primary_key mapper argument (and all other arguments which take
+  column arguments in a generic way)
+
+- use a list for delayed entities, instead of a set, this might solve some
+  init problems in delayed_setup mode because then entities would be
+  initialized in the order they are defined.
+
+- instead of linking the descriptor in the entity (cls._descriptor) we could 
+  do it externally, like in SA. This would solve some of the ugliness we have
+  in the current implementation (mostly in target).
+
+- add polymorphic references
+  For the syntax, I'd like something to have either belongs_to relationships
+  without of_kind argument or with a special "constant" argument like:
+    belongs_to('rel', of_kind=ANY_KIND)
+  Maybe this would be better suited on SA side or in an addon to Elixir and
+  not in the main lib?
+  The implementation would be a bit similar to what Jonathan does at:
+  http://cleverdevil.org/computing/52/making-a-statement-with-elixir
+  we would "just" need to generalize the target_id to support multi-column-pk
+  and I think we would be good to go for belongs_to relationships
+
+- investigate whether it would be possible to do a generic acts_as(xxx) 
+  instead of the acts_as_taggable Jonathan demonstrated
+  
+- elixir on arbitrary selects. Shouldn't be hard...
+	cfr http://www.sqlalchemy.org/trac/ticket/502
+
+- somehow support things like described at:
+  http://spyced.blogspot.com/2007/01/why-sqlalchemy-impresses-me.html
+  ie relations using any "selectable" instead of the normal object table.
+
+    mapper(User, users, 
+        properties={
+           'orders': relation(mapper(Order, orders), order_by=orders.c.id),
+           'max_order': relation(mapper(Order, max_orders, non_primary=True),
+                                 uselist=False, viewonly=True),
+        })
+
