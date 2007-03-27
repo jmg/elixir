@@ -30,6 +30,11 @@
 - Changed the approach to reflecting/autoloading belongs_to relationships.
   This shouldn't change anything to how it's used but allowed me to factor
   some code with has_and_belongs_to_many relationships.
+- The tablename option can now be given a callable so that people can provide
+  their own function to get the table name for an entity. The tablename option
+  can now also be set globally (using the options_defaults dictionary). Of
+  course, this only makes sense for the callable usecase.
+
 - Fixed bug preventing having entities without any statement.
 - Fixed documentation for belongs_to relationships (the arguemnt is "required",
   not "nullable").
@@ -39,6 +44,7 @@
 - Fixed wrong field length in autoload test (it is not noticeable with sqlite).
 - Actually make the code python 2.3 compatible (Robin's patch was based on
   0.1.0 while I had introduced more decorators in the trunk in the mean time).
+
 - Made some PEP8 tweaks in many places. Used the pep8 script provided with 
   Cheesecake.
 - Some cleanup/useless code removal

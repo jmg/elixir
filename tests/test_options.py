@@ -53,6 +53,25 @@ class TestOptions(object):
         except ConcurrentModificationError:
             pass
 
+    def test_tablename_func(self):
+        import re
+
+        def camel_to_underscore(entity):
+            return re.sub(r'(.+?)([A-Z])+?', r'\1_\2', entity.__name__).lower()
+
+        options_defaults['tablename'] = camel_to_underscore
+
+        class MyEntity(Entity):
+            has_field('name', Unicode(30))
+
+        class MySuperTestEntity(Entity):
+            has_field('name', Unicode(30))
+
+        assert MyEntity.table.name == 'my_entity'
+        assert MySuperTestEntity.table.name == 'my_super_test_entity'
+
+        options_defaults['tablename'] = None
+
     def teardown(self):
         cleanup_all()
 

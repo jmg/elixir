@@ -64,12 +64,12 @@ class EntityDescriptor(object):
 
         # set default value for options
         self.order_by = None
-        self.tablename = None
         self.table_args = list()
         self.metadata = getattr(self.module, 'metadata', elixir.metadata)
 
         for option in ('inheritance', 
-                       'autoload', 'shortnames', 'auto_primarykey',
+                       'autoload', 'tablename', 'shortnames', 
+                       'auto_primarykey',
                        'version_id_col'):
             setattr(self, option, options_defaults[option])
 
@@ -92,6 +92,8 @@ class EntityDescriptor(object):
                 modulename = entity.__module__.replace('.', '_')
                 tablename = "%s_%s" % (modulename, entity.__name__)
                 self.tablename = tablename.lower()
+        elif callable(self.tablename):
+            self.tablename = self.tablename(entity)
     
     def setup(self):
         '''

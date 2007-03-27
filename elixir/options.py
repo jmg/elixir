@@ -44,7 +44,11 @@ The list of supported arguments are as follows:
 |                     | ``delay_setup`` to ``True`` before defining your      |
 |                     | entities.                                             |
 +---------------------+-------------------------------------------------------+
-| ``tablename``       | Specify a custom tablename                            |
+| ``tablename``       | Specify a custom tablename. You can either provide a  |
+|                     | plain string or a callable. The callable will be      |
+|                     | given the entity (ie class) as argument and must      |
+|                     | return a string representing the name of the table    |
+|                     | for that entity.                                      |
 +---------------------+-------------------------------------------------------+
 | ``shortnames``      | Usually tablenames include the full module-path       |
 |                     | to the entity, but lower-cased and separated by       |
@@ -116,6 +120,7 @@ options_defaults = dict(
     inheritance='single',
     autoload=None,
     shortnames=False,
+    tablename=None,
     auto_primarykey=True,
     version_id_col=False,
     mapper_options=dict(),
