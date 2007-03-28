@@ -15,6 +15,9 @@ Website/doc related
     - default values
     - required fields
     - transactions
+    - demonstrate some of the other methods provided by assign_mapper (we only
+      show select and get_by and we don't really explain what they do).
+    - explain what's the objectstore and how to use it.
     ? custom table name
     ? autoload
     ? multi-thread
@@ -32,6 +35,8 @@ Website/doc related
 
 Code related
 ------------
+
+- use "required" instead of "nullable" (in examples.rst and examples/...)
 
 - implement other types of inheritance. Some of the work should be done on
   SQLAlchemy's side.
