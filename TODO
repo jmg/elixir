@@ -12,10 +12,14 @@ Website/doc related
 
 - extend the tutorial !!! (but we shouldn't duplicate the FAQ though)
     - Many2Many
+    - default values
+    - required fields
     - transactions
+    ? custom table name
     ? autoload
     ? multi-thread
     ? multi-database
+    ? deferred fields
 
 - complete the FAQ, and possibly create a page on the website for it.
 
