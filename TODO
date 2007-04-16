@@ -15,9 +15,11 @@ Website/doc related
     - default values
     - required fields
     - transactions
+    - multiple files (modules) models
     - demonstrate some of the other methods provided by assign_mapper (we only
       show select and get_by and we don't really explain what they do).
     - explain what's the objectstore and how to use it.
+    ? many2many with intermediary object (extra fields in table) -> FAQ?
     ? custom table name
     ? autoload
     ? multi-thread
@@ -37,6 +39,9 @@ Code related
 ------------
 
 - use "required" instead of "nullable" (in examples.rst and examples/...)
+
+- change setup order so that you can order_by a column created by a belongs_to
+  relationship.
 
 - implement other types of inheritance. Some of the work should be done on
   SQLAlchemy's side.
@@ -126,6 +131,12 @@ discussed before doing anything.
   we would "just" need to generalize the target_id to support multi-column-pk
   and I think we would be good to go for belongs_to relationships
 
+  The problem is to keep the referencial integrity of the database. Obviously
+  it's not possible to do that if people modify their data through SQL
+  directly (or at least it would involve complicated triggers on the DB and
+  that wouldn't be portable. It should be possible to do it through the ORM
+  though.
+
 - investigate whether it would be possible to do a generic acts_as(xxx) 
   instead of the acts_as_taggable Jonathan demonstrated
   
@@ -142,4 +153,14 @@ discussed before doing anything.
            'max_order': relation(mapper(Order, max_orders, non_primary=True),
                                  uselist=False, viewonly=True),
         })
+
+    would be something like:
+
+    # Order class must be defined before
+    max_orders_by_user = select([func.max(Order.c.order_id).label('order_id')],
+                                group_by=[Order.c.user_id]).alias('max_orders_by_user')
+    max_orders = Order.table.select(Order.c.order_id==max_orders_by_user.c.order_id).alias('max_orders')
+
+    class User(Entity):
+        has_one('max_order', of_kind='Order', selectable=max_orders)
 
