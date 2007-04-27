@@ -13,3 +13,11 @@ provided by Elixir. You can still do want by simply creating another metadata
 object the way you like (probably a plain DynamicMetaData) and use that
 metadata for all your entities.
 
+* Is there a way to declare uniqueness constraints?
+
+Yes, you can use the `using_table_options` statement.  Here is an example:
+
+    class Person(Entity):
+        has_field('firstname', Unicode(30))
+        has_field('surname', Unicode(30))
+        using_table_options(UniqueConstraint('firstname', 'surname'))
