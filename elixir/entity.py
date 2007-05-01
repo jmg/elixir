@@ -341,3 +341,7 @@ class Entity(object):
 
     __metaclass__ = EntityMeta
 
+    def __init__(self, **kwargs):
+         for key, value in kwargs.items():
+             setattr(self, key, value)
+

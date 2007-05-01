@@ -1,3 +1,7 @@
+0.4.0
+- Added default __init__ method on entities so that subclasses can override it
+  and still have the "set attribute by keyword" behavior by calling super()
+
 0.3.0 - 2007-03-27
 - Made the provided metadata not threadlocal. This could break things for you
   in some rare case. Please see the (newly created) FAQ file for details about
