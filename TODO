@@ -16,11 +16,13 @@ Website/doc related
     - required fields
     - transactions
     - multiple files (modules) models
+    - demonstrate common entities options (tablename, order_by, ...)
+    - demonstrate common raltionships options (order_by, ...)
     - demonstrate some of the other methods provided by assign_mapper (we only
       show select and get_by and we don't really explain what they do).
     - explain what's the objectstore and how to use it.
     ? many2many with intermediary object (extra fields in table) -> FAQ?
-    ? custom table name
+    ? table constraints
     ? autoload
     ? multi-thread
     ? multi-database
@@ -42,6 +44,11 @@ Code related
 
 - change setup order so that you can order_by a column created by a belongs_to
   relationship.
+
+- support Overriding Column Names and wrapping column in properties
+  http://www.sqlalchemy.org/docs/adv_datamapping.html#advdatamapping_properties_overriding
+  (ie support synonym).
+
 
 - implement other types of inheritance. Some of the work should be done on
   SQLAlchemy's side.
@@ -89,6 +96,13 @@ IDEAS
 The following items might or might not get implemented and probably need to be
 discussed before doing anything.
 
+- Make the session context extension/assign_mapper optional
+
+- Provide something to facilitate mapper extensions.
+  Beachcoder's code (see below) seem pretty cool but I wonder if it wouldn't
+  be possible to do something simpler.
+  http://beachcoder.wordpress.com/2007/05/02/adding-event-callbacks-to-sqlalchemyelixir-classes/
+
 - I'm not sure it would be worth it but we might want to put a section
   "contributing" on the website. In that case it might be a good idea to point
   to this file so that people know what can be done.
@@ -117,8 +131,8 @@ discussed before doing anything.
   initialized in the order they are defined.
 
 - instead of linking the descriptor in the entity (cls._descriptor) we could 
-  do it externally, like in SA. This would solve some of the ugliness we have
-  in the current implementation (mostly in target).
+  do it externally, like the mappers in SA. This would solve some of the 
+  ugliness we have in the current implementation (mostly in target).
 
 - add polymorphic references
   For the syntax, I'd like to have either belongs_to relationships
