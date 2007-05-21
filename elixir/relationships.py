@@ -415,8 +415,14 @@ class BelongsTo(Relationship):
                 fk_colnames.append(colname)
 
                 # build the list of columns the foreign key will point to
-                fk_refcols.append("%s.%s" % (target_desc.entity.table.name,
-                                             pk_col.name))
+                if target_desc.entity.table.schema:
+                    fk_refcols.append("%s.%s.%s" % (
+                        target_desc.entity.table.schema,
+                        target_desc.entity.table.name,
+                        pk_col.name))
+                else:
+                    fk_refcols.append("%s.%s" % (target_desc.entity.table.name,
+                                                 pk_col.name))
 
                 # build up the primary join. This is needed when you have 
                 # several belongs_to relations between two objects
