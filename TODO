@@ -14,7 +14,6 @@ Website/doc related
     - Many2Many
     - default values
     - required fields
-    - transactions
     - multiple files (modules) models
     - demonstrate common entities options (tablename, order_by, ...)
     - demonstrate common raltionships options (order_by, ...)
@@ -22,6 +21,7 @@ Website/doc related
       show select and get_by and we don't really explain what they do).
     - explain what's the objectstore and how to use it.
     ? many2many with intermediary object (extra fields in table) -> FAQ?
+    ? transactions
     ? table constraints
     ? autoload
     ? multi-thread
@@ -45,10 +45,17 @@ Code related
 - change setup order so that you can order_by a column created by a belongs_to
   relationship.
 
+- make it possible to make a relation to an SA-mapped class (add test case)
+  it'll be slightly problematic for the translate_order_by in HasMany and
+  HABTM. We'll need to extract that method as a global function.
+  see relationships.py
+
+- add a test case for a relation from an SA-mapped class to an Elixir Entity
+  (it should work but I've never tried it).
+
 - support Overriding Column Names and wrapping column in properties
   http://www.sqlalchemy.org/docs/adv_datamapping.html#advdatamapping_properties_overriding
   (ie support synonym).
-
 
 - implement other types of inheritance. Some of the work should be done on
   SQLAlchemy's side.
@@ -66,6 +73,8 @@ Code related
 
 - test multi-col-primary-keys: we've implemented the functionality in many
   places, but we do not have a single test for that case.
+
+- add a test case for multi module stuff
 
 - Pop relations' keyword arguments (and raise an exception) which would
   conflict with those we generate
@@ -96,6 +105,14 @@ IDEAS
 The following items might or might not get implemented and probably need to be
 discussed before doing anything.
 
+- provide optional __init__ kwargs validation (cfr. assignmapper)
+
+- provide optional "runtime setattr" validation
+  http://www.sqlalchemy.org/trac/attachment/ticket/547
+  * the provided "_find_class_descriptor" seem overly complex though
+  * the (unlikely?) case where a parent who is not inheriting from XFBase (or 
+    Entity) defines a property will probably fail because of line 16.
+
 - Make the session context extension/assign_mapper optional
 
 - Provide something to facilitate mapper extensions.
@@ -111,6 +128,7 @@ discussed before doing anything.
   the entity base class.
 
 - integrate the association proxy plugin
+  see ML thread about this
 
 - add __revision__ (+ svn property) to all elixir files?
 
@@ -177,4 +195,7 @@ discussed before doing anything.
 
     class User(Entity):
         has_one('max_order', of_kind='Order', selectable=max_orders)
+
+- get some inspiration from Django
+    symmetrical on M2M
 

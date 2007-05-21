@@ -1,6 +1,8 @@
 0.4.0
 - Added default __init__ method on entities so that subclasses can override it
   and still have the "set attribute by keyword" behavior by calling super()
+- added .q property on the metaclass, so that you can get a query on an entity
+  by just using Entity.q, instead of using Entity.query()
 
 0.3.0 - 2007-03-27
 - Made the provided metadata not threadlocal. This could break things for you

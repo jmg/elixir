@@ -316,6 +316,10 @@ class EntityMeta(type):
         # create table & assign (empty) mapper
         desc.setup()
 
+    def q(cls):
+        return cls.query()
+    q = property(q)
+
 class Entity(object):
     '''
     The base class for all entities
