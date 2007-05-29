@@ -168,6 +168,8 @@ discussed before doing anything.
   directly (or at least it would involve complicated triggers on the DB and
   that wouldn't be portable. It should be possible to do it through the ORM
   though.
+  See:
+  http://www.sqlalchemy.org/trac/browser/sqlalchemy/trunk/examples/poly_assoc
 
 - investigate whether it would be possible to do a generic acts_as(xxx) 
   instead of the acts_as_taggable Jonathan demonstrated
