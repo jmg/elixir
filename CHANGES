@@ -1,4 +1,7 @@
 0.4.0
+- Added ext.associable for generating polymorphic associations with Elixir
+  Statements. (Many thanks to Mike Bayer for his support on writing this.)
+- Added ext sub-package for additional Elixir statements.
 - Added default __init__ method on entities so that subclasses can override it
   and still have the "set attribute by keyword" behavior by calling super()
 - Added .q property on the metaclass, so that you can get a query on an entity
