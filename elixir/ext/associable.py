@@ -99,7 +99,6 @@ The generated Elixir Statement has several options available:
 |               | Defaults to False, to indicate that they should not be      |
 |               | lazily loaded.                                              |
 +---------------+-------------------------------------------------------------+
-
 '''
 from elixir.statements import Statement
 import elixir as el
@@ -141,7 +140,7 @@ def associable(entity):
         def __init__(self, name):
             setattr(self, '%s_type' % able_name, name)
     
-    class Associable(object):
+    class Associable(el.relationships.Relationship):
         """An associable Elixir Statement object"""
         def __init__(self, entity, name, uselist=True, lazy=False):
             self.entity = entity
