@@ -18,12 +18,15 @@ with full identity support called 'videostore'.
 
 import sqlalchemy
 
-from sqlalchemy.ext.sessioncontext  import SessionContext
-from sqlalchemy.types               import *
-from elixir.options                 import *
-from elixir.entity                  import Entity, EntityDescriptor
-from elixir.fields                  import *
-from elixir.relationships           import *
+from sqlalchemy.ext.sessioncontext import SessionContext
+from sqlalchemy.types import *
+
+from elixir.options import using_options, using_table_options, \
+                           using_mapper_options, options_defaults
+from elixir.entity import Entity, EntityMeta, EntityDescriptor
+from elixir.fields import has_field, with_fields, Field
+from elixir.relationships import belongs_to, has_one, has_many, \
+                                 has_and_belongs_to_many
 
 try:
     set
@@ -32,7 +35,7 @@ except NameError:
 
 __version__ = '0.3.0'
 
-__all__ = ['Entity', 'Field', 'has_field', 'with_fields',
+__all__ = ['Entity', 'EntityMeta', 'Field', 'has_field', 'with_fields',
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many',
            'using_options', 'using_table_options', 'using_mapper_options',
            'options_defaults', 'metadata', 'objectstore',

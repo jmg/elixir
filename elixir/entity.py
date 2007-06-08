@@ -17,10 +17,7 @@ except NameError:
 import sys
 import elixir
 
-
-__all__ = ['Entity']
-
-__pudge_all__ = __all__
+__pudge_all__ = ['Entity', 'EntityMeta']
 
 DEFAULT_AUTO_PRIMARYKEY_NAME = "id"
 DEFAULT_AUTO_PRIMARYKEY_TYPE = Integer
@@ -295,7 +292,9 @@ class EntityDescriptor(object):
 
 class EntityMeta(type):
     """
-    Entity meta class.
+    Entity meta class. 
+    You should only use this if you want to define your own base class for your
+    entities (ie you don't want to use the provided 'Entity' class).
     """
 
     def __init__(cls, name, bases, dict_):

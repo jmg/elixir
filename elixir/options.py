@@ -111,9 +111,6 @@ function's documentation <http://www.sqlalchemy.org/docs/adv_datamapping.myt
 
 from elixir.statements import Statement
 
-__all__ = ['using_options', 'using_table_options', 'using_mapper_options',
-           'options_defaults']
-
 __pudge_all__ = ['options_defaults']
 
 options_defaults = dict(

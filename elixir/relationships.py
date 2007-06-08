@@ -197,9 +197,6 @@ from elixir.entity      import EntityDescriptor
 
 import sys
 
-
-__all__ = ['belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many']
-
 __pudge_all__ = []
 
 class Relationship(object):
