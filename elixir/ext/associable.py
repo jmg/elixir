@@ -31,6 +31,9 @@ entity that should be associable with other Elixir entities and returns an
 Elixir Statement for use with them. This automates the process of creating the
 polymorphic association tables and ensuring their referential integrity.
 
+Matching select_XXX and select_by_XXX are also added to the associated entity
+which allow queries to be run for the associated objects.
+
 Example usage:
 
 ::
@@ -77,6 +80,11 @@ the associated table:
     neworder = Order(item_count=4)
     neworder.address = home
     user.orders.append(neworder)
+    
+    # Queries using the added helpers
+    Person.select_by_addresses(city='Cupertino')
+    Person.select_addresses(and_(Address.c.street=='132 Elm St',
+                                 Address.c.city=='Smallville'))
 
 Statement Options
 -----------------
@@ -161,6 +169,10 @@ def associable(entity):
             def select_by(cls, **kwargs):
                 return cls.query().join(attr_name).join('targets').filter_by(**kwargs).list()
             setattr(entity, 'select_by_%s' % self.name, classmethod(select_by))
+            
+            def select(cls, *args, **kwargs):
+                return cls.query().join(attr_name).join('targets').filter(*args, **kwargs).list()
+            setattr(entity, 'select_%s' % self.name, classmethod(select))
         
         def setup(self):
             self.create_properties()
