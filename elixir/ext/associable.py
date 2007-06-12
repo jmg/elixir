@@ -157,8 +157,12 @@ def associable(entity):
                                   sa.ForeignKey('%s.%s_id' % (able_name, able_name)))
             entity._descriptor.add_field(field)
             entity._descriptor.relationships[able_name] = self
+            
+            def select_by(cls, **kwargs):
+                return cls.query().join(attr_name).join('targets').filter_by(**kwargs).list()
+            setattr(entity, 'select_by_%s' % self.name, classmethod(select_by))
         
-        def setup(self):        
+        def setup(self):
             self.create_properties()
             return True
         
@@ -166,6 +170,7 @@ def associable(entity):
             entity = self.entity
             entity.mapper.add_property(attr_name, sa.relation(GenericAssoc, lazy=self.lazy,
                                        backref='_backref_%s' % entity.table.name))
+            entity.mapper.add_property(self.name, sa.synonym(attr_name))
             if self.uselist:
                 def get(self):
                     if getattr(self, attr_name) is None:
@@ -183,7 +188,7 @@ def associable(entity):
                                 GenericAssoc(entity.table.name))
                     getattr(self, attr_name).targets = [value]
                 setattr(entity, self.name, property(get, set))
-        
+                
     sa.mapper(GenericAssoc, association_table, properties={
         'targets':sa.relation(entity, secondary=association_to_table, 
                               lazy=False, backref='association')
