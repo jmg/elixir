@@ -1,18 +1,21 @@
 from elixir import Entity, has_field, String
 
-class Thing(Entity):
-    has_field('name', String(40))
-    has_field('type', String(40))
-    
-    class Stuff(Entity):
-        has_field('ping', String(32))
-        has_field('pong', String(32))
-    
-    has_field('other', String(40))
+def setup():
+    global Thing
 
-
+    class Thing(Entity):
+        has_field('name', String(40))
+        has_field('type', String(40))
+        
+        class Stuff(Entity):
+            has_field('ping', String(32))
+            has_field('pong', String(32))
+        
+        has_field('other', String(40))
+    
 class TestNestedClass(object):
     def test_nestedclass(self):
+        print "GLOBALS", globals().keys()
         assert 'name' in Thing.table.columns.keys()
         assert 'type' in Thing.table.columns.keys()
         assert 'other' in Thing.table.columns.keys()

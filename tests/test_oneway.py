@@ -3,30 +3,37 @@
 """
 
 from sqlalchemy import create_engine
-from elixir     import *
+from elixir import *
 
-class Person(Entity):
-    with_fields(
-        name = Field(Unicode(30))
-    )
+def setup():
+    global Person, Animal
 
-class Animal(Entity):
-    with_fields(
-        name = Field(Unicode(30)),
-        nose_color = Field(Unicode(15))
-    )
-    
-    belongs_to('owner', of_kind='Person')
+    class Person(Entity):
+        with_fields(
+            name = Field(Unicode(30))
+        )
 
+    class Animal(Entity):
+        with_fields(
+            name = Field(Unicode(30)),
+            nose_color = Field(Unicode(15))
+        )
+        
+        belongs_to('owner', of_kind='Person')
+
+    engine = create_engine('sqlite:///')
+    metadata.connect(engine)
+
+def teardown():
+    cleanup_all()
 
 class TestOneWay(object):
     def setup(self):
-        engine = create_engine('sqlite:///')
-        metadata.connect(engine)
         create_all()
     
     def teardown(self):
-        cleanup_all()
+        drop_all()
+        objectstore.clear()
     
     def test_oneway(self):
         santa = Person(name="Santa Claus")

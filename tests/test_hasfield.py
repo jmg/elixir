@@ -2,28 +2,34 @@
     simple test case
 """
 
-import sqlalchemy
+from sqlalchemy import create_engine 
+from elixir import *
 
-from sqlalchemy.types   import *
-from elixir             import *
+def setup():
+    global Person 
+
+    class Person(Entity):
+        has_field('firstname', Unicode(30))
+        has_field('surname', Unicode(30))
+
+        def __str__(self):
+            return "<Person: %s %s>" % (self.firstname, self.surname)
+
+    engine = create_engine('sqlite:///')
+    metadata.connect(engine)
 
 
-class Person(Entity):
-    has_field('firstname', Unicode(30))
-    has_field('surname', Unicode(30))
+def teardown():
+    cleanup_all()
 
-    def __str__(self):
-        return "%s %s" % (self.firstname, self.surname)
-    
 
 class TestHasField(object):
     def setup(self):
-        engine = sqlalchemy.create_engine('sqlite:///')
-        metadata.connect(engine)
         create_all()
     
     def teardown(self):
-        cleanup_all()
+        drop_all()
+        objectstore.clear()
     
     def test_hasfield(self):
         homer = Person(firstname="Homer", surname="Simpson")
@@ -40,7 +46,9 @@ class TestHasField(object):
         
 
 if __name__ == '__main__':
+    setup()
     test = TestHasField()
     test.setup()
     test.test_hasfield()
     test.teardown()
+    teardown()

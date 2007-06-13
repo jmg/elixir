@@ -5,61 +5,64 @@
 from sqlalchemy import create_engine
 from elixir     import *
 
-class Director(Entity):
-    with_fields(
-        name = Field(Unicode(60))
-    )
-    
-    has_many('movies', of_kind='Movie', inverse='director')
-    
-    using_options(shortnames=True)
+def setup():
+    global Director, Movie, Actor, Media
+
+    class Director(Entity):
+        with_fields(
+            name = Field(Unicode(60))
+        )
+        
+        has_many('movies', of_kind='Movie', inverse='director')
 
 
-class Movie(Entity):
-    """
-        simple movie class
-    """
-    
-    # columns
-    with_fields(
-        title = Field(Unicode(50)),
-        year = Field(Integer)
-    )
-    
-    # relationships
-    belongs_to('director', of_kind="Director", inverse='movies')
-    
-    has_and_belongs_to_many('actors', of_kind="Actor", inverse='movies')
-    has_one('media', of_kind='Media', inverse='movie')
-    
-    # options
-    using_options(tablename="movies_table")
+    class Movie(Entity):
+        """
+            simple movie class
+        """
+        
+        # columns
+        with_fields(
+            title = Field(Unicode(50)),
+            year = Field(Integer)
+        )
+        
+        # relationships
+        belongs_to('director', of_kind="Director", inverse='movies')
+        
+        has_and_belongs_to_many('actors', of_kind="Actor", inverse='movies')
+        has_one('media', of_kind='Media', inverse='movie')
 
 
-class Actor(Entity):
-    with_fields(
-        name = Field(Unicode(60))
-    )
-    
-    has_and_belongs_to_many('movies', of_kind="Movie", inverse="actors")
+    class Actor(Entity):
+        with_fields(
+            name = Field(Unicode(60))
+        )
+        
+        has_and_belongs_to_many('movies', of_kind="Movie", inverse="actors")
 
 
-class Media(Entity):
-    with_fields(
-        number = Field(Integer, primary_key=True)
-    )
-    
-    belongs_to('movie', of_kind='Movie', inverse='media')
-    
+    class Media(Entity):
+        with_fields(
+            number = Field(Integer, primary_key=True)
+        )
+        
+        belongs_to('movie', of_kind='Movie', inverse='media')
+
+    engine = create_engine('sqlite:///')
+    metadata.connect(engine)
+        
+def teardown():
+    cleanup_all()
+
 
 class TestMovies(object):
     def setup(self):
-        engine = create_engine('sqlite:///')
-        metadata.connect(engine)
         create_all()
     
     def teardown(self):
-        cleanup_all()
+        drop_all()
+        objectstore.clear()
     
     def test_bidirectional(self):
         brunner = Movie(title="Blade Runner", year=1982)
@@ -110,3 +113,10 @@ class TestMovies(object):
         assert Movie.get_by(title="Blade Runner").media.number is Media.get_by(number=1).number
         assert Actor.get_by(name="Sigourney Weaver") in Media.get_by(number=7).movie.actors
 
+if __name__ == '__main__':
+    setup()
+    test = TestMovies()
+    test.setup()
+    test.test_bidirectional()
+    test.teardown()
+    teardown()

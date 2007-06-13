@@ -80,6 +80,7 @@ class TestMultiSelfRef(object):
 
     def test_belongs_to_multiple_selfref(self):
         # define a self-referential table with several relations
+
         class TreeNode(Entity):
             has_field('name', String(50), nullable=False)
 

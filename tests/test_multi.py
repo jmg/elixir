@@ -3,8 +3,6 @@
 """
 
 import sqlalchemy
-import datetime
-
 from elixir import *
 
 #-----------
@@ -41,6 +39,7 @@ class TestMultiBelongsTo(object):
     
     def teardown(self):
         cleanup_all()
+        objectstore.clear()
     
     def test_belongs_to_multi_ref(self):
         snowball = Animal(name="Snowball II", color="grey")

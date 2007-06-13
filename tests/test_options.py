@@ -4,13 +4,16 @@
 
 from sqlalchemy import create_engine, create_session, UniqueConstraint 
 from sqlalchemy.exceptions import SQLError, ConcurrentModificationError 
-from elixir     import *
+from elixir import *
 
 
 class TestOptions(object):
     def setup(self):
         engine = create_engine('sqlite:///')
         metadata.connect(engine)
+
+    def teardown(self):
+        cleanup_all()
 
     # this test is a rip-off SQLAlchemy's activemapper's update test
     def test_version_id_col(self):
@@ -72,25 +75,25 @@ class TestOptions(object):
 
         options_defaults['tablename'] = None
 
-    def teardown(self):
-        cleanup_all()
 
 
 class TestTableOptions(object):
     def setup(self):
-        global Person
+        engine = create_engine('sqlite:///')
+        metadata.connect(engine)
 
+    def teardown(self):
+        cleanup_all()
+
+    def test_table_options(self):
         class Person(Entity):
             has_field('firstname', Unicode(30))
             has_field('surname', Unicode(30))
 
             using_table_options(UniqueConstraint('firstname', 'surname'))
 
-        engine = create_engine('sqlite:///')
-        metadata.connect(engine)
         create_all()
 
-    def test_table_options(self):
         homer = Person(firstname="Homer", surname='Simpson')
         bart = Person(firstname="Bart", surname='Simpson')
 
@@ -105,9 +108,4 @@ class TestTableOptions(object):
             raised = True
 
         assert raised
-
-        objectstore.clear()
-
-    def teardown(self):
-        cleanup_all()
 

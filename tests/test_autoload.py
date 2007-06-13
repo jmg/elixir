@@ -2,91 +2,93 @@
     simple test case
 """
 
-import sqlalchemy
-from sqlalchemy import Table, Column, ForeignKey, BoundMetaData
-from sqlalchemy.types import *
+from sqlalchemy import Table, Column, ForeignKey, BoundMetaData, create_engine
 from elixir import *
-from elixir import metadata, objectstore
 import elixir
-import datetime
 
-# First create the tables (it would be better to use an external db)
-engine = sqlalchemy.create_engine('sqlite:///')
-meta = BoundMetaData(engine)
+def setup():
+    # First create the tables (it would be better to use an external db)
+    engine = create_engine('sqlite:///')
+    meta = BoundMetaData(engine)
 
-person_table = Table('person', meta,
-    Column('id', Integer, primary_key=True),
-    Column('father_id', Integer, ForeignKey('person.id')),
-    Column('name', Unicode(32)))
-person_table.create()
+    person_table = Table('person', meta,
+        Column('id', Integer, primary_key=True),
+        Column('father_id', Integer, ForeignKey('person.id')),
+        Column('name', Unicode(32)))
 
-animal_table = Table('animal', meta,
-    Column('id', Integer, primary_key=True),
-    Column('name', String(30)),
-    Column('color', String(15)),
-    Column('owner_id', Integer, ForeignKey('person.id')),
-    Column('feeder_id', Integer, ForeignKey('person.id')))
-animal_table.create()
+    animal_table = Table('animal', meta,
+        Column('id', Integer, primary_key=True),
+        Column('name', String(30)),
+        Column('color', String(15)),
+        Column('owner_id', Integer, ForeignKey('person.id')),
+        Column('feeder_id', Integer, ForeignKey('person.id')))
 
-category_table = Table('category', meta,
-    Column('name', String, primary_key=True))
-category_table.create()
+    category_table = Table('category', meta,
+        Column('name', String, primary_key=True))
 
-person_category_table = Table('person_category', meta,
-    Column('person_id', Integer, ForeignKey('person.id')),
-    Column('category_name', String, ForeignKey('category.name')))
-person_category_table.create()
+    person_category_table = Table('person_category', meta,
+        Column('person_id', Integer, ForeignKey('person.id')),
+        Column('category_name', String, ForeignKey('category.name')))
 
-person_person_table = Table('person_person', meta,
-    Column('person_id1', Integer, ForeignKey('person.id')),
-    Column('person_id2', Integer, ForeignKey('person.id')))
-person_person_table.create()
+    person_person_table = Table('person_person', meta,
+        Column('person_id1', Integer, ForeignKey('person.id')),
+        Column('person_id2', Integer, ForeignKey('person.id')))
 
-elixir.delay_setup = True
-elixir.options_defaults.update(dict(autoload=True, shortnames=True))
+    meta.create_all()
 
-class Person(Entity):
-    belongs_to('father', of_kind='Person')
-    has_many('children', of_kind='Person')
-    has_many('pets', of_kind='Animal', inverse='owner')
-    has_many('animals', of_kind='Animal', inverse='feeder')
-    has_and_belongs_to_many('categories', of_kind='Category', 
-                            tablename='person_category')
-    has_and_belongs_to_many('appreciate', of_kind='Person',
-                            tablename='person_person',
-                            local_side='person_id1')
-    has_and_belongs_to_many('isappreciatedby', of_kind='Person',
-                            tablename='person_person',
-                            local_side='person_id2')
+    elixir.delay_setup = True
+    elixir.options_defaults.update(dict(autoload=True, shortnames=True))
 
-    def __str__(self):
-        s = '%s\n' % self.name.encode('utf-8')  
-        for pet in self.pets:
-            s += '  * pet: %s\n' % pet.name
-        return s
+    global Person, Animal, Category
 
+    class Person(Entity):
+        belongs_to('father', of_kind='Person')
+        has_many('children', of_kind='Person')
+        has_many('pets', of_kind='Animal', inverse='owner')
+        has_many('animals', of_kind='Animal', inverse='feeder')
+        has_and_belongs_to_many('categories', of_kind='Category', 
+                                tablename='person_category')
+        has_and_belongs_to_many('appreciate', of_kind='Person',
+                                tablename='person_person',
+                                local_side='person_id1')
+        has_and_belongs_to_many('isappreciatedby', of_kind='Person',
+                                tablename='person_person',
+                                local_side='person_id2')
 
-class Animal(Entity):
-    belongs_to('owner', of_kind='Person', colname='owner_id')
-    belongs_to('feeder', of_kind='Person', colname='feeder_id')
+        def __str__(self):
+            s = '%s\n' % self.name.encode('utf-8')  
+            for pet in self.pets:
+                s += '  * pet: %s\n' % pet.name
+            return s
 
 
-class Category(Entity):
-    has_and_belongs_to_many('persons', of_kind='Person', 
-                            tablename='person_category')
+    class Animal(Entity):
+        belongs_to('owner', of_kind='Person', colname='owner_id')
+        belongs_to('feeder', of_kind='Person', colname='feeder_id')
 
-elixir.delay_setup = False
-elixir.options_defaults.update(dict(autoload=False, shortnames=False))
+
+    class Category(Entity):
+        has_and_belongs_to_many('persons', of_kind='Person', 
+                                tablename='person_category')
+
+    elixir.delay_setup = False
+    elixir.options_defaults.update(dict(autoload=False, shortnames=False))
+
+    metadata.connect(engine)
+    setup_all()
+
+def teardown():
+    cleanup_all()
 
 #-----------
 
 class TestAutoload(object):
     def setup(self):
-        metadata.connect(engine)
-        setup_all()
-    
+        create_all()
+        
     def teardown(self):
         drop_all()
+        objectstore.clear()
     
     def test_autoload(self):
         snowball = Animal(name="Snowball II", color="grey")
@@ -168,8 +170,23 @@ class TestAutoload(object):
         assert homer in barney.isappreciatedby
 
 if __name__ == '__main__':
+    setup()
+
     test = TestAutoload()
     test.setup()
-    test.test_autoload_has_and_belongs_to_many_selfref()
-#    test.test_autoload()
+    test.test_autoload()
     test.teardown()
+
+    test.setup()
+    test.test_autoload_selfref()
+    test.teardown()
+
+    test.setup()
+    test.test_autoload_has_and_belongs_to_many()
+    test.teardown()
+
+    test.setup()
+    test.test_autoload_has_and_belongs_to_many_selfref()
+    test.teardown()
+
+    teardown()
