@@ -8,6 +8,9 @@
   by just using Entity.q, instead of using Entity.query()
 - Made EntityMeta public, so that people can actually define their own base 
   class.
+- Reworked/cleaned tests so that they don't leak stuff to other tests (both at
+  the method level and module level) anymore. Uses nosetest's module level 
+  fixture.
 - Fixed relationships to tables using a schema (Patch by Neil Blakey-Milner)
 
 0.3.0 - 2007-03-27
