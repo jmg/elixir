@@ -200,9 +200,10 @@ def associable(entity):
                                 GenericAssoc(entity.table.name))
                     getattr(self, attr_name).targets = [value]
                 setattr(entity, self.name, property(get, set))
-                
+
     sa.mapper(GenericAssoc, association_table, properties={
-        'targets':sa.relation(entity, secondary=association_to_table, 
-                              lazy=False, backref='association')
+        'targets': sa.relation(entity, secondary=association_to_table,
+                               lazy=False, backref='association',
+                               order_by=entity.mapper.order_by)
     })
     return Statement(Associable)
