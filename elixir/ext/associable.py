@@ -60,12 +60,12 @@ the associated table:
         has_field('street', String(130))
         has_field('city', String)
     
-    is_addressable = associable(Address)
+    is_addressable = associable(Address, 'addresses')
     
     class Person(Entity):
         has_field('name', Unicode)
         has_many('orders', of_kind='Order')
-        is_addressable('addresses')
+        is_addressable()
     
     class Order(Entity):
         has_field('order_num', primary_key=True)
@@ -96,7 +96,8 @@ The generated Elixir Statement has several options available:
 +===============+=============================================================+
 | ``name``      | Specify a custom name for the Entity attribute. This is     |
 |               | used to declare the attribute used to access the associated |
-|               | table values                                                |
+|               | table values. Otherwise, the name will use the plural_name  |
+|               | provided to the associable call.                            |
 +---------------+-------------------------------------------------------------+
 | ``uselist``   | Whether or not the associated table should be represented   |
 |               | as a list, or a single property. It should be set to False  |
@@ -112,7 +113,7 @@ from elixir.statements import Statement
 import elixir as el
 import sqlalchemy as sa
 
-def associable(entity):
+def associable(entity, plural_name=None):
     '''
     Generate an associable Elixir Statement
     '''
@@ -150,11 +151,16 @@ def associable(entity):
     
     class Associable(el.relationships.Relationship):
         """An associable Elixir Statement object"""
-        def __init__(self, entity, name, uselist=True, lazy=False):
+        def __init__(self, entity, name=None, uselist=True, lazy=False):
             self.entity = entity
-            self.name = name
             self.lazy = lazy
             self.uselist = uselist
+            
+            if name is None:
+                self.name = plural_name
+            else:
+                self.name = name
+            
             assoc_entity._assoc_relations.append(entity)
             
             field = type('myfield', (object,), {})
