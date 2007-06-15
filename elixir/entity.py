@@ -52,6 +52,7 @@ class EntityDescriptor(object):
 
         self.fields = OrderedDict()
         self.relationships = dict()
+        self.delayed_properties = dict()
         self.constraints = list()
 
         #CHECKME: this is a workaround for the "current" descriptor/target
@@ -161,8 +162,26 @@ class EntityDescriptor(object):
                 properties[field.column.name] = deferred(field.column,
                                                          group=group)
 
+        #TODO: make this happen after the rel columns have been added.
+        for name, prop in self.delayed_properties.iteritems():
+            properties[name] = self.evaluate_property(prop)
+        self.delayed_properties.clear()
+
         assign_mapper(session.context, self.entity, self.entity.table,
                       properties=properties, **kwargs)
+
+    def evaluate_property(self, prop):
+        if callable(prop):
+            return prop(self.entity.table.c)
+        else:
+            return prop
+
+    def add_property(self, name, prop):
+        if self.entity.mapper:
+            prop_value = self.evaluate_property(prop)
+            self.entity.mapper.add_property(name, prop_value)
+        else:
+            self.delayed_properties[name] = prop
 
     def setup_table(self):
         '''

@@ -27,6 +27,7 @@ from elixir.entity import Entity, EntityMeta, EntityDescriptor
 from elixir.fields import has_field, with_fields, Field
 from elixir.relationships import belongs_to, has_one, has_many, \
                                  has_and_belongs_to_many
+from elixir.properties import has_property
 
 try:
     set
@@ -36,6 +37,7 @@ except NameError:
 __version__ = '0.3.0'
 
 __all__ = ['Entity', 'EntityMeta', 'Field', 'has_field', 'with_fields',
+           'has_property', 
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many',
            'using_options', 'using_table_options', 'using_mapper_options',
            'options_defaults', 'metadata', 'objectstore',

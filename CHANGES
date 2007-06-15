@@ -2,6 +2,9 @@
 - Added ext sub-package for additional Elixir statements.
 - Added ext.associable for generating polymorphic associations with Elixir
   Statements. (Many thanks to Mike Bayer for his support on writing this.)
+- Added has_property statement to add properties on the entity mapper which
+  rely on columns (an thus need them to be defined before the property can be
+  declared). See tests/test_has_property.py for an example.
 - Added default __init__ method on entities so that subclasses can override it
   and still have the "set attribute by keyword" behavior by calling super()
 - Added .q property on the metaclass, so that you can get a query on an entity
