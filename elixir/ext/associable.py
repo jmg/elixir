@@ -199,7 +199,11 @@ def associable(entity, plural_name=None):
             else:
                 # scalar based property decorator
                 def get(self):
-                    return getattr(self, attr_name).targets[0]
+                    attr = getattr(self, attr_name)
+                    if attr is not None:
+                        return attr.targets[0]
+                    else:
+                        return None
                 def set(self, value):
                     if getattr(self, attr_name) is None:
                         setattr(self, attr_name, 
