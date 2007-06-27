@@ -505,6 +505,7 @@ class HasMany(HasOne):
 
 
 class HasAndBelongsToMany(Relationship):
+    uselist = True
 
     def __init__(self, entity, name, *args, **kwargs):
         self.user_tablename = kwargs.pop('tablename', None)
@@ -661,7 +662,7 @@ class HasAndBelongsToMany(Relationship):
                 self.target._descriptor.translate_order_by(kwargs['order_by'])
 
         self.property = relation(self.target, secondary=self.secondary_table,
-                                 uselist=True, **kwargs)
+                                 uselist=self.uselist, **kwargs)
         self.entity.mapper.add_property(self.name, self.property)
 
     def is_inverse(self, other):
