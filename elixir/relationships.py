@@ -311,16 +311,7 @@ class Relationship(object):
     inverse = property(inverse)
     
     def match_type_of(self, other):
-        t1, t2 = type(self), type(other)
-    
-        if t1 is HasAndBelongsToMany:
-            return t1 is t2
-        elif t1 in (HasOne, HasMany):
-            return t2 is BelongsTo
-        elif t1 is BelongsTo:
-            return t2 in (HasMany, HasOne)
-        else:
-            return False
+        return False
 
     def is_inverse(self, other):
         return other is not self and \
@@ -356,6 +347,9 @@ class BelongsTo(Relationship):
         self.primaryjoin_clauses = list()
         super(BelongsTo, self).__init__(entity, name, *args, **kwargs)
     
+    def match_type_of(self, other):
+        return isinstance(other, (HasMany, HasOne))
+
     def create_keys(self):
         '''
         Find all primary keys on the target and create foreign keys on the 
@@ -447,14 +441,18 @@ class BelongsTo(Relationship):
 
         if self.primaryjoin_clauses:
             kwargs['primaryjoin'] = and_(*self.primaryjoin_clauses)
+
         kwargs['uselist'] = False
-        
+
         self.property = relation(self.target, **kwargs)
         self.entity.mapper.add_property(self.name, self.property)
 
 
 class HasOne(Relationship):
     uselist = False
+
+    def match_type_of(self, other):
+        return isinstance(other, BelongsTo)
 
     def create_keys(self):
         # make sure an inverse relationship exists
@@ -521,6 +519,9 @@ class HasAndBelongsToMany(Relationship):
         self.secondaryjoin_clauses = list()
         super(HasAndBelongsToMany, self).__init__(entity, name, 
                                                   *args, **kwargs)
+
+    def match_type_of(self, other):
+        return isinstance(other, HasAndBelongsToMany)
 
     def create_tables(self):
         if self.inverse:
