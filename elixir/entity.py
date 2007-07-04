@@ -2,7 +2,8 @@
 Entity baseclass, metaclass and descriptor
 '''
 
-from sqlalchemy                     import Table, Integer, desc, deferred
+from sqlalchemy                     import Table, Integer, desc
+from sqlalchemy.orm                 import deferred
 from sqlalchemy.ext.assignmapper    import assign_mapper
 from sqlalchemy.util                import OrderedDict
 from elixir.statements              import Statement

@@ -49,7 +49,7 @@ __pudge_all__ = ['create_all', 'drop_all', 'setup_all', 'cleanup_all',
                  'metadata', 'objectstore', 'delay_setup']
 
 # connect
-metadata = sqlalchemy.DynamicMetaData('elixir', threadlocal=False)
+metadata = sqlalchemy.DynamicMetaData(threadlocal=False)
 
 try:
     # this only happens when the threadlocal extension is used
@@ -65,7 +65,7 @@ except AttributeError:
             return getattr(self.context.current, name)
         session = property(lambda s:s.context.current)
 
-    objectstore = Objectstore(sqlalchemy.create_session)
+    objectstore = Objectstore(sqlalchemy.orm.create_session)
 
 metadatas = set()
 

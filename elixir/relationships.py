@@ -189,8 +189,9 @@ the following optional (keyword) arguments:
 
 '''
 
-from sqlalchemy         import relation, ForeignKeyConstraint, Column, \
+from sqlalchemy         import ForeignKeyConstraint, Column, \
                                Table, and_
+from sqlalchemy.orm     import relation
 from elixir.statements  import Statement
 from elixir.fields      import Field
 from elixir.entity      import EntityDescriptor
