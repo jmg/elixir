@@ -113,7 +113,7 @@ from elixir.statements import Statement
 import elixir as el
 import sqlalchemy as sa
 
-def associable(entity, plural_name=None):
+def associable(entity, plural_name=None, lazy=True):
     '''
     Generate an associable Elixir Statement
     '''
@@ -151,7 +151,7 @@ def associable(entity, plural_name=None):
     
     class Associable(el.relationships.Relationship):
         """An associable Elixir Statement object"""
-        def __init__(self, entity, name=None, uselist=True, lazy=False):
+        def __init__(self, entity, name=None, uselist=True, lazy=True):
             self.entity = entity
             self.lazy = lazy
             self.uselist = uselist
@@ -213,7 +213,7 @@ def associable(entity, plural_name=None):
 
     sa.mapper(GenericAssoc, association_table, properties={
         'targets': sa.relation(entity, secondary=association_to_table,
-                               lazy=False, backref='association',
+                               lazy=lazy, backref='association',
                                order_by=entity.mapper.order_by)
     })
     return Statement(Associable)
