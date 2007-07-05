@@ -14,6 +14,7 @@
 - Reworked/cleaned tests so that they don't leak stuff to other tests (both at
   the method level and module level) anymore. Uses nosetest's module level 
   fixture.
+- Fixed some buggy tests.
 - Applied patch from Ants Aasma to make Elixir compatible with the 0.4 branch
   of SQLAlchemy.
 - Fixed relationships to tables using a schema (Patch by Neil Blakey-Milner)
