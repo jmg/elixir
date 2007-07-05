@@ -41,6 +41,9 @@ def setup():
 
     global Person, Animal, Category
 
+    #TODO: split these into individual classes for each test. It's best to wait
+    # till we can define several classes in a method with reference between them
+    # without having to make them global.
     class Person(Entity):
         belongs_to('father', of_kind='Person')
         has_many('children', of_kind='Person')
@@ -54,13 +57,6 @@ def setup():
         has_and_belongs_to_many('isappreciatedby', of_kind='Person',
                                 tablename='person_person',
                                 local_side='person_id2')
-
-        def __str__(self):
-            s = '%s\n' % self.name.encode('utf-8')  
-            for pet in self.pets:
-                s += '  * pet: %s\n' % pet.name
-            return s
-
 
     class Animal(Entity):
         belongs_to('owner', of_kind='Person', colname='owner_id')
@@ -76,6 +72,7 @@ def setup():
 
     metadata.connect(engine)
     setup_all()
+
 
 def teardown():
     cleanup_all()
@@ -101,9 +98,8 @@ class TestAutoload(object):
         
         homer = Person.get_by(name="Homer")
         lisa = Person.get_by(name="Lisa")
+        slh = Animal.get_by(name="Santa's Little Helper")
         
-        print homer
-
         assert len(homer.animals) == 2
         assert homer == lisa.pets[0].feeder
         assert homer == slh.owner

@@ -52,6 +52,7 @@ class TestMultiBelongsTo(object):
         
         homer = Person.get_by(name="Homer")
         lisa = Person.get_by(name="Lisa")
+        slh = Animal.q.filter(Animal.c.name.like("Santa%")).scalar()
         
         print homer
 
