@@ -14,10 +14,16 @@
 - Reworked/cleaned tests so that they don't leak stuff to other tests (both at
   the method level and module level) anymore. Uses nosetest's module level 
   fixture.
-- Fixed some buggy tests.
+- Changed the order of relationship kwargs processing so that computed kwargs
+  can be overridden by kwargs manually passed to the statement. This should
+  only be used if you know what you are doing.
 - Applied patch from Ants Aasma to make Elixir compatible with the 0.4 branch
   of SQLAlchemy.
+- Fixed some buggy tests.
 - Fixed relationships to tables using a schema (Patch by Neil Blakey-Milner)
+- Made inverse relationships use backrefs. This fixes the "bidirectional
+  coherency" problem some people had before doing a flush. (based on a patch 
+  from Remi Jolin).
 
 0.3.0 - 2007-03-27
 - Made the provided metadata not threadlocal. This could break things for you

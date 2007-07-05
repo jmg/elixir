@@ -191,7 +191,7 @@ the following optional (keyword) arguments:
 
 from sqlalchemy         import ForeignKeyConstraint, Column, \
                                Table, and_
-from sqlalchemy.orm     import relation
+from sqlalchemy.orm     import relation, backref
 from elixir.statements  import Statement
 from elixir.fields      import Field
 from elixir.entity      import EntityDescriptor
@@ -215,7 +215,8 @@ class Relationship(object):
         self._inverse = None
         
         self.property = None # sqlalchemy property
-        
+        self.backref = None  # sqlalchemy backref
+
         #TODO: unused for now
         self.args = args
         self.kwargs = kwargs
@@ -239,6 +240,26 @@ class Relationship(object):
         Subclasses (ie. concrete relationships) may override this method to add 
         properties to the involved entities.
         '''
+        kwargs = {}
+        if self.inverse:
+            # check if the inverse was already processed (and this has already defined
+            # a backref)
+            if self.inverse.backref:
+                kwargs['backref'] = self.inverse.backref
+            else:
+                kwargs = self.get_prop_kwargs()
+
+                # SQLAlchemy doesn't like when 'secondary' is both defined on
+                # the relation and the backref
+                kwargs.pop('secondary', None)
+
+                # define backref for use by the inverse
+                self.backref = backref(self.name, **kwargs)
+                return
+
+        kwargs.update(self.get_prop_kwargs())
+        self.property = relation(self.target, **kwargs)
+        self.entity.mapper.add_property(self.name, self.property)
     
     def setup(self):
         '''
@@ -248,7 +269,7 @@ class Relationship(object):
         if not self.target:
             return False
 
-        if self.property:
+        if self.property or self.backref:
             return True
 
         self.create_keys()
@@ -361,6 +382,7 @@ class BelongsTo(Relationship):
 
         if source_desc.autoload:
             #TODO: test if this works when colname is a list
+
             if self.colname:
                 self.primaryjoin_clauses = \
                     _build_join_clauses(self.entity.table, 
@@ -428,9 +450,9 @@ class BelongsTo(Relationship):
                                             fk_colnames, fk_refcols,
                                             name=fk_name,
                                             **self.constraint_kwargs))
-    
-    def create_properties(self):
-        kwargs = self.kwargs
+
+    def get_prop_kwargs(self):
+        kwargs = {'uselist': False}
         
         if self.entity.table is self.target.table:
             if self.entity._descriptor.autoload:
@@ -442,10 +464,9 @@ class BelongsTo(Relationship):
         if self.primaryjoin_clauses:
             kwargs['primaryjoin'] = and_(*self.primaryjoin_clauses)
 
-        kwargs['uselist'] = False
+        kwargs.update(self.kwargs)
 
-        self.property = relation(self.target, **kwargs)
-        self.entity.mapper.add_property(self.name, self.property)
+        return kwargs
 
 
 class HasOne(Relationship):
@@ -469,8 +490,8 @@ class HasOne(Relationship):
         # make sure it is set up because it creates the foreign key we'll need
         self.inverse.setup()
     
-    def create_properties(self):
-        kwargs = self.kwargs
+    def get_prop_kwargs(self):
+        kwargs = {'uselist': self.uselist}
         
         #TODO: for now, we don't break any test if we remove those 2 lines.
         # So, we should either complete the selfref test to prove that they
@@ -485,22 +506,23 @@ class HasOne(Relationship):
         if self.inverse.primaryjoin_clauses:
             kwargs['primaryjoin'] = and_(*self.inverse.primaryjoin_clauses)
 
-        kwargs['uselist'] = self.uselist
-        
-        self.property = relation(self.target, **kwargs)
-        self.entity.mapper.add_property(self.name, self.property)
+        kwargs.update(self.kwargs)
+
+        return kwargs
 
 
 class HasMany(HasOne):
     uselist = True
+    
+    def get_prop_kwargs(self):
+        kwargs = super(HasMany, self).get_prop_kwargs()
 
-    def create_properties(self):
-        if 'order_by' in self.kwargs:
-            self.kwargs['order_by'] = \
+        if 'order_by' in kwargs:
+            kwargs['order_by'] = \
                 self.target._descriptor.translate_order_by(
-                    self.kwargs['order_by'])
+                    kwargs['order_by'])
 
-        super(HasMany, self).create_properties()
+        return kwargs
 
 
 class HasAndBelongsToMany(Relationship):
@@ -652,20 +674,21 @@ class HasAndBelongsToMany(Relationship):
                                     self.local_side, self.remote_side, 
                                     self.entity.table)
 
-    def create_properties(self):
-        kwargs = self.kwargs
+    def get_prop_kwargs(self):
+        kwargs = {'secondary': self.secondary_table, 
+                  'uselist': self.uselist}
 
         if self.target is self.entity:
             kwargs['primaryjoin'] = and_(*self.primaryjoin_clauses)
             kwargs['secondaryjoin'] = and_(*self.secondaryjoin_clauses)
 
+        kwargs.update(self.kwargs)
+
         if 'order_by' in kwargs:
             kwargs['order_by'] = \
                 self.target._descriptor.translate_order_by(kwargs['order_by'])
 
-        self.property = relation(self.target, secondary=self.secondary_table,
-                                 uselist=self.uselist, **kwargs)
-        self.entity.mapper.add_property(self.name, self.property)
+        return kwargs
 
     def is_inverse(self, other):
         return super(HasAndBelongsToMany, self).is_inverse(other) and \
@@ -685,15 +708,22 @@ def _build_join_clauses(local_table, local_cols1, local_cols2, target_table):
         cols2 = tuple(cols2)
     else:
         cols2 = None
+
+    # Build a map of fk constraints pointing to the correct table.
+    # The map is indexed on the local col names.
     constraint_map = {}
     for constraint in local_table.constraints:
         if isinstance(constraint, ForeignKeyConstraint):
-            use_constraint = False
+
+            use_constraint = True
             fk_colnames = []
+
+            # if all columns point to the correct table, we use the constraint
             for fk in constraint.elements:
-                fk_colnames.append(fk.parent.name)
                 if fk.references(target_table):
-                    use_constraint = True
+                    fk_colnames.append(fk.parent.name)
+                else:
+                    use_constraint = False
             if use_constraint:
                 fk_colnames.sort()
                 constraint_map[tuple(fk_colnames)] = constraint
@@ -703,6 +733,8 @@ def _build_join_clauses(local_table, local_cols1, local_cols2, target_table):
     # columns match because the columns for this join were not given and we
     # know the other join is either not used (is None) or has an explicit 
     # match.
+        
+#TODO: rewrite this. Even with the comment, I don't even understand it myself.
     for cols, constraint in constraint_map.iteritems():
         if cols == cols1 or (cols != cols2 and 
                              not cols1 and (cols2 in constraint_map or

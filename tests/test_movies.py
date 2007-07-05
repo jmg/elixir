@@ -64,6 +64,14 @@ class TestMovies(object):
         drop_all()
         objectstore.clear()
     
+    def test_backref(self):
+        swars = Movie(title="Star Wars", year=1977)
+        glucas = Director(name="George Lucas")
+        swars.director = glucas
+
+        # does it work before a flush?
+        assert swars in glucas.movies
+
     def test_bidirectional(self):
         brunner = Movie(title="Blade Runner", year=1982)
         alien = Movie(title="Alien", year=1979)
