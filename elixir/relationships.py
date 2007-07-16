@@ -407,9 +407,7 @@ class BelongsTo(Relationship):
                         % (self.name, self.entity.__name__, 
                            self.target.__name__))
 
-            for key_num, key in enumerate(target_desc.primary_keys):
-                pk_col = key.column
-
+            for key_num, pk_col in enumerate(target_desc.primary_keys):
                 if self.colname:
                     colname = self.colname[key_num]
                 else:
@@ -455,11 +453,8 @@ class BelongsTo(Relationship):
         kwargs = {'uselist': False}
         
         if self.entity.table is self.target.table:
-            if self.entity._descriptor.autoload:
-                cols = [col for col in self.target.table.primary_key.columns]
-            else:
-                cols = [k.column for k in self.target._descriptor.primary_keys]
-            kwargs['remote_side'] = cols
+            kwargs['remote_side'] = \
+                [col for col in self.target.table.primary_key.columns]
 
         if self.primaryjoin_clauses:
             kwargs['primaryjoin'] = and_(*self.primaryjoin_clauses)
@@ -608,9 +603,7 @@ class HasAndBelongsToMany(Relationship):
                     fk_colnames = list()
                     fk_refcols = list()
                 
-                    for key in desc.primary_keys:
-                        pk_col = key.column
-                        
+                    for pk_col in desc.primary_keys:
                         colname = '%s_%s' % (desc.tablename, pk_col.name)
 
                         # In case we have a many-to-many self-reference, we 

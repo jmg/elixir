@@ -39,7 +39,7 @@ class EntityDescriptor(object):
         self.entity = entity
         self.module = sys.modules[entity.__module__]
 
-        self.primary_keys = list()
+        self.has_pk = False
 
         self.parent = None
         for base in entity.__bases__:
@@ -74,7 +74,7 @@ class EntityDescriptor(object):
 
         for option_dict in ('mapper_options', 'table_options'):
             setattr(self, option_dict, options_defaults[option_dict].copy())
-    
+   
     def setup_options(self):
         '''
         Setup any values that might depend on using_options. For example, the 
@@ -168,6 +168,11 @@ class EntityDescriptor(object):
             properties[name] = self.evaluate_property(prop)
         self.delayed_properties.clear()
 
+        if 'primary_key' in kwargs:
+            cols = self.entity.table.c
+            kwargs['primary_key'] = [getattr(cols, colname) for
+                colname in kwargs['primary_key']]
+
         assign_mapper(session.context, self.entity, self.entity.table,
                       properties=properties, **kwargs)
 
@@ -199,11 +204,10 @@ class EntityDescriptor(object):
                     self.parent._descriptor.setup_table()
                     
                 self.entity.table = self.parent.table 
-                self.primary_keys = self.parent._descriptor.primary_keys
 
                 # re-add the entity fields to the parent entity so that they
                 # are added to the parent's table (whether the parent's table
-                # is setup already or not).
+                # is already setup or not).
                 for field in self.fields.itervalues():
                     self.parent._descriptor.add_field(field)
 
@@ -221,7 +225,7 @@ class EntityDescriptor(object):
             self.add_field(Field(Integer, colname=self.version_id_col))
 
         if not self.autoload:
-            if not self.primary_keys and self.auto_primarykey:
+            if not self.has_pk and self.auto_primarykey:
                 self.create_auto_primary_key()
 
         # create list of columns and constraints
@@ -237,12 +241,16 @@ class EntityDescriptor(object):
         self.entity.table = Table(self.tablename, self.metadata, 
                                   *args, **kwargs)
     
+    def primary_keys(self):
+        return [col for col in self.entity.table.primary_key.columns]
+    primary_keys = property(primary_keys)
+
     def create_auto_primary_key(self):
         '''
         Creates a primary key
         '''
         
-        assert not self.primary_keys and self.auto_primarykey
+        assert not self.has_pk and self.auto_primarykey
         
         if isinstance(self.auto_primarykey, basestring):
             colname = self.auto_primarykey
@@ -256,7 +264,7 @@ class EntityDescriptor(object):
         self.fields[field.colname] = field
         
         if field.primary_key:
-            self.primary_keys.append(field)
+            self.has_pk = True
         
         table = self.entity.table
         if table:

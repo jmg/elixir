@@ -19,6 +19,12 @@
   only be used if you know what you are doing.
 - Applied patch from Ants Aasma to make Elixir compatible with the 0.4 branch
   of SQLAlchemy.
+- Reworked how entities look for primary keys on related entities. This
+  enables one "normal" entity (fully defined in Elixir) to refer to an entity
+  which is autoloaded.
+- Added translation (from column name to column object) of the primary_key 
+  mapper option so that it can actually be used. This allows to have entities
+  without any primary key defined at the table level.
 - Fixed some buggy tests.
 - Fixed relationships to tables using a schema (Patch by Neil Blakey-Milner)
 - Made inverse relationships use backrefs. This fixes the "bidirectional
