@@ -25,6 +25,9 @@
 - Added translation (from column name to column object) of the primary_key 
   mapper option so that it can actually be used. This allows to have entities
   without any primary key defined at the table level.
+- Applied (a modified version of a) patch from Ivanov Maxim to fix the 
+  relationship target code (target should fail when a module is not found, 
+  because it can simply not be loaded yet).
 - Fixed some buggy tests.
 - Fixed relationships to tables using a schema (Patch by Neil Blakey-Milner)
 - Made inverse relationships use backrefs. This fixes the "bidirectional

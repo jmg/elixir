@@ -285,8 +285,13 @@ class Relationship(object):
 
             if path:
                 # do we have a fully qualified entity name?
-                module = sys.modules[path.pop()]
-            else: 
+                module = sys.modules.get(path.pop(), None)
+                if module is None:
+                    # the module is probably not yet defined
+                    #TODO: in a delay_setup scenario, we should raise an
+                    #exception
+                    return None
+            else:
                 # if not, try the same module as the source
                 module = self.entity._descriptor.module
 
