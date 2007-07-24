@@ -2,7 +2,7 @@
     simple test case
 """
 
-from sqlalchemy import create_engine, column_property
+from sqlalchemy import column_property
 from elixir import *
 
 def setup():

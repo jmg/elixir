@@ -2,7 +2,6 @@
     test options
 """
 
-from sqlalchemy import create_engine
 from elixir import *
 
 
@@ -30,8 +29,7 @@ def setup():
         has_and_belongs_to_many('records', of_kind='Record', 
                                 order_by='-title')
 
-    engine = create_engine('sqlite:///')
-    metadata.connect(engine)
+    metadata.connect('sqlite:///')
     create_all()
 
     # insert some data

@@ -2,14 +2,12 @@
     simple test case
 """
 
-from sqlalchemy import create_engine
-from elixir     import *
+from elixir import *
 
 
 class TestSelfRef(object):
     def setup(self):
-        engine = create_engine('sqlite:///')
-        metadata.connect(engine)
+        metadata.connect('sqlite:///')
     
     def teardown(self):
         cleanup_all()
@@ -72,8 +70,7 @@ class TestSelfRef(object):
 
 class TestMultiSelfRef(object):
     def setup(self):
-        engine = create_engine('sqlite:///')
-        metadata.connect(engine)
+        metadata.connect('sqlite:///')
     
     def teardown(self):
         cleanup_all()

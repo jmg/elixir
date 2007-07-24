@@ -2,7 +2,6 @@
     simple test case
 """
 
-from sqlalchemy import create_engine 
 from elixir import *
 
 def setup():
@@ -32,8 +31,7 @@ def setup():
             return "%s (%s) {%s}" % (super(PersonExtended, self).__str__(), 
                                      self.age, parent)
 
-    engine = create_engine('sqlite:///')
-    metadata.connect(engine)
+    metadata.connect('sqlite:///')
 
 
 def teardown():

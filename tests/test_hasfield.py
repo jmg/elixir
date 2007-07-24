@@ -2,7 +2,6 @@
     simple test case
 """
 
-from sqlalchemy import create_engine 
 from elixir import *
 
 def setup():
@@ -15,8 +14,7 @@ def setup():
         def __str__(self):
             return "<Person: %s %s>" % (self.firstname, self.surname)
 
-    engine = create_engine('sqlite:///')
-    metadata.connect(engine)
+    metadata.connect('sqlite:///')
 
 
 def teardown():

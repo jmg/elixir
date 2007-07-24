@@ -2,15 +2,14 @@
     test options
 """
 
-from sqlalchemy import create_engine, create_session, UniqueConstraint 
+from sqlalchemy import create_session, UniqueConstraint 
 from sqlalchemy.exceptions import SQLError, ConcurrentModificationError 
 from elixir import *
 
 
 class TestOptions(object):
     def setup(self):
-        engine = create_engine('sqlite:///')
-        metadata.connect(engine)
+        metadata.connect('sqlite:///')
 
     def teardown(self):
         cleanup_all()
@@ -79,8 +78,7 @@ class TestOptions(object):
 
 class TestTableOptions(object):
     def setup(self):
-        engine = create_engine('sqlite:///')
-        metadata.connect(engine)
+        metadata.connect('sqlite:///')
 
     def teardown(self):
         cleanup_all()

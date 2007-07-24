@@ -2,8 +2,7 @@
     simple test case
 """
 
-from sqlalchemy import create_engine
-from elixir     import *
+from elixir import *
 
 def setup():
     global Director, Movie, Actor, Media
@@ -49,8 +48,7 @@ def setup():
         
         belongs_to('movie', of_kind='Movie', inverse='media')
 
-    engine = create_engine('sqlite:///')
-    metadata.connect(engine)
+    metadata.connect('sqlite:///')
         
 def teardown():
     cleanup_all()

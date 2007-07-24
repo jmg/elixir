@@ -2,7 +2,6 @@
     simple test case
 """
 
-import sqlalchemy
 from elixir import *
 
 #-----------
@@ -33,8 +32,7 @@ class TestMultiBelongsTo(object):
             belongs_to('owner', of_kind='Person')
             belongs_to('feeder', of_kind='Person')
 
-        engine = sqlalchemy.create_engine('sqlite:///')
-        metadata.connect(engine)
+        metadata.connect('sqlite:///')
         create_all()
     
     def teardown(self):
@@ -73,8 +71,7 @@ class TestMultiHasAndBelongsToMany(object):
         class Tag(Entity):
             has_field('name', String(20), primary_key=True)
 
-        engine = sqlalchemy.create_engine('sqlite:///')
-        metadata.connect(engine)
+        metadata.connect('sqlite:///')
         create_all()
 
     def teardown(self):
