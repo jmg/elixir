@@ -63,6 +63,7 @@ except AttributeError:
 
         def __getattr__(self, name):
             return getattr(self.context.current, name)
+
         session = property(lambda s:s.context.current)
 
     objectstore = Objectstore(sqlalchemy.orm.create_session)

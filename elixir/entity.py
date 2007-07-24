@@ -3,7 +3,7 @@ Entity baseclass, metaclass and descriptor
 '''
 
 from sqlalchemy                     import Table, Integer, desc
-from sqlalchemy.orm                 import deferred
+from sqlalchemy.orm                 import deferred, Query
 from sqlalchemy.ext.assignmapper    import assign_mapper
 from sqlalchemy.util                import OrderedDict
 from elixir.statements              import Statement
@@ -344,7 +344,7 @@ class EntityMeta(type):
         desc.setup()
 
     def q(cls):
-        return cls.query()
+        return Query(cls, session=elixir.objectstore.session)
     q = property(q)
 
 class Entity(object):
