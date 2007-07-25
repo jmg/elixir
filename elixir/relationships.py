@@ -237,9 +237,12 @@ class Relationship(object):
     
     def create_properties(self):
         '''
-        Subclasses (ie. concrete relationships) may override this method to add 
-        properties to the involved entities.
+        Subclasses (ie. concrete relationships) may override this method to
+        add properties to the involved entities.
         '''
+        if self.property or self.backref:
+            return
+
         kwargs = {}
         if self.inverse:
             # check if the inverse was already processed (and this has already defined
@@ -381,6 +384,8 @@ class BelongsTo(Relationship):
         Find all primary keys on the target and create foreign keys on the 
         source accordingly.
         '''
+        if self.foreign_key:
+            return
 
         source_desc = self.entity._descriptor
         target_desc = self.target._descriptor
@@ -390,9 +395,9 @@ class BelongsTo(Relationship):
 
             if self.colname:
                 self.primaryjoin_clauses = \
-                    _build_join_clauses(self.entity.table, 
-                                        self.colname, None, 
-                                        self.target.table)[0]
+                    _get_join_clauses(self.entity.table, 
+                                      self.colname, None, 
+                                      self.target.table)[0]
                 if not self.primaryjoin_clauses:
                     raise Exception(
                         "Couldn't find a foreign key constraint in table "
@@ -488,7 +493,7 @@ class HasOne(Relationship):
                       % (self.target.__name__, self.name,
                          self.entity.__name__))
         # make sure it is set up because it creates the foreign key we'll need
-        self.inverse.setup()
+        self.inverse.create_keys()
     
     def get_prop_kwargs(self):
         kwargs = {'uselist': self.uselist}
@@ -546,100 +551,103 @@ class HasAndBelongsToMany(Relationship):
         return isinstance(other, HasAndBelongsToMany)
 
     def create_tables(self):
+        if self.secondary_table:
+            return
+
         if self.inverse:
             if self.inverse.secondary_table:
                 self.secondary_table = self.inverse.secondary_table
                 self.primaryjoin_clauses = self.inverse.secondaryjoin_clauses
                 self.secondaryjoin_clauses = self.inverse.primaryjoin_clauses
+                return
 
-        if not self.secondary_table:
-            e1_desc = self.entity._descriptor
-            e2_desc = self.target._descriptor
-           
-            # First, we compute the name of the table. Note that some of the 
-            # intermediary variables are reused later for the constraint 
-            # names.
-            
-            # We use the name of the relation for the first entity 
-            # (instead of the name of its primary key), so that we can 
-            # have two many-to-many relations between the same objects 
-            # without having a table name collision. 
-            source_part = "%s_%s" % (e1_desc.tablename, self.name)
+        e1_desc = self.entity._descriptor
+        e2_desc = self.target._descriptor
+       
+        # First, we compute the name of the table. Note that some of the 
+        # intermediary variables are reused later for the constraint 
+        # names.
+        
+        # We use the name of the relation for the first entity 
+        # (instead of the name of its primary key), so that we can 
+        # have two many-to-many relations between the same objects 
+        # without having a table name collision. 
+        source_part = "%s_%s" % (e1_desc.tablename, self.name)
 
-            # And we use only the name of the table of the second entity
-            # when there is no inverse, so that a many-to-many relation 
-            # can be defined without an inverse.
+        # And we use only the name of the table of the second entity
+        # when there is no inverse, so that a many-to-many relation 
+        # can be defined without an inverse.
+        if self.inverse:
+            target_part = "%s_%s" % (e2_desc.tablename, self.inverse.name)
+        else:
+            target_part = e2_desc.tablename
+        
+        if self.user_tablename:
+            tablename = self.user_tablename
+        else:
+            # We need to keep the table name consistent (independant of 
+            # whether this relation or its inverse is setup first).
+            if self.inverse and e1_desc.tablename < e2_desc.tablename:
+                tablename = "%s__%s" % (target_part, source_part)
+            else:
+                tablename = "%s__%s" % (source_part, target_part)
+
+        if e1_desc.autoload:
+            self._reflect_table(tablename)
+        else:
+            # We pre-compute the names of the foreign key constraints 
+            # pointing to the source (local) entity's table and to the 
+            # target's table
+
+            # In some databases (at lease MySQL) the constraint names need 
+            # to be unique for the whole database, instead of per table.
+            source_fk_name = "%s_fk" % source_part
             if self.inverse:
-                target_part = "%s_%s" % (e2_desc.tablename, self.inverse.name)
+                target_fk_name = "%s_fk" % target_part
             else:
-                target_part = e2_desc.tablename
+                target_fk_name = "%s_inverse_fk" % source_part
+
+            columns = list()
+            constraints = list()
+
+            joins = (self.primaryjoin_clauses, self.secondaryjoin_clauses)
+            for num, desc, fk_name in ((0, e1_desc, source_fk_name), 
+                                       (1, e2_desc, target_fk_name)):
+                fk_colnames = list()
+                fk_refcols = list()
             
-            if self.user_tablename:
-                tablename = self.user_tablename
-            else:
-                # We need to keep the table name consistent (independant of 
-                # whether this relation or its inverse is setup first).
-                if self.inverse and e1_desc.tablename < e2_desc.tablename:
-                    tablename = "%s__%s" % (target_part, source_part)
-                else:
-                    tablename = "%s__%s" % (source_part, target_part)
+                for pk_col in desc.primary_keys:
+                    colname = '%s_%s' % (desc.tablename, pk_col.name)
 
-            if e1_desc.autoload:
-                self._reflect_table(tablename)
-            else:
-                # We pre-compute the names of the foreign key constraints 
-                # pointing to the source (local) entity's table and to the 
-                # target's table
+                    # In case we have a many-to-many self-reference, we 
+                    # need to tweak the names of the columns so that we 
+                    # don't end up with twice the same column name.
+                    if self.entity is self.target:
+                        colname += str(num + 1)
 
-                # In some databases (at lease MySQL) the constraint names need 
-                # to be unique for the whole database, instead of per table.
-                source_fk_name = "%s_fk" % source_part
-                if self.inverse:
-                    target_fk_name = "%s_fk" % target_part
-                else:
-                    target_fk_name = "%s_inverse_fk" % source_part
+                    col = Column(colname, pk_col.type)
+                    columns.append(col)
 
-                columns = list()
-                constraints = list()
+                    # Build the list of local columns which will be part 
+                    # of the foreign key.
+                    fk_colnames.append(colname)
 
-                joins = (self.primaryjoin_clauses, self.secondaryjoin_clauses)
-                for num, desc, fk_name in ((0, e1_desc, source_fk_name), 
-                                           (1, e2_desc, target_fk_name)):
-                    fk_colnames = list()
-                    fk_refcols = list()
+                    # Build the list of columns the foreign key will point
+                    # to.
+                    fk_refcols.append(desc.tablename + '.' + pk_col.name)
+
+                    # Build join clauses (in case we have a self-ref)
+                    if self.entity is self.target:
+                        joins[num].append(col == pk_col)
                 
-                    for pk_col in desc.primary_keys:
-                        colname = '%s_%s' % (desc.tablename, pk_col.name)
+                constraints.append(
+                    ForeignKeyConstraint(fk_colnames, fk_refcols,
+                                         name=fk_name))
 
-                        # In case we have a many-to-many self-reference, we 
-                        # need to tweak the names of the columns so that we 
-                        # don't end up with twice the same column name.
-                        if self.entity is self.target:
-                            colname += str(num + 1)
-
-                        col = Column(colname, pk_col.type)
-                        columns.append(col)
-
-                        # Build the list of local columns which will be part 
-                        # of the foreign key.
-                        fk_colnames.append(colname)
-
-                        # Build the list of columns the foreign key will point
-                        # to.
-                        fk_refcols.append(desc.tablename + '.' + pk_col.name)
-
-                        # Build join clauses (in case we have a self-ref)
-                        if self.entity is self.target:
-                            joins[num].append(col == pk_col)
-                    
-                    constraints.append(
-                        ForeignKeyConstraint(fk_colnames, fk_refcols,
-                                             name=fk_name))
-
-                args = columns + constraints
-                
-                self.secondary_table = Table(tablename, e1_desc.metadata, 
-                                             *args)
+            args = columns + constraints
+            
+            self.secondary_table = Table(tablename, e1_desc.metadata, 
+                                         *args)
 
     def _reflect_table(self, tablename):
         if not self.target._descriptor.autoload:
@@ -668,9 +676,9 @@ class HasAndBelongsToMany(Relationship):
                     % (self.name, self.entity.__name__))
 
             self.primaryjoin_clauses, self.secondaryjoin_clauses = \
-                _build_join_clauses(self.secondary_table, 
-                                    self.local_side, self.remote_side, 
-                                    self.entity.table)
+                _get_join_clauses(self.secondary_table, 
+                                  self.local_side, self.remote_side, 
+                                  self.entity.table)
 
     def get_prop_kwargs(self):
         kwargs = {'secondary': self.secondary_table, 
@@ -694,7 +702,7 @@ class HasAndBelongsToMany(Relationship):
                 (not self.user_tablename and not other.user_tablename))
 
 
-def _build_join_clauses(local_table, local_cols1, local_cols2, target_table):
+def _get_join_clauses(local_table, local_cols1, local_cols2, target_table):
     primary_join, secondary_join = [], []
     cols1 = local_cols1[:]
     cols1.sort()
