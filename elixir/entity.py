@@ -241,9 +241,6 @@ class EntityDescriptor(object):
         self.entity.table = Table(self.tablename, self.metadata, 
                                   *args, **kwargs)
 
-    def primary_keys(self):
-        return [col for col in self.entity.table.primary_key.columns]
-    primary_keys = property(primary_keys)
 
     def create_auto_primary_key(self):
         '''
@@ -302,6 +299,10 @@ class EntityDescriptor(object):
             rel.entity._descriptor.get_inverse_relation(matching_rel, True)
 
         return matching_rel
+
+    def primary_keys(self):
+        return [col for col in self.entity.table.primary_key.columns]
+    primary_keys = property(primary_keys)
 
     def all_relationships(self):
         if self.parent:

@@ -35,12 +35,8 @@ Website/doc related
 
 - document SA/Elixir differences
 
-- RELEASE file shouldn't be included in the distribution
-
 Code related
 ------------
-
-- use "required" instead of "nullable" (in examples.rst and examples/...)
 
 - change setup order so that you can order_by a column created by a belongs_to
   relationship.
@@ -51,7 +47,7 @@ Code related
   see relationships.py
 
 - add a test case for a relation from an SA-mapped class to an Elixir Entity
-  (it should work but I've never tried it).
+  (it works but we need a proper test for that).
 
 - support Overriding Column Names and wrapping column in properties
   http://www.sqlalchemy.org/docs/adv_datamapping.html#advdatamapping_properties_overriding
@@ -61,20 +57,11 @@ Code related
   SQLAlchemy's side.
     cfr mailing list.
 
-- fix the backref attribute update before flush problem
-    cfr http://www.sqlalchemy.org/docs/datamapping.html#datamapping_relations_backreferences
-    cfr mailing list (message from andre felipe dias -- bi-directional relation)
-    cfr my question on SA mailing list
-    simply adding backrefs systematically is not a solution either (it breaks
-    some tests -- I haven't had time to investigate the matter further yet).
-
 - make elixir work with migrate (or vice-versa). 
     cfr mailing list
 
 - test multi-col-primary-keys: we've implemented the functionality in many
   places, but we do not have a single test for that case.
-
-- add a test case for multi module stuff
 
 - Pop relations' keyword arguments (and raise an exception) which would
   conflict with those we generate

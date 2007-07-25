@@ -37,7 +37,7 @@ class Actor(Entity):
 
 class Visit(Entity):
     has_field('visit_key', String(40), primary_key=True)
-    has_field('created', DateTime, nullable=False, default=datetime.now)
+    has_field('created', DateTime, required=True, default=datetime.now)
     has_field('expiry', DateTime)
     using_options(tablename='visit')
     
