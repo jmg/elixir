@@ -220,7 +220,7 @@ class Relationship(object):
         #TODO: unused for now
         self.args = args
         self.kwargs = kwargs
-        
+
         self.entity._descriptor.relationships[self.name] = self
     
     def create_keys(self):
