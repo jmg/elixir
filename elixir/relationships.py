@@ -73,6 +73,10 @@ which will be directed to the created column:
 |                      | (left without a value). Defaults to ``False``,       |
 |                      | unless the field is a primary key.                   |
 +----------------------+------------------------------------------------------+
+| ``primary_key``      | Specify whether or not the column(s) created by this |
+|                      | relationship should act as a primary_key.            |
+|                      | Defaults to ``False``.                               |
++----------------------+------------------------------------------------------+
 | ``column_kwargs``    | A dictionary holding any other keyword argument you  |
 |                      | might want to pass to the Column.                    |
 +----------------------+------------------------------------------------------+
@@ -364,6 +368,8 @@ class BelongsTo(Relationship):
         self.column_kwargs = kwargs.pop('column_kwargs', {})
         if 'required' in kwargs:
             self.column_kwargs['nullable'] = not kwargs.pop('required')
+        if 'primary_key' in kwargs:
+            self.column_kwargs['primary_key'] = kwargs.pop('primary_key')
 
         self.constraint_kwargs = kwargs.pop('constraint_kwargs', {})
         if 'use_alter' in kwargs:
