@@ -23,7 +23,13 @@ class Statement(object):
         class_locals = sys._getframe(1).f_locals
         statements = class_locals.setdefault(STATEMENTS, [])
         statements.append((self, args, kwargs))
-        
+    
+    @classmethod
+    def finalize(cls, entity):
+        for statement, args, kwargs in getattr(entity, STATEMENTS, []):
+            getattr(statement.target, 'finalize', lambda x: None)(entity)
+    
+    @classmethod
     def process(cls, entity):
         '''
         Apply all statements to the given entity.
@@ -32,4 +38,3 @@ class Statement(object):
         # and apply them, i.e. instanciate the corresponding classes
         for statement, args, kwargs in getattr(entity, STATEMENTS, []):
             statement.target(entity, *args, **kwargs)
-    process = classmethod(process)

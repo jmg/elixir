@@ -116,6 +116,9 @@ class EntityDescriptor(object):
 
         # try to setup all uninitialized relationships
         EntityDescriptor.setup_relationships()
+        
+        # finally, allow the statement to do any "finalization"
+        Statement.finalize(self.entity)
     
     def translate_order_by(self, order_by):
         if isinstance(order_by, basestring):
