@@ -3,11 +3,13 @@ from elixir.ext.events import *
 
 
 before_insert_called = 0
+after_insert_called  = 0
 before_update_called = 0
 after_update_called  = 0
-after_insert_called  = 0
 before_delete_called = 0
 after_delete_called  = 0
+
+before_any_called = 0
 
 
 def setup():
@@ -22,6 +24,11 @@ def setup():
             global before_insert_called
             before_insert_called += 1
         
+        @after_insert
+        def post_insert(self):
+            global after_insert_called
+            after_insert_called += 1
+
         @before_update
         def pre_update(self):
             global before_update_called
@@ -31,22 +38,23 @@ def setup():
         def post_update(self):
             global after_update_called
             after_update_called += 1
-        
-        @after_insert
-        def post_insert(self):
-            global after_insert_called
-            after_insert_called += 1
-        
+
         @before_delete
-        def before_delete(self):
+        def pre_delete(self):
             global before_delete_called
             before_delete_called += 1
         
         @after_delete
-        def after_delete(self):
+        def post_delete(self):
             global after_delete_called
             after_delete_called += 1
     
+        @before_insert
+        @before_update
+        @before_delete
+        def pre_any(self):
+            global before_any_called
+            before_any_called += 1
     metadata.connect('sqlite:///')
 
 
@@ -76,10 +84,11 @@ class TestEvents(object):
         
         assert before_insert_called == 1
         assert before_update_called == 1
-        assert after_update_called  == 1
-        assert after_insert_called  == 1
+        assert after_update_called == 1
+        assert after_insert_called == 1
         assert before_delete_called == 1
-        assert after_delete_called  == 1
+        assert after_delete_called == 1
+        assert before_any_called == 3
 
 
 if __name__ == '__main__':
