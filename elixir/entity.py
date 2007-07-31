@@ -191,7 +191,14 @@ class EntityDescriptor(object):
             self.entity.mapper.add_property(name, prop_value)
         else:
             self.delayed_properties[name] = prop
-
+    
+    def add_mapper_extension(self, extension):
+        extensions = self.mapper_options.get('extension', [])
+        if not isinstance(extensions, list):
+            extensions = [extensions]
+        extensions.append(extension)
+        self.mapper_options['extension'] = extensions
+    
     def setup_table(self):
         '''
         Create a SQLAlchemy table-object with all columns that have been 

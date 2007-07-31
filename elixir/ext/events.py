@@ -23,13 +23,9 @@ class RespondsToEvents(object):
 
         # create a custom mapper extension class, tailored to our entity
         ext = type('EventMapperExtension', (MapperExtension,), methods)()
-
+        
         # then, make sure that the entity's mapper has our mapper extension
-        extensions = entity._descriptor.mapper_options.get('extension', [])
-        if not isinstance(extensions, list):
-            extensions = [extensions]
-        extensions.append(ext)
-        entity._descriptor.mapper_options['extension'] = extensions
+        entity._descriptor.add_mapper_extension(ext)
 
     def make_proxy_method(self, methods):
         def proxy_method(self, mapper, connection, instance):
