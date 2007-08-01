@@ -1,5 +1,5 @@
 from elixir import *
-from elixir.ext.events import *
+from elixir.events import *
 
 
 before_insert_called = 0
