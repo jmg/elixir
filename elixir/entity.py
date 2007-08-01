@@ -3,7 +3,7 @@ Entity baseclass, metaclass and descriptor
 '''
 
 from sqlalchemy                     import Table, Integer, desc
-from sqlalchemy.orm                 import deferred, Query
+from sqlalchemy.orm                 import deferred, Query, MapperExtension
 from sqlalchemy.ext.assignmapper    import assign_mapper
 from sqlalchemy.util                import OrderedDict
 from elixir.statements              import Statement
@@ -17,6 +17,7 @@ except NameError:
 
 import sys
 import elixir
+import inspect
 
 __pudge_all__ = ['Entity', 'EntityMeta']
 
@@ -105,7 +106,8 @@ class EntityDescriptor(object):
         if elixir.delay_setup:
             elixir.delayed_entities.add(self)
             return
-
+        
+        self.setup_events()
         self.setup_table()
         self.setup_mapper()
 
@@ -119,6 +121,34 @@ class EntityDescriptor(object):
         
         # finally, allow the statement to do any "finalization"
         Statement.finalize(self.entity)
+    
+    def setup_events(self):
+        # create a list of callbacks for each event
+        methods = {}
+        for name, func in inspect.getmembers(self.entity, inspect.ismethod):
+            if hasattr(func, '_elixir_events'):
+                for event in func._elixir_events:
+                    event_methods = methods.setdefault(event, [])
+                    event_methods.append(func)
+        
+        if not methods:
+            return
+        
+        # transform that list into methods themselves
+        for event in methods:
+            methods[event] = self.make_proxy_method(methods[event])
+        
+        # create a custom mapper extension class, tailored to our entity
+        ext = type('EventMapperExtension', (MapperExtension,), methods)()
+        
+        # then, make sure that the entity's mapper has our mapper extension
+        self.add_mapper_extension(ext)
+    
+    def make_proxy_method(self, methods):
+        def proxy_method(self, mapper, connection, instance):
+            for func in methods:
+                func(instance)
+        return proxy_method
     
     def translate_order_by(self, order_by):
         if isinstance(order_by, basestring):

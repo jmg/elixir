@@ -17,7 +17,6 @@ def setup():
     
     class Document(Entity):
         has_field('name', Unicode)
-        responds_to_events()
         
         @before_insert
         def pre_insert(self):
