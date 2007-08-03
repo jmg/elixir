@@ -167,7 +167,10 @@ def associable(entity, plural_name=None, lazy=True):
             field.colname = '%s_assoc_id' % interface_name
             field.deferred = False
             field.primary_key = False
-            field.column = sa.Column('%s_assoc_id' % interface_name, None, 
+            # CHANGE: I had to change the second argument from None to sa.Integer
+            # in order to get associable working with the versioning extension...
+            # Ben: was this the right thing to do?
+            field.column = sa.Column('%s_assoc_id' % interface_name, sa.Integer, 
                                   sa.ForeignKey('%s.%s_id' % (able_name, able_name)))
             entity._descriptor.add_field(field)
             entity._descriptor.relationships[able_name] = self
