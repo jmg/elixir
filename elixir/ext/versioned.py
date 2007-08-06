@@ -90,7 +90,7 @@ class VersionedMapperExtension(MapperExtension):
     
     def before_delete(self, mapper, connection, instance):
         instance.__history_table__.delete(
-            instance.__history_table__.c.id==instance.id
+            get_history_where(instance)
         ).execute()
         return EXT_PASS
 
