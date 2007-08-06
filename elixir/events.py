@@ -1,6 +1,11 @@
-from sqlalchemy.orm.mapper import MapperExtension
-from elixir.statements import Statement
-
+__all__ = [
+    'before_insert',
+    'after_insert',
+    'before_update',
+    'after_update',
+    'before_delete',
+    'after_delete'
+]
 
 def create_decorator(event_name):
     def decorator(func):
@@ -10,7 +15,6 @@ def create_decorator(event_name):
         return func
     return decorator
 
-
 before_insert = create_decorator('before_insert')
 after_insert = create_decorator('after_insert')
 before_update = create_decorator('before_update')
@@ -19,11 +23,4 @@ before_delete = create_decorator('before_delete')
 after_delete = create_decorator('after_delete')
 
 
-__all__ = [
-    'before_insert',
-    'after_insert',
-    'before_update',
-    'after_update',
-    'before_delete',
-    'after_delete'
-]
+
