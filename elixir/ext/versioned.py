@@ -112,9 +112,11 @@ class ActsAsVersioned(object):
         timestampField = Field(DateTime, colname='timestamp')
         entity._descriptor.add_field(versionField)
         entity._descriptor.add_field(timestampField)
+        self.entity = entity
     
-    @classmethod
-    def finalize(cls, entity):
+    def after_table(self):
+        entity = self.entity
+
         # look for events
         after_revert_events = []
         for name, func in inspect.getmembers(entity, inspect.ismethod):

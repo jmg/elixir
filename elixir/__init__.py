@@ -138,6 +138,9 @@ def setup_all(create_tables=False):
                 rel.create_tables()
 
         for desc in _delayed_descriptors:
+            Statement.process(desc.entity, 'after_table')
+
+        for desc in _delayed_descriptors:
             desc.setup_events()
         
         for desc in _delayed_descriptors:
@@ -147,10 +150,6 @@ def setup_all(create_tables=False):
             for rel in desc.relationships.itervalues():
                 rel.create_properties()
 
-        #TODO: merge this with the "when" feature of statements
-        for desc in _delayed_descriptors:
-            # allow the statements to do any "finalization"
-            Statement.finalize(desc.entity)
 
     finally:
         # make sure that even if we fail to initialize, we don't leave junk for
