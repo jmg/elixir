@@ -54,7 +54,7 @@ def setup():
         def pre_any(self):
             global before_any_called
             before_any_called += 1
-    metadata.connect('sqlite:///')
+    metadata.bind = 'sqlite:///'
 
 
 def teardown():

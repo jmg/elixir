@@ -10,7 +10,7 @@ def teardown():
 
 class TestPackages(object):
     def setup(self):
-        metadata.connect('sqlite:///')
+        metadata.bind = 'sqlite:///'
     
     def teardown(self):
         drop_all()

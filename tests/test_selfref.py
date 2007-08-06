@@ -7,7 +7,7 @@ from elixir import *
 
 class TestSelfRef(object):
     def setup(self):
-        metadata.connect('sqlite:///')
+        metadata.bind = 'sqlite:///'
     
     def teardown(self):
         cleanup_all()
@@ -70,7 +70,7 @@ class TestSelfRef(object):
 
 class TestMultiSelfRef(object):
     def setup(self):
-        metadata.connect('sqlite:///')
+        metadata.bind = 'sqlite:///'
     
     def teardown(self):
         cleanup_all()

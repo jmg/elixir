@@ -7,7 +7,7 @@ from elixir import *
 
 
 def setup():
-    metadata.connect('sqlite:///')
+    metadata.bind = 'sqlite:///'
 
 def teardown():
     cleanup_all()

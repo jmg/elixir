@@ -6,7 +6,7 @@ from sqlalchemy import Table, Column, MetaData
 from elixir import *
 
 def setup():
-    metadata.connect('sqlite:///')
+    metadata.bind = 'sqlite:///'
 
 def teardown():
     cleanup_all()

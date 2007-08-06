@@ -20,7 +20,7 @@ def setup():
         
         belongs_to('owner', of_kind='Person')
 
-    metadata.connect('sqlite:///')
+    metadata.bind = 'sqlite:///'
 
 def teardown():
     cleanup_all()

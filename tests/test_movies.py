@@ -48,7 +48,7 @@ def setup():
         
         belongs_to('movie', of_kind='Movie', inverse='media')
 
-    metadata.connect('sqlite:///')
+    metadata.bind = 'sqlite:///'
         
 def teardown():
     cleanup_all()

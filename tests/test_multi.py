@@ -32,7 +32,7 @@ class TestMultiBelongsTo(object):
             belongs_to('owner', of_kind='Person')
             belongs_to('feeder', of_kind='Person')
 
-        metadata.connect('sqlite:///')
+        metadata.bind = 'sqlite:///'
         create_all()
     
     def teardown(self):
@@ -71,7 +71,7 @@ class TestMultiHasAndBelongsToMany(object):
         class Tag(Entity):
             has_field('name', String(20), primary_key=True)
 
-        metadata.connect('sqlite:///')
+        metadata.bind = 'sqlite:///'
         create_all()
 
     def teardown(self):

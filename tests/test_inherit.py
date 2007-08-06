@@ -5,7 +5,7 @@
 from elixir import *
 
 def setup():
-    metadata.connect('sqlite:///')
+    metadata.bind = 'sqlite:///'
 
 def do_tst(inheritance, polymorphic, expected_res):
     class A(Entity):

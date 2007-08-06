@@ -14,7 +14,7 @@ def setup():
         def __str__(self):
             return "<Person: %s %s>" % (self.firstname, self.surname)
 
-    metadata.connect('sqlite:///')
+    metadata.bind = 'sqlite:///'
 
 
 def teardown():

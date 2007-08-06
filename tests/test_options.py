@@ -10,7 +10,7 @@ from elixir import *
 
 class TestOptions(object):
     def setup(self):
-        metadata.connect('sqlite:///')
+        metadata.bind = 'sqlite:///'
 
     def teardown(self):
         cleanup_all()
@@ -79,7 +79,7 @@ class TestOptions(object):
 
 class TestTableOptions(object):
     def setup(self):
-        metadata.connect('sqlite:///')
+        metadata.bind = 'sqlite:///'
 
     def teardown(self):
         cleanup_all()

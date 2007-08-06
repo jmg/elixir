@@ -29,7 +29,7 @@ def setup():
         has_and_belongs_to_many('records', of_kind='Record', 
                                 order_by='-title')
 
-    metadata.connect('sqlite:///')
+    metadata.bind = 'sqlite:///'
     create_all()
 
     # insert some data
