@@ -43,8 +43,7 @@ from elixir                import Integer, objectstore, DateTime
 from elixir.statements     import Statement
 from elixir.fields         import Field
 from sqlalchemy            import Table, Column, and_, desc
-from sqlalchemy.orm        import mapper
-from sqlalchemy.orm.mapper import MapperExtension, EXT_PASS
+from sqlalchemy.orm        import mapper, MapperExtension, EXT_PASS
 from datetime              import datetime
 
 import inspect

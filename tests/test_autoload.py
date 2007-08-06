@@ -67,7 +67,7 @@ def setup():
 
     elixir.options_defaults.update(dict(autoload=False, shortnames=False))
 
-    metadata.connect(meta.bind)
+    metadata.bind = meta.bind
     setup_all()
 
 

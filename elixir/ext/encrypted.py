@@ -25,7 +25,7 @@ an entity by entity basis, for added security.
 
 from Crypto.Cipher          import Blowfish 
 from elixir.statements      import Statement
-from sqlalchemy.orm.mapper  import MapperExtension, EXT_PASS
+from sqlalchemy.orm         import MapperExtension, EXT_PASS
 
 
 #
