@@ -33,16 +33,16 @@ The list of supported arguments are as follows:
 +=====================+=======================================================+
 | ``inheritance``     | Specify the type of inheritance this entity must use. |
 |                     | It can be one of ``single``, ``concrete`` or          |
-|                     | ``multi``.                                            |
-|                     | **For now, only the single type is implemented.**     |
+|                     | ``multi``. Defaults to ``single``.                    |
 +---------------------+-------------------------------------------------------+
-| ``metadata``        | Specify a custom MetaData                             |
+| ``polymorphic``     | Whether the inheritance should be polymorphic or not. |
+|                     | Defaults to ``False``. Note that polymorphic concrete |
+|                     | inheritance is currently not implemented.             |
++---------------------+-------------------------------------------------------+
+| ``metadata``        | Specify a custom MetaData.                            |
 +---------------------+-------------------------------------------------------+
 | ``autoload``        | Automatically load column definitions from the        |
 |                     | existing database table.                              |
-|                     | Using autoloaded tables implies setting               |
-|                     | ``delay_setup`` to ``True`` before defining your      |
-|                     | entities.                                             |
 +---------------------+-------------------------------------------------------+
 | ``tablename``       | Specify a custom tablename. You can either provide a  |
 |                     | plain string or a callable. The callable will be      |
@@ -54,7 +54,7 @@ The list of supported arguments are as follows:
 |                     | to the entity, but lower-cased and separated by       |
 |                     | underscores ("_"), eg.: "project1_model_myentity"     |
 |                     | for an entity named "MyEntity" in the module          |
-|                     | "project1.model".  If shortnames is True, the         |
+|                     | "project1.model".  If shortnames is ``True``, the     |
 |                     | tablename will just be the entity's classname         |
 |                     | lower-cased, ie. "myentity".                          |
 +---------------------+-------------------------------------------------------+
@@ -115,6 +115,7 @@ __pudge_all__ = ['options_defaults']
 
 options_defaults = dict(
     inheritance='single',
+    polymorphic=False,
     autoload=None,
     shortnames=False,
     tablename=None,
@@ -127,12 +128,13 @@ options_defaults = dict(
 class UsingOptions(object):    
     valid_options = (
         'inheritance',
-        'metadata',
+        'polymorphic',
         'autoload',
         'tablename',
         'shortnames',
         'auto_primarykey',
         'version_id_col',
+        'metadata',
         'order_by',
     )
     

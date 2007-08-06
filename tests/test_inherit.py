@@ -5,76 +5,87 @@
 from elixir import *
 
 def setup():
-    global Person, PersonExtended
-
-    class Person(Entity):
-        has_field('firstname', Unicode(30))
-        has_field('surname', Unicode(30))
-        belongs_to('sister', of_kind='Person')
-
-        @property
-        def name(self):
-            return "%s %s" % (self.firstname, self.surname)
-
-        def __str__(self):
-            sister = self.sister and self.sister.name or "unknown"
-            return "%s [%s]" % (self.name, sister)
-    
-    class PersonExtended(Person):
-        has_field('age', Integer)
-        belongs_to('parent', of_kind='PersonExtended')
-
-        using_options(inheritance='single')
-
-        def __str__(self):
-            parent = self.parent and self.parent.name or "unknown"
-            return "%s (%s) {%s}" % (super(PersonExtended, self).__str__(), 
-                                     self.age, parent)
-
     metadata.connect('sqlite:///')
 
+def do_tst(inheritance, polymorphic, expected_res):
+    class A(Entity):
+        has_field('data1', String(20))
+        using_options(inheritance=inheritance, polymorphic=polymorphic)
 
-def teardown():
-    cleanup_all()
+    class B(A):
+        has_field('data2', String(20))
+        using_options(inheritance=inheritance, polymorphic=polymorphic)
+
+    class C(B):
+        has_field('data3', String(20))
+        using_options(inheritance=inheritance, polymorphic=polymorphic)
+
+    class D(A):
+        has_field('data4', String(20))
+        using_options(inheritance=inheritance, polymorphic=polymorphic)
+
+    setup_all(True)
+
+    A(data1='a1')
+    B(data1='b1', data2='b2')
+    C(data1='c1', data2='c2', data3='c3')
+    D(data1='d1', data4='d4')
+
+    objectstore.flush()
+    objectstore.clear()
+
+    res = {}
+    for class_ in (A, B, C, D):
+        res[class_.__name__] = class_.q.all()
+        res[class_.__name__].sort(key=lambda o: o.__class__.__name__) 
+
+    for query_class in ('A', 'B', 'C', 'D'):
+        assert len(res[query_class]) == len(expected_res[query_class])
+        for real, expected in zip(res[query_class], expected_res[query_class]):
+            assert real.__class__.__name__ == expected
 
 
 class TestInheritance(object):
-    def setup(self):
-        create_all()
-    
     def teardown(self):
-        drop_all()
-        objectstore.clear()
+        cleanup_all(True)
 
     def test_singletable_inheritance(self):
-        homer = PersonExtended(firstname="Homer", surname="Simpson", age=36)
-        # lisa needs to be a Person object, not a PersonExtended object because
-        # the sister relationship points to a Person, not a PersonExtended, so
-        # bart's sister must be a Person. This is to comply with SQLAlchemy's
-        # policy to prevent loading relationships with unintended types, unless 
-        # explicitly enabled (enable_typechecks=False).
-        lisa = Person(firstname="Lisa", surname="Simpson")
-        bart = PersonExtended(firstname="Bart", surname="Simpson", 
-                              parent=homer, sister=lisa)
+        do_tst('single', False, {
+            'A': ('A', 'A', 'A', 'A'),
+            'B': ('B', 'B', 'B', 'B'),
+            'C': ('C', 'C', 'C', 'C'),
+            'D': ('D', 'D', 'D', 'D'),
+        })
 
-        objectstore.flush()
-        objectstore.clear()
+    def test_polymorphic_singletable_inheritance(self):
+        do_tst('single', True, {
+            'A': ('A', 'B', 'C', 'D'),
+            'B': ('B', 'C'),
+            'C': ('C',),
+            'D': ('D',),
+        })
 
-        p = PersonExtended.get_by(firstname="Bart")
+    def test_concrete_inheritance(self):
+        do_tst('concrete', False, {
+            'A': ('A',),
+            'B': ('B',),
+            'C': ('C',),
+            'D': ('D',),
+        })
 
-        assert p.sister.name == 'Lisa Simpson'
-        assert p.parent.age == 36
+    def test_multitable_inheritance(self):
+        do_tst('multi', False, {
+            'A': ('A', 'A', 'A', 'A'),
+            'B': ('B', 'B'),
+            'C': ('C',),
+            'D': ('D',),
+        })
 
-        for p in Person.select():
-            print p
+    def test_polymorphic_multitable_inheritance(self):
+        do_tst('multi', True, {
+            'A': ('A', 'B', 'C', 'D'),
+            'B': ('B', 'C'),
+            'C': ('C',),
+            'D': ('D',),
+        })
 
-        for p in PersonExtended.select():
-            print p
-
-if __name__ == '__main__':
-    setup()
-    test = TestInheritance()
-    test.setup()
-    test.test_singletable_inheritance()
-    test.teardown()
-    teardown()

@@ -15,7 +15,7 @@ def teardown():
 
 class TestAutoload(object):
     def test_pk(self):
-        local_meta = MetaData(metadata.engine)
+        local_meta = MetaData(metadata.bind)
 
         person_table = Table('person', local_meta,
             Column('id', Integer),

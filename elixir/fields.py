@@ -98,7 +98,18 @@ class Field(object):
         
         self.args = args
         self.kwargs = kwargs
-    
+
+    def copy(self):
+        '''
+        Returns a copy of the field
+        '''
+
+        kwargs = self.kwargs
+        kwargs.update({'colname': self.colname, 'deferred': self.deferred})
+        if 'nullable' in self.kwargs:
+            kwargs['required'] = not self.kwargs['nullable']
+        return Field(self.type, *self.args, **kwargs)
+            
     def column(self):
         '''
         Returns the corresponding sqlalchemy-column

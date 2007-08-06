@@ -42,8 +42,9 @@ values within the entity's main table will be versioned into the history table.
 from elixir                import Integer, objectstore, DateTime
 from elixir.statements     import Statement
 from elixir.fields         import Field
+from sqlalchemy            import Table, Column, and_, desc
+from sqlalchemy.orm        import mapper
 from sqlalchemy.orm.mapper import MapperExtension, EXT_PASS
-from sqlalchemy            import Table, Column, mapper, and_, desc
 from datetime              import datetime
 
 import inspect

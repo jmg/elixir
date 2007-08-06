@@ -198,7 +198,7 @@ from sqlalchemy         import ForeignKeyConstraint, Column, \
 from sqlalchemy.orm     import relation, backref
 from elixir.statements  import Statement
 from elixir.fields      import Field
-from elixir.entity      import EntityDescriptor
+from elixir.entity      import EntityDescriptor, EntityMeta
 
 import sys
 
@@ -227,7 +227,7 @@ class Relationship(object):
 
         self.entity._descriptor.relationships[self.name] = self
     
-    def create_keys(self):
+    def create_keys(self, pk):
         '''
         Subclasses (ie. concrete relationships) may override this method to 
         create foreign keys.
@@ -249,8 +249,8 @@ class Relationship(object):
 
         kwargs = {}
         if self.inverse:
-            # check if the inverse was already processed (and this has already defined
-            # a backref)
+            # check if the inverse was already processed (and thus has already
+            # defined a backref we can use)
             if self.inverse.backref:
                 kwargs['backref'] = self.inverse.backref
             else:
@@ -268,23 +268,6 @@ class Relationship(object):
         self.property = relation(self.target, **kwargs)
         self.entity.mapper.add_property(self.name, self.property)
     
-    def setup(self):
-        '''
-        Sets up the relationship, creates foreign keys and secondary tables.
-        '''
-
-        if not self.target:
-            return False
-
-        if self.property or self.backref:
-            return True
-
-        self.create_keys()
-        self.create_tables()
-        self.create_properties()
-        
-        return True
-    
     def target(self):
         if not self._target:
             path = self.of_kind.rsplit('.', 1)
@@ -292,31 +275,15 @@ class Relationship(object):
 
             if path:
                 # do we have a fully qualified entity name?
-                module = sys.modules.get(path.pop(), None)
-                if module is None:
-                    # the module is probably not yet defined
-                    #TODO: in a delay_setup scenario, we should raise an
-                    #exception
-                    return None
+                module = sys.modules[path.pop()]
+                self._target = getattr(module, classname, None)
             else:
-                # if not, try the same module as the source
-                module = self.entity._descriptor.module
-
-            self._target = getattr(module, classname, None)
-            if not self._target:
-                # This is ugly but we need it because the class which is
-                # currently being defined (we have to keep in mind we are in 
-                # its metaclass code) is not yet available in the module
-                # namespace, so the getattr above fails. And unfortunately,
-                # this doesn't only happen for the owning entity of this
-                # relation since we might be setting up a deferred relation.
-                e = EntityDescriptor.current.entity
-                if classname == e.__name__ or \
-                        self.of_kind == e.__module__ +'.'+ e.__name__:
-                    self._target = e
-                else:
-                    return None
-        
+                # If not, try the list of entities of the "caller" of the 
+                # source class. Most of the time, this will be the module the
+                # class is defined in. But it could also be a method (inner
+                # classes).
+                caller_entities = EntityMeta._entities[self.entity._caller]
+                self._target = caller_entities[classname]
         return self._target
     target = property(target)
     
@@ -385,7 +352,7 @@ class BelongsTo(Relationship):
     def match_type_of(self, other):
         return isinstance(other, (HasMany, HasOne))
 
-    def create_keys(self):
+    def create_keys(self, pk):
         '''
         Find all primary keys on the target and create foreign keys on the 
         source accordingly.
@@ -393,8 +360,17 @@ class BelongsTo(Relationship):
         if self.foreign_key:
             return
 
+        if self.column_kwargs.get('primary_key', False) != pk:
+            return
+
         source_desc = self.entity._descriptor
+        #TODO: make this work if target is a pure SA-mapped class
+        # for that, I need: 
+        # - the list of primary key columns of the target table
+        # - the name of the target table
         target_desc = self.target._descriptor
+        #make sure the target has all its pk setup up
+        target_desc.create_pk_cols()
 
         if source_desc.autoload:
             #TODO: test if this works when colname is a list
@@ -430,7 +406,7 @@ class BelongsTo(Relationship):
                     colname = '%s_%s' % (self.name, pk_col.name)
 
                 # we use a Field here instead of using a Column directly 
-                # because of add_field 
+                # because add_field can be used before the table is created
                 field = Field(pk_col.type, colname=colname, index=True, 
                               **self.column_kwargs)
                 source_desc.add_field(field)
@@ -442,15 +418,13 @@ class BelongsTo(Relationship):
                 # store the names of those columns
                 fk_colnames.append(colname)
 
-                # build the list of columns the foreign key will point to
-                if target_desc.entity.table.schema:
-                    fk_refcols.append("%s.%s.%s" % (
-                        target_desc.entity.table.schema,
-                        target_desc.entity.table.name,
-                        pk_col.name))
-                else:
-                    fk_refcols.append("%s.%s" % (target_desc.entity.table.name,
-                                                 pk_col.name))
+                # build the list of column "paths" the foreign key will 
+                # point to
+                target_path = "%s.%s" % (target_desc.tablename, pk_col.name)
+                schema = target_desc.table_options.get('schema', None)
+                if schema is not None:
+                    target_path = "%s.%s" % (schema, target_path)
+                fk_refcols.append(target_path)
 
                 # build up the primary join. This is needed when you have 
                 # several belongs_to relations between two objects
@@ -458,7 +432,7 @@ class BelongsTo(Relationship):
             
             # In some databases (at lease MySQL) the constraint name needs to 
             # be unique for the whole database, instead of per table.
-            fk_name = "%s_%s_fk" % (self.entity.table.name, 
+            fk_name = "%s_%s_fk" % (source_desc.tablename, 
                                     '_'.join(fk_colnames))
             source_desc.add_constraint(ForeignKeyConstraint(
                                             fk_colnames, fk_refcols,
@@ -486,7 +460,7 @@ class HasOne(Relationship):
     def match_type_of(self, other):
         return isinstance(other, BelongsTo)
 
-    def create_keys(self):
+    def create_keys(self, pk):
         # make sure an inverse relationship exists
         if self.inverse is None:
             raise Exception(
@@ -499,7 +473,7 @@ class HasOne(Relationship):
                       % (self.target.__name__, self.name,
                          self.entity.__name__))
         # make sure it is set up because it creates the foreign key we'll need
-        self.inverse.create_keys()
+        self.inverse.create_keys(pk)
     
     def get_prop_kwargs(self):
         kwargs = {'uselist': self.uselist}

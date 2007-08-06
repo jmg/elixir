@@ -2,14 +2,13 @@
     simple test case
 """
 
-from sqlalchemy import Table, Column, ForeignKey, BoundMetaData, create_engine
+from sqlalchemy import Table, Column, ForeignKey, MetaData
 from elixir import *
 import elixir
 
 def setup():
     # First create the tables (it would be better to use an external db)
-    engine = create_engine('sqlite:///')
-    meta = BoundMetaData(engine)
+    meta = MetaData('sqlite:///')
 
     person_table = Table('person', meta,
         Column('id', Integer, primary_key=True),
@@ -36,7 +35,6 @@ def setup():
 
     meta.create_all()
 
-    elixir.delay_setup = True
     elixir.options_defaults.update(dict(autoload=True, shortnames=True))
 
     global Person, Animal, Category
@@ -67,10 +65,9 @@ def setup():
         has_and_belongs_to_many('persons', of_kind='Person', 
                                 tablename='person_category')
 
-    elixir.delay_setup = False
     elixir.options_defaults.update(dict(autoload=False, shortnames=False))
 
-    metadata.connect(engine)
+    metadata.connect(meta.bind)
     setup_all()
 
 
@@ -117,13 +114,10 @@ class TestAutoload(object):
         objectstore.flush()
         objectstore.clear()
         
-        p = Person.get_by(name="Homer")
-        
-        print "%s is %s's child." % (p.name, p.father.name)
-        print "His children are: %s." % (
-                " and ".join(c.name for c in p.children))
+        p = Person.q.filter_by(name="Homer").one()
         
         assert p in p.father.children
+        assert p.father.name == "Abe"
         assert p.father is Person.get_by(name="Abe")
         assert p is Person.get_by(name="Lisa").father
 

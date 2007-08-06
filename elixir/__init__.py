@@ -28,6 +28,7 @@ from elixir.fields import has_field, with_fields, Field
 from elixir.relationships import belongs_to, has_one, has_many, \
                                  has_and_belongs_to_many
 from elixir.properties import has_property
+from elixir.statements import Statement
 
 try:
     set
@@ -41,15 +42,14 @@ __all__ = ['Entity', 'EntityMeta', 'Field', 'has_field', 'with_fields',
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many',
            'using_options', 'using_table_options', 'using_mapper_options',
            'options_defaults', 'metadata', 'objectstore',
-           'create_all', 'drop_all', 'setup_all', 'cleanup_all',
-           'delay_setup'] + \
+           'create_all', 'drop_all', 'setup_all', 'cleanup_all'] + \
           sqlalchemy.types.__all__
 
 __pudge_all__ = ['create_all', 'drop_all', 'setup_all', 'cleanup_all',
-                 'metadata', 'objectstore', 'delay_setup']
+                 'metadata', 'objectstore']
 
 # connect
-metadata = sqlalchemy.DynamicMetaData(threadlocal=False)
+metadata = sqlalchemy.MetaData()
 
 try:
     # this only happens when the threadlocal extension is used
@@ -82,41 +82,96 @@ def drop_all():
     for md in metadatas:
         md.drop_all()
 
-delayed_entities = set()
-delay_setup = False
+_delayed_descriptors = list()
 
-
-def setup_all():
+def setup_all(create_tables=False):
     '''Setup the table and mapper for all entities which have been delayed.
 
-    This should be used in conjunction with setting ``delay_setup`` to ``True``
-    before defining your entities.
+    This is called automatically when your entity is first accessed, or ...
+    [TODO: complete this]
     '''
-    for entity in delayed_entities:
-        entity.setup_table()
-    for entity in delayed_entities:
-        entity.setup_mapper()
 
-    # setup all relationships
-    for entity in delayed_entities:
-        for rel in entity.relationships.itervalues():
-            rel.setup()
+    if not _delayed_descriptors:
+        return
 
-    delayed_entities.clear()
+#TODO: define all those operations as methods on the descriptor
+#    for method_name in ('setup_table', 'setup_mapper', 'setup_relkeys', ...):
+#        for desc in _delayed_descriptors:
+#            method = getattr(desc, method_name)
+#            method()
+    try:
+        for desc in _delayed_descriptors:
+            entity = desc.entity
+            entity._ready = False
+            del sqlalchemy.orm.mapper_registry[entity._class_key]
+
+            md = desc.metadata
+            # the table could have already been removed (namely in a single 
+            # table inheritance scenario)
+            md.tables.pop(entity._table_key, None)
+
+            # restore original table iterator if not done already
+            if hasattr(md.table_iterator, '_non_elixir_patched_iterator'):
+                md.table_iterator = \
+                    md.table_iterator._non_elixir_patched_iterator
+
+        # Make sure autoloaded tables are available so that we can setup 
+        # foreign keys to their columns
+        for desc in _delayed_descriptors:
+            if desc.autoload:
+                desc.setup_table()
+
+        for desc in _delayed_descriptors:
+            desc.create_pk_cols()
+
+        # Create other columns from belongs_to relationships.
+        for desc in _delayed_descriptors:
+            for rel in desc.relationships.itervalues():
+                rel.create_keys(False)
+
+        for desc in _delayed_descriptors:
+            if not desc.autoload:
+                desc.setup_table()
+
+        for desc in _delayed_descriptors:
+            for rel in desc.relationships.itervalues():
+                rel.create_tables()
+
+        for desc in _delayed_descriptors:
+            desc.setup_events()
+        
+        for desc in _delayed_descriptors:
+            desc.setup_mapper()
+
+        for desc in _delayed_descriptors:
+            for rel in desc.relationships.itervalues():
+                rel.create_properties()
+
+        #TODO: merge this with the "when" feature of statements
+        for desc in _delayed_descriptors:
+            # allow the statements to do any "finalization"
+            Statement.finalize(desc.entity)
+
+    finally:
+        # make sure that even if we fail to initialize, we don't leave junk for
+        # others
+        del _delayed_descriptors[:]
 
     # issue the "CREATE" SQL statements
-    create_all()
+    if create_tables:
+        create_all()
 
 
-def cleanup_all():
+def cleanup_all(drop_tables=False):
     '''Drop table and clear mapper for all entities, and clear all metadatas.
     '''
-    drop_all()
+    if drop_tables:
+        drop_all()
+        
     for md in metadatas:
         md.clear()
     metadatas.clear()
-    EntityDescriptor.uninitialized_rels.clear()
 
     objectstore.clear()
-    sqlalchemy.clear_mappers()
+    sqlalchemy.orm.clear_mappers()
 

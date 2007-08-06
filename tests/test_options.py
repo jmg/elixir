@@ -2,7 +2,8 @@
     test options
 """
 
-from sqlalchemy import create_session, UniqueConstraint 
+from sqlalchemy import UniqueConstraint 
+from sqlalchemy.orm import create_session
 from sqlalchemy.exceptions import SQLError, ConcurrentModificationError 
 from elixir import *
 
@@ -83,7 +84,8 @@ class TestTableOptions(object):
     def teardown(self):
         cleanup_all()
 
-    def test_table_options(self):
+    def test_unique_constraint(self):
+        
         class Person(Entity):
             has_field('firstname', Unicode(30))
             has_field('surname', Unicode(30))
@@ -98,6 +100,39 @@ class TestTableOptions(object):
         objectstore.flush()
 
         homer2 = Person(firstname="Homer", surname='Simpson')
+
+        raised = False
+        try:
+            objectstore.flush()
+        except SQLError:
+            raised = True
+
+        assert raised
+
+    def test_unique_constraint_belongs_to(self):
+        class Author(Entity):
+            has_field("name", Unicode)
+
+        class Book(Entity):
+            has_field("title", Unicode, required=True)
+            belongs_to("author", of_kind="Author")
+
+            using_table_options(UniqueConstraint("title", "author_id"))
+
+        setup_all(True)
+
+        tolkien = Author(name="J. R. R. Tolkien")
+        lotr = Book(title="The Lord of the Rings", author=tolkien)
+        hobbit = Book(title="The Hobbit", author=tolkien)
+
+        objectstore.flush()
+
+        tolkien2 = Author(name="Tolkien")
+        hobbit2 = Book(title="The Hobbit", author=tolkien2)
+
+        objectstore.flush()
+
+        hobbit3 = Book(title="The Hobbit", author=tolkien)
 
         raised = False
         try:

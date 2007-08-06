@@ -2,10 +2,12 @@
 Entity baseclass, metaclass and descriptor
 '''
 
-from sqlalchemy                     import Table, Integer, desc
+from sqlalchemy                     import Table, Integer, String, desc,\
+                                           ForeignKey
 from sqlalchemy.orm                 import deferred, Query, MapperExtension
 from sqlalchemy.ext.assignmapper    import assign_mapper
 from sqlalchemy.util                import OrderedDict
+import sqlalchemy
 from elixir.statements              import Statement
 from elixir.fields                  import Field
 from elixir.options                 import options_defaults
@@ -16,6 +18,8 @@ except NameError:
     from sets import Set as set
 
 import sys
+import warnings
+
 import elixir
 import inspect
 
@@ -24,6 +28,9 @@ __pudge_all__ = ['Entity', 'EntityMeta']
 DEFAULT_AUTO_PRIMARYKEY_NAME = "id"
 DEFAULT_AUTO_PRIMARYKEY_TYPE = Integer
 DEFAULT_VERSION_ID_COL = "row_version"
+DEFAULT_POLYMORPHIC_COL_NAME = "row_type"
+DEFAULT_POLYMORPHIC_COL_SIZE = 20
+DEFAULT_POLYMORPHIC_COL_TYPE = String(DEFAULT_POLYMORPHIC_COL_SIZE)
 
 class EntityDescriptor(object):
     '''
@@ -43,6 +50,8 @@ class EntityDescriptor(object):
         self.has_pk = False
 
         self.parent = None
+        self.children = []
+
         for base in entity.__bases__:
             if issubclass(base, Entity) and base is not Entity:
                 if self.parent:
@@ -51,23 +60,20 @@ class EntityDescriptor(object):
                                     % self.entity.__name__)
                 else:
                     self.parent = base
+                    self.parent._descriptor.children.append(entity)
 
         self.fields = OrderedDict()
+        #TODO Ordered
         self.relationships = dict()
         self.delayed_properties = dict()
         self.constraints = list()
-
-        #CHECKME: this is a workaround for the "current" descriptor/target
-        # property ugliness. The problem is that this workaround is ugly too.
-        # I'm not sure if this is a safe practice. It works but...?
-#        setattr(self.module, entity.__name__, entity)
 
         # set default value for options
         self.order_by = None
         self.table_args = list()
         self.metadata = getattr(self.module, 'metadata', elixir.metadata)
 
-        for option in ('inheritance', 
+        for option in ('inheritance', 'polymorphic',
                        'autoload', 'tablename', 'shortnames', 
                        'auto_primarykey',
                        'version_id_col'):
@@ -84,6 +90,13 @@ class EntityDescriptor(object):
         elixir.metadatas.add(self.metadata)
 
         entity = self.entity
+        if self.inheritance == 'concrete' and self.polymorphic:
+            raise NotImplementedError("Polymorphic concrete inheritance is "
+                                      "not yet implemented.")
+
+        if self.parent:
+            if self.inheritance == 'single':
+                self.tablename = self.parent._descriptor.tablename
 
         if not self.tablename:
             if self.shortnames:
@@ -94,33 +107,6 @@ class EntityDescriptor(object):
                 self.tablename = tablename.lower()
         elif callable(self.tablename):
             self.tablename = self.tablename(entity)
-    
-    def setup(self):
-        '''
-        Create tables, keys, columns that have been specified so far and 
-        assign a mapper. Will be called when an instance of the entity is 
-        created or a mapper is needed to access one or many instances of the 
-        entity. It will try to initialize the entity's relationships (along 
-        with any delayed relationship) but some of them might be delayed.
-        '''
-        if elixir.delay_setup:
-            elixir.delayed_entities.add(self)
-            return
-        
-        self.setup_events()
-        self.setup_table()
-        self.setup_mapper()
-
-        # This marks all relations of the entity (or, at least those which 
-        # have been added so far by statements) as being uninitialized
-        EntityDescriptor.uninitialized_rels.update(
-            self.relationships.values())
-
-        # try to setup all uninitialized relationships
-        EntityDescriptor.setup_relationships()
-        
-        # finally, allow the statement to do any "finalization"
-        Statement.finalize(self.entity)
     
     def setup_events(self):
         # create a list of callbacks for each event
@@ -178,14 +164,30 @@ class EntityDescriptor(object):
         if self.version_id_col:
             kwargs['version_id_col'] = self.fields[self.version_id_col].column
 
-        if self.parent:
-            if self.inheritance == 'single':
-                # at this point, we don't know whether the parent relationships
-                # have already been processed or not. Some of them might be, 
-                # some other might not.
-                if not self.parent.mapper:
-                    self.parent._descriptor.setup_mapper()
+        if self.inheritance in ('single', 'concrete', 'multi'):
+            if self.parent and \
+               not (self.inheritance == 'concrete' and not self.polymorphic):
                 kwargs['inherits'] = self.parent.mapper
+
+            if self.polymorphic:
+                if self.children and not self.parent:
+                    kwargs['polymorphic_on'] = \
+                        self.fields[self.polymorphic].column
+                    if self.inheritance == 'multi':
+                        children = self._get_children()
+                        join = self.entity.table
+                        for child in children:
+                            join = join.outerjoin(child.table)
+                        kwargs['select_table'] = join
+                    
+                if self.children or self.parent:
+                    #TODO: make this customizable (both callable and string)
+                    #TODO: include module name
+                    kwargs['polymorphic_identity'] = \
+                        self.entity.__name__.lower()
+
+                if self.inheritance == 'concrete':
+                    kwargs['concrete'] = True
 
         properties = dict()
         for field in self.fields.itervalues():
@@ -196,7 +198,6 @@ class EntityDescriptor(object):
                 properties[field.column.name] = deferred(field.column,
                                                          group=group)
 
-        #TODO: make this happen after the rel columns have been added.
         for name, prop in self.delayed_properties.iteritems():
             properties[name] = self.evaluate_property(prop)
         self.delayed_properties.clear()
@@ -206,8 +207,19 @@ class EntityDescriptor(object):
             kwargs['primary_key'] = [getattr(cols, colname) for
                 colname in kwargs['primary_key']]
 
-        assign_mapper(session.context, self.entity, self.entity.table,
-                      properties=properties, **kwargs)
+        if self.parent and self.inheritance == 'single':
+            args = []
+        else:
+            args = [self.entity.table]
+
+        assign_mapper(session.context, self.entity, properties=properties, 
+                      *args, **kwargs)
+
+    def _get_children(self):
+        children = self.children[:]
+        for child in self.children:
+            children.extend(child._descriptor._get_children())
+        return children
 
     def evaluate_property(self, prop):
         if callable(prop):
@@ -239,10 +251,7 @@ class EntityDescriptor(object):
         
         if self.parent:
             if self.inheritance == 'single':
-                # reuse the parent's table
-                if not self.parent.table:
-                    self.parent._descriptor.setup_table()
-                    
+                # we know the parent is setup before the child
                 self.entity.table = self.parent.table 
 
                 # re-add the entity fields to the parent entity so that they
@@ -252,21 +261,23 @@ class EntityDescriptor(object):
                     self.parent._descriptor.add_field(field)
 
                 return
-#            elif self.inheritance == 'concrete':
-                # do not reuse parent table, but copy all fields
-                # the problem is that, at this point, all "plain" fields
-                # are known, but not those generated by relations
-#                for field in self.fields.itervalues():
-#                    self.add_field(field)
+            elif self.inheritance == 'concrete':
+               # copy all fields from parent table
+               for field in self.parent._descriptor.fields.itervalues():
+                    self.add_field(field.copy())
+
+        if self.polymorphic and self.inheritance in ('single', 'multi') and \
+           self.children and not self.parent:
+            if not isinstance(self.polymorphic, basestring):
+                self.polymorphic = DEFAULT_POLYMORPHIC_COL_NAME
+                
+            self.add_field(Field(DEFAULT_POLYMORPHIC_COL_TYPE, 
+                                 colname=self.polymorphic))
 
         if self.version_id_col:
             if not isinstance(self.version_id_col, basestring):
                 self.version_id_col = DEFAULT_VERSION_ID_COL
             self.add_field(Field(Integer, colname=self.version_id_col))
-
-        if not self.autoload:
-            if not self.has_pk and self.auto_primarykey:
-                self.create_auto_primary_key()
 
         # create list of columns and constraints
         args = [field.column for field in self.fields.itervalues()] \
@@ -282,12 +293,38 @@ class EntityDescriptor(object):
                                   *args, **kwargs)
 
 
+    def create_pk_cols(self):
+        """
+        Create primary_key columns. That is, add columns from belongs_to
+        relationships marked as being a primary_key and then adds a primary 
+        key to the table if it hasn't already got one and needs one. 
+        
+        This method is "semi-recursive" in that it calls the create_keys 
+        method on BelongsTo relationships and those in turn call create_pk_cols
+        on their target. It shouldn't be possible to have an infinite loop 
+        since a loop of primary_keys is not a valid situation.
+        """
+        for rel in self.relationships.itervalues():
+            rel.create_keys(True)
+
+        if not self.autoload:
+            if self.parent and self.inheritance == 'multi':
+                # add foreign keys to the parent's primary key columns 
+                parent_desc = self.parent._descriptor
+                for pk_col in parent_desc.primary_keys:
+                    colname = "%s_%s" % (self.parent.__name__.lower(),
+                                         pk_col.name)
+                    field = Field(pk_col.type, ForeignKey(pk_col), 
+                                  colname=colname, primary_key=True)
+                    self.add_field(field)
+            if not self.has_pk and self.auto_primarykey:
+                self.create_auto_primary_key()
+
+
     def create_auto_primary_key(self):
         '''
         Creates a primary key
         '''
-        
-        assert not self.has_pk and self.auto_primarykey
         
         if isinstance(self.auto_primarykey, basestring):
             colname = self.auto_primarykey
@@ -303,7 +340,8 @@ class EntityDescriptor(object):
         if field.primary_key:
             self.has_pk = True
 
-        table = self.entity.table
+        # we don't want to trigger setup_all too early
+        table = type.__getattribute__(self.entity, 'table')
         if table:
             table.append_column(field.column)
     
@@ -341,7 +379,11 @@ class EntityDescriptor(object):
         return matching_rel
 
     def primary_keys(self):
-        return [col for col in self.entity.table.primary_key.columns]
+        if self.autoload:
+            return [col for col in self.entity.table.primary_key.columns]
+        else:
+            return [field.column for field in self.fields.itervalues() if
+                    field.primary_key]
     primary_keys = property(primary_keys)
 
     def all_relationships(self):
@@ -353,11 +395,21 @@ class EntityDescriptor(object):
         return res
     all_relationships = property(all_relationships)
 
-    def setup_relationships(cls):
-        for relationship in list(EntityDescriptor.uninitialized_rels):
-            if relationship.setup():
-                EntityDescriptor.uninitialized_rels.remove(relationship)
-    setup_relationships = classmethod(setup_relationships)
+
+class TriggerProxy(object):
+    def __init__(self, class_, attrname, setupfunc):
+        self.class_ = class_
+        self.attrname = attrname
+        self.setupfunc = setupfunc
+
+    def __getattr__(self, name):
+        self.setupfunc()
+        proxied_attr = getattr(self.class_, self.attrname)
+        return getattr(proxied_attr, name)
+
+    def __repr__(self):
+        proxied_attr = getattr(self.class_, self.attrname)
+        return "<TriggerProxy (%s)>" % (self.class_.__name__)
 
 class EntityMeta(type):
     """
@@ -365,24 +417,82 @@ class EntityMeta(type):
     You should only use this if you want to define your own base class for your
     entities (ie you don't want to use the provided 'Entity' class).
     """
+    _ready = False
+    _entities = {}
 
     def __init__(cls, name, bases, dict_):
         # only process subclasses of Entity, not Entity itself
         if bases[0] is object:
             return
 
+        cid = cls._caller = id(sys._getframe(1))
+        caller_entities = EntityMeta._entities.setdefault(cid, {})
+        caller_entities[name] = cls
+
         # create the entity descriptor
         desc = cls._descriptor = EntityDescriptor(cls)
-        EntityDescriptor.current = desc
 
-        # process statements
-        Statement.process(cls)
+        # process statements. Needed before the proxy for metadata
+        Statement.process(cls, 'init')
 
         # setup misc options here (like tablename etc.)
         desc.setup_options()
 
-        # create table & assign (empty) mapper
-        desc.setup()
+        # create trigger proxies
+        # TODO: support entity_name... or maybe not. I'm not sure it makes 
+        # sense in Elixir.
+        cls.setup_proxy()
+
+    def setup_proxy(cls, entity_name=None):
+        #TODO: move as much as possible of those "_private" values to the
+        # descriptor, so that we don't mess the initial class.
+        cls._class_key = sqlalchemy.orm.mapperlib.ClassKey(cls, entity_name)
+
+        tablename = cls._descriptor.tablename
+        schema = cls._descriptor.table_options.get('schema', None)
+        cls._table_key = sqlalchemy.schema._get_table_key(tablename, schema)
+
+        elixir._delayed_descriptors.append(cls._descriptor)
+        
+        mapper_proxy = TriggerProxy(cls, 'mapper', elixir.setup_all)
+        table_proxy = TriggerProxy(cls, 'table', elixir.setup_all)
+
+        sqlalchemy.orm.mapper_registry[cls._class_key] = mapper_proxy
+        md = cls._descriptor.metadata
+        md.tables[cls._table_key] = table_proxy
+
+        # We need to monkeypatch the metadata's table iterator method because 
+        # otherwise it doesn't work if the setup is triggered by the 
+        # metadata.create_all().
+        # This is because ManyToMany relationships add tables AFTER the list 
+        # of tables that are going to be created is "computed" 
+        # (metadata.tables.values()).
+        # see:
+        # - table_iterator method in MetaData class in sqlalchemy/schema.py 
+        # - visit_metadata method in sqlalchemy/ansisql.py
+        original_table_iterator = md.table_iterator
+        if not hasattr(original_table_iterator, 
+                       '_non_elixir_patched_iterator'):
+            def table_iterator(*args, **kwargs):
+                elixir.setup_all()
+                return original_table_iterator(*args, **kwargs)
+            table_iterator.__doc__ = original_table_iterator.__doc__
+            table_iterator._non_elixir_patched_iterator = \
+                original_table_iterator
+            md.table_iterator = table_iterator
+
+        cls._ready = True
+
+    def __getattribute__(cls, name):
+        if type.__getattribute__(cls, "_ready"):
+            #TODO: we need to add all assign_mapper methods
+            if name in ('c', 'table', 'mapper'):
+                elixir.setup_all()
+        return type.__getattribute__(cls, name)
+
+    def __call__(cls, *args, **kwargs):
+        elixir.setup_all()
+        return type.__call__(cls, *args, **kwargs)
 
     def q(cls):
         return Query(cls, session=elixir.objectstore.session)
@@ -417,4 +527,19 @@ class Entity(object):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    def get_by(cls, *args, **kwargs):
+#        warnings.warn("The get_by method on the class is deprecated."
+#                      "You should use cls.query.get_by", DeprecationWarning,
+#                      stacklevel=2)
+        return cls.q.get_by(*args, **kwargs)
+    get_by = classmethod(get_by)
+
+    def select(cls, *args, **kwargs):
+#        warnings.warn("The select method on the class is deprecated."
+#                      "You should use cls.query.select", DeprecationWarning,
+#                      stacklevel=2)
+        return cls.q.select(*args, **kwargs)
+    select = classmethod(select)
+
 
