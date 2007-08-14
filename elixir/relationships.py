@@ -357,6 +357,7 @@ class BelongsTo(Relationship):
         Find all primary keys on the target and create foreign keys on the 
         source accordingly.
         '''
+
         if self.foreign_key:
             return
 
@@ -472,8 +473,6 @@ class HasOne(Relationship):
                       "manually by using the inverse keyword."
                       % (self.target.__name__, self.name,
                          self.entity.__name__))
-        # make sure it is set up because it creates the foreign key we'll need
-        self.inverse.create_keys(pk)
     
     def get_prop_kwargs(self):
         kwargs = {'uselist': self.uselist}

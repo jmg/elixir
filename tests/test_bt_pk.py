@@ -21,12 +21,10 @@ class TestBelongsToWithPrimaryKey(object):
             has_field('name', Unicode(40), primary_key=True)
          
         class B(Entity):
-            belongs_to('a', of_kind='A',
-                       column_kwargs={'primary_key': True})
+            belongs_to('a', of_kind='A', primary_key=True)
          
         class C(Entity):
-            belongs_to('b', of_kind='B',
-                       column_kwargs={'primary_key': True})
+            belongs_to('b', of_kind='B', primary_key=True)
 
         setup_all()
 
@@ -39,8 +37,7 @@ class TestBelongsToWithPrimaryKey(object):
             pass
          
         class B(Entity):
-            belongs_to('a', of_kind='A',
-                       column_kwargs={'primary_key': True})
+            belongs_to('a', of_kind='A', primary_key=True)
          
         setup_all()
 
@@ -55,13 +52,11 @@ class TestBelongsToWithPrimaryKey(object):
          
         class B(Entity):
             has_field('num', Integer, primary_key=True)
-            belongs_to('a', of_kind='A',
-                       column_kwargs={'primary_key': True})
+            belongs_to('a', of_kind='A', primary_key=True)
          
         class C(Entity):
             has_field('num', Integer, primary_key=True)
-            belongs_to('b', of_kind='B',
-                       column_kwargs={'primary_key': True})
+            belongs_to('b', of_kind='B', primary_key=True)
 
         setup_all()
 
@@ -82,12 +77,10 @@ class TestBelongsToWithPrimaryKey(object):
             belongs_to('c', of_kind='C', use_alter=True)
          
         class B(Entity):
-            belongs_to('a', of_kind='A',
-                       column_kwargs={'primary_key': True})
+            belongs_to('a', of_kind='A', primary_key=True)
          
         class C(Entity):
-            belongs_to('b', of_kind='B',
-                       column_kwargs={'primary_key': True})
+            belongs_to('b', of_kind='B', primary_key=True)
 
         setup_all()
 
@@ -95,4 +88,14 @@ class TestBelongsToWithPrimaryKey(object):
         assert C.table.primary_key.columns.has_key('b_a_id')
         assert A.table.primary_key.columns.has_key('id')
         assert A.table.columns.has_key('c_b_a_id')
+
+    def test_inverse(self):
+        class A(Entity):
+            has_one('b', of_kind='B')
+
+        class B(Entity):
+            belongs_to('a', of_kind='A', primary_key=True)
+
+        setup_all()
+            
 
