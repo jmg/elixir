@@ -134,6 +134,9 @@ def setup_all(create_tables=False):
                 desc.setup_table()
 
         for desc in _delayed_descriptors:
+            Statement.process(desc.entity, 'before_table')
+
+        for desc in _delayed_descriptors:
             for rel in desc.relationships.itervalues():
                 rel.create_tables()
 
@@ -144,12 +147,20 @@ def setup_all(create_tables=False):
             desc.setup_events()
         
         for desc in _delayed_descriptors:
+            Statement.process(desc.entity, 'before_mapper')
+
+        for desc in _delayed_descriptors:
             desc.setup_mapper()
+
+        for desc in _delayed_descriptors:
+            Statement.process(desc.entity, 'after_mapper')
 
         for desc in _delayed_descriptors:
             for rel in desc.relationships.itervalues():
                 rel.create_properties()
 
+        for desc in _delayed_descriptors:
+            Statement.process(desc.entity, 'finalize')
 
     finally:
         # make sure that even if we fail to initialize, we don't leave junk for

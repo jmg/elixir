@@ -29,14 +29,16 @@ class Statement(object):
         '''
         Apply all statements to the given entity.
         '''
-        # loop over all statements in the class's statement list named "when"
+        # loop over all statements in the class's statement list
         # and apply them, i.e. instanciate the corresponding classes
         statements = getattr(entity, STATEMENTS, [])
         for num, statement in enumerate(statements):
+            # replace the statement "definition tuple" by its instance
             if isinstance(statement, tuple):
                 statement, args, kwargs = statement
                 statements[num] = statement.target(entity, *args, **kwargs)
             else:
+                # otherwise, call the corresponding method
                 if when and hasattr(statement, when):
                     getattr(statement, when)()
 

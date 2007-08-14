@@ -433,7 +433,7 @@ class EntityMeta(type):
         desc = cls._descriptor = EntityDescriptor(cls)
 
         # process statements. Needed before the proxy for metadata
-        Statement.process(cls, 'init')
+        Statement.process(cls)
 
         # setup misc options here (like tablename etc.)
         desc.setup_options()
