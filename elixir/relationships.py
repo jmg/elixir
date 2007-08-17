@@ -138,6 +138,30 @@ corresponding ``belongs_to`` relationship in the other way. This is because the
 ``has_many`` relationship needs the foreign key created by the ``belongs_to`` 
 relationship.
 
+There is an alternate form of the ``has_many`` relationship that takes only
+two keyword arguments: `through` and `via` in order to encourage a more
+rich form of many-to-many relationship that is an alternative to the 
+``has_and_belongs_to_many`` statement.  Here is an example:
+
+::
+
+    class Person(Entity):
+        has_field('name', Unicode)
+        has_many('assignments', of_kind='Assignment', inverse='person')
+        has_many('projects', through='assignments', via='project')
+
+    class Project(Entity):
+        has_field('title', Unicode)
+        has_many('assignments', of_kind='Assignment', inverse='project')
+
+    class Assignment(Entity):
+        has_field('start_date', DateTime)
+        belongs_to('person', of_kind='Person', inverse='assignments')
+        belongs_to('project', of_kind='Project', inverse='assignments')
+
+In the above example, a `Person` has many `projects` through the `Assignment`
+relationship object, via a `project` attribute.
+
 `has_and_belongs_to_many`
 -------------------------
 
@@ -199,6 +223,7 @@ from sqlalchemy.orm     import relation, backref
 from elixir.statements  import Statement
 from elixir.fields      import Field
 from elixir.entity      import EntityDescriptor, EntityMeta
+from sqlalchemy.ext.associationproxy import association_proxy
 
 import sys
 
@@ -497,6 +522,13 @@ class HasOne(Relationship):
 
 class HasMany(HasOne):
     uselist = True
+    
+    def __init__(self, entity, name, *args, **kwargs):
+        if 'through' in kwargs and 'via' in kwargs:
+            setattr(entity, name, association_proxy(kwargs.get('through'), kwargs.get('via')))
+            return
+        
+        super(HasMany, self).__init__(entity, name, *args, **kwargs)
     
     def get_prop_kwargs(self):
         kwargs = super(HasMany, self).get_prop_kwargs()
