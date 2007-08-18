@@ -39,7 +39,7 @@ as part of the versioning process, and will need to be handled manually. Only
 values within the entity's main table will be versioned into the history table.
 '''
 
-from elixir                import Integer, objectstore, DateTime
+from elixir                import Integer, DateTime
 from elixir.statements     import Statement
 from elixir.fields         import Field
 from sqlalchemy            import Table, Column, and_, desc
@@ -142,7 +142,7 @@ class ActsAsVersioned(object):
                         
         # attach utility methods and properties to the entity
         def get_versions(self):
-            return objectstore.query(Version).select(get_history_where(self))
+            return entity._descriptor.objectstore.query(Version).select(get_history_where(self))
         
         def get_as_of(self, dt):
             # if the passed in timestamp is older than our current version's
@@ -151,7 +151,7 @@ class ActsAsVersioned(object):
             
             # otherwise, we need to look to the history table to get our
             # older version
-            items = objectstore.query(Version).select(
+            items = entity._descriptor.objectstore.query(Version).select(
                 and_(get_history_where(self), Version.c.timestamp <= dt),
                 order_by=desc(Version.c.timestamp),
                 limit=1
@@ -167,7 +167,7 @@ class ActsAsVersioned(object):
             )).execute().fetchone()
             
             entity.table.update(get_entity_where(self)).execute(
-                **dict(old_version.items())
+                dict(old_version.items())
             )
             
             hist.delete(and_(get_history_where(self), hist.c.version>=to_version)).execute()

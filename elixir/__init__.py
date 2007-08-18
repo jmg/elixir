@@ -23,7 +23,7 @@ from sqlalchemy.types import *
 
 from elixir.options import using_options, using_table_options, \
                            using_mapper_options, options_defaults
-from elixir.entity import Entity, EntityMeta, EntityDescriptor
+from elixir.entity import Entity, EntityMeta, EntityDescriptor, Objectstore
 from elixir.fields import has_field, with_fields, Field
 from elixir.relationships import belongs_to, has_one, has_many, \
                                  has_and_belongs_to_many
@@ -55,32 +55,21 @@ try:
     # this only happens when the threadlocal extension is used
     objectstore = sqlalchemy.objectstore
 except AttributeError:
-    # thread local SessionContext
-    class Objectstore(object):
-
-        def __init__(self, *args, **kwargs):
-            self.context = SessionContext(*args, **kwargs)
-
-        def __getattr__(self, name):
-            return getattr(self.context.current, name)
-
-        session = property(lambda s:s.context.current)
-
-    objectstore = Objectstore(sqlalchemy.orm.create_session)
+    objectstore = Objectstore(SessionContext(sqlalchemy.orm.create_session))
 
 metadatas = set()
 
 
-def create_all():
+def create_all(engine=None):
     'Create all necessary tables for all declared entities'
     for md in metadatas:
-        md.create_all()
+        md.create_all(bind=engine)
 
 
-def drop_all():
+def drop_all(engine=None):
     'Drop all tables for all declared entities'
     for md in metadatas:
-        md.drop_all()
+        md.drop_all(bind=engine)
 
 _delayed_descriptors = list()
 

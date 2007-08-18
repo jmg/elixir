@@ -7,7 +7,6 @@ from sqlalchemy.orm import create_session
 from sqlalchemy.exceptions import SQLError, ConcurrentModificationError 
 from elixir import *
 
-
 class TestOptions(object):
     def setup(self):
         metadata.bind = 'sqlite:///'
@@ -76,7 +75,96 @@ class TestOptions(object):
         options_defaults['tablename'] = None
 
 
+class TestSessionOptions(object):
+    def setup(self):
+        metadata.bind = None
 
+    def teardown(self):
+        cleanup_all()
+
+    def test_session_context(self):
+        from sqlalchemy.ext.sessioncontext import SessionContext
+        from sqlalchemy.orm import create_session
+        from sqlalchemy import create_engine
+
+        engine = create_engine('sqlite:///')
+        
+        ctx = SessionContext(lambda: create_session(bind=engine))
+        
+        class Person(Entity):
+            using_options(session=ctx)
+            has_field('firstname', Unicode(30))
+            has_field('surname', Unicode(30))
+
+        create_all(engine)
+
+        homer = Person(firstname="Homer", surname='Simpson')
+        bart = Person(firstname="Bart", surname='Simpson')
+        ctx.current.flush()
+        
+        assert Person.query().session is ctx.current
+        
+        assert Person.query().filter_by(firstname='Homer').one() is homer
+
+    def test_scoped_session(self):
+        try:
+            from sqlalchemy.orm import scoped_session, sessionmaker
+        except ImportError:
+            print "Not on version 0.4 of sqlalchemy"
+            return
+            
+        from sqlalchemy import create_engine
+
+        engine = create_engine('sqlite:///')
+
+        Session = scoped_session(sessionmaker(bind=engine))
+
+        class Person(Entity):
+            using_options(session=Session)
+            has_field('firstname', Unicode(30))
+            has_field('surname', Unicode(30))
+
+        create_all(engine)
+
+        homer = Person(firstname="Homer", surname='Simpson')
+        bart = Person(firstname="Bart", surname='Simpson')
+        Session.flush()
+
+        assert Person.query().session is Session()
+
+        assert Person.query().filter_by(firstname='Homer').one() is homer
+        
+    def test_global_scoped_session(self):
+        try:
+            from sqlalchemy.orm import scoped_session, sessionmaker
+        except ImportError:
+            print "Not on version 0.4 of sqlalchemy"
+            return
+
+        from sqlalchemy import create_engine
+
+        global session
+        
+        engine = create_engine('sqlite:///')
+        
+        session = scoped_session(sessionmaker(bind=engine))
+        
+        class Person(Entity):
+            has_field('firstname', Unicode(30))
+            has_field('surname', Unicode(30))
+
+        create_all(engine)
+
+        homer = Person(firstname="Homer", surname='Simpson')
+        bart = Person(firstname="Bart", surname='Simpson')
+        session.flush()
+        
+        assert Person.query().session is session()
+        
+        assert Person.query().filter_by(firstname='Homer').one() is homer
+
+        del session
+        
 class TestTableOptions(object):
     def setup(self):
         metadata.bind = 'sqlite:///'

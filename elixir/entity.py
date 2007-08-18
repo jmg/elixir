@@ -6,6 +6,7 @@ from sqlalchemy                     import Table, Integer, String, desc,\
                                            ForeignKey
 from sqlalchemy.orm                 import deferred, Query, MapperExtension
 from sqlalchemy.ext.assignmapper    import assign_mapper
+from sqlalchemy.ext.sessioncontext  import SessionContext
 from sqlalchemy.util                import OrderedDict
 import sqlalchemy
 from elixir.statements              import Statement
@@ -155,7 +156,15 @@ class EntityDescriptor(object):
         if self.entity.mapper:
             return
         
-        session = getattr(self.module, 'session', elixir.objectstore)
+        # look for a 'session' attribute assigned to the entity
+        # (or entity's base class)
+        session = getattr(self, 'session', None)
+        if session is None:
+            session = getattr(self.module, 'session', elixir.objectstore)
+        if not isinstance(session, Objectstore):
+            session = Objectstore(session)
+            
+        self.objectstore = session
         
         kwargs = self.mapper_options
         if self.order_by:
@@ -212,7 +221,7 @@ class EntityDescriptor(object):
         else:
             args = [self.entity.table]
 
-        assign_mapper(session.context, self.entity, properties=properties, 
+        self.objectstore.mapper(self.entity, properties=properties, 
                       *args, **kwargs)
 
     def _get_children(self):
@@ -495,7 +504,7 @@ class EntityMeta(type):
         return type.__call__(cls, *args, **kwargs)
 
     def q(cls):
-        return Query(cls, session=elixir.objectstore.session)
+        return Query(cls, session=cls._descriptor.objectstore.session)
     q = property(q)
 
 
@@ -542,4 +551,28 @@ class Entity(object):
         return cls.q.select(*args, **kwargs)
     select = classmethod(select)
 
+
+class Objectstore(object):
+    """a wrapper for a SQLAlchemy session-making object, such as 
+    SessionContext or ScopedSession.
+    
+    Uses the ``registry`` attribute present on both objects
+    (versions 0.3 and 0.4) in order to return the current
+    contextual session.
+    """
+    
+    def __init__(self, ctx):
+        self.context = ctx
+        self.is_ctx = isinstance(ctx, SessionContext)
+
+    def __getattr__(self, name):
+        return getattr(self.context.registry(), name)
+    
+    def mapper(self, cls, *args, **kwargs):
+        if self.is_ctx:
+            assign_mapper(self.context, cls, *args, **kwargs)
+        else:
+            cls.mapper = self.context.mapper(cls, *args, **kwargs)
+        
+    session = property(lambda s:s.context.registry())
 

@@ -136,6 +136,7 @@ class UsingOptions(object):
         'version_id_col',
         'metadata',
         'order_by',
+        'session',
     )
     
     def __init__(self, entity, *args, **kwargs):
