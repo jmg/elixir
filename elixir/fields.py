@@ -27,7 +27,7 @@ behavior. The following arguments are supported:
 +-------------------+---------------------------------------------------------+
 | ``deferred``      | Specify whether this particular column should be        |
 |                   | fetched by default (along with the other columns) when  |
-|                   | an instance of the entity is fetched from the database  | 
+|                   | an instance of the entity is fetched from the database  |
 |                   | or rather only later on when this particular column is  |
 |                   | first referenced. This can be useful when one wants to  |
 |                   | avoid loading a large text or binary field into memory  |
