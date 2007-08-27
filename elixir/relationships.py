@@ -147,17 +147,17 @@ rich form of many-to-many relationship that is an alternative to the
 
     class Person(Entity):
         has_field('name', Unicode)
-        has_many('assignments', of_kind='Assignment', inverse='person')
+        has_many('assignments', of_kind='Assignment')
         has_many('projects', through='assignments', via='project')
-
-    class Project(Entity):
-        has_field('title', Unicode)
-        has_many('assignments', of_kind='Assignment', inverse='project')
 
     class Assignment(Entity):
         has_field('start_date', DateTime)
-        belongs_to('person', of_kind='Person', inverse='assignments')
-        belongs_to('project', of_kind='Project', inverse='assignments')
+        belongs_to('person', of_kind='Person')
+        belongs_to('project', of_kind='Project')
+
+    class Project(Entity):
+        has_field('title', Unicode)
+        has_many('assignments', of_kind='Assignment')
 
 In the above example, a `Person` has many `projects` through the `Assignment`
 relationship object, via a `project` attribute.
@@ -237,9 +237,19 @@ class Relationship(object):
     def __init__(self, entity, name, *args, **kwargs):
         self.entity = entity
         self.name = name
-        self.of_kind = kwargs.pop('of_kind')
         self.inverse_name = kwargs.pop('inverse', None)
-        
+
+        if 'through' in kwargs and 'via' in kwargs:
+            setattr(entity, name, 
+                    association_proxy(kwargs.pop('through'), kwargs.pop('via'),
+                                      **kwargs))
+            return
+        elif 'through' in kwargs or 'via' in kwargs:
+            raise Exception("'through' and 'via' relationship keyword "
+                            "arguments should be used in combination.")
+
+        self.of_kind = kwargs.pop('of_kind')
+
         self._target = None
         self._inverse = None
         
@@ -429,7 +439,7 @@ class BelongsTo(Relationship):
                 if self.colname:
                     colname = self.colname[key_num]
                 else:
-                    colname = '%s_%s' % (self.name, pk_col.name)
+                    colname = '%s_%s' % (self.name, pk_col.key)
 
                 # we use a Field here instead of using a Column directly 
                 # because add_field can be used before the table is created
@@ -446,7 +456,7 @@ class BelongsTo(Relationship):
 
                 # build the list of column "paths" the foreign key will 
                 # point to
-                target_path = "%s.%s" % (target_desc.tablename, pk_col.name)
+                target_path = "%s.%s" % (target_desc.tablename, pk_col.key)
                 schema = target_desc.table_options.get('schema', None)
                 if schema is not None:
                     target_path = "%s.%s" % (schema, target_path)
@@ -522,13 +532,6 @@ class HasOne(Relationship):
 
 class HasMany(HasOne):
     uselist = True
-    
-    def __init__(self, entity, name, *args, **kwargs):
-        if 'through' in kwargs and 'via' in kwargs:
-            setattr(entity, name, association_proxy(kwargs.get('through'), kwargs.get('via')))
-            return
-        
-        super(HasMany, self).__init__(entity, name, *args, **kwargs)
     
     def get_prop_kwargs(self):
         kwargs = super(HasMany, self).get_prop_kwargs()
@@ -628,7 +631,7 @@ class HasAndBelongsToMany(Relationship):
                 fk_refcols = list()
             
                 for pk_col in desc.primary_keys:
-                    colname = '%s_%s' % (desc.tablename, pk_col.name)
+                    colname = '%s_%s' % (desc.tablename, pk_col.key)
 
                     # In case we have a many-to-many self-reference, we 
                     # need to tweak the names of the columns so that we 
@@ -645,7 +648,7 @@ class HasAndBelongsToMany(Relationship):
 
                     # Build the list of columns the foreign key will point
                     # to.
-                    fk_refcols.append(desc.tablename + '.' + pk_col.name)
+                    fk_refcols.append(desc.tablename + '.' + pk_col.key)
 
                     # Build join clauses (in case we have a self-ref)
                     if self.entity is self.target:
@@ -738,7 +741,7 @@ def _get_join_clauses(local_table, local_cols1, local_cols2, target_table):
             # if all columns point to the correct table, we use the constraint
             for fk in constraint.elements:
                 if fk.references(target_table):
-                    fk_colnames.append(fk.parent.name)
+                    fk_colnames.append(fk.parent.key)
                 else:
                     use_constraint = False
             if use_constraint:

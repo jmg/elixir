@@ -36,6 +36,19 @@ behavior. The following arguments are supported:
 |                   | or placed into groups that lazy-load together (by using |
 |                   | ``deferred`` = `"group_name"`).                         |
 +-------------------+---------------------------------------------------------+
+| ``through``       | Specify a relation name to go through. This field will  |
+|                   | not exist as a column on the database but will be a     |
+|                   | property which automatically proxy values to the        |
+|                   | ``attribute`` attribute of the object pointed to by the |
+|                   | relation. If the ``attribute`` argument is not present, |
+|                   | the name of the current field will be used. In an       |
+|                   | has_field statement, you can only proxy through a       |
+|                   | belongs_to or an has_one relationship.                  |
++-------------------+---------------------------------------------------------+
+| ``attribute``     | Name of the "endpoint" attribute to proxy to. This      |
+|                   | should only be used in combination with the ``through`` |
+|                   | argument.                                               |
++-------------------+---------------------------------------------------------+
 
 Any other keyword argument is passed on to the SQLAlchemy
 ``Column`` object. Please refer to the `SQLAlchemy Column object's
@@ -75,6 +88,7 @@ Here is a quick example of how to use ``with_fields``.
 
 from sqlalchemy             import Column
 from elixir.statements      import Statement
+from sqlalchemy.ext.associationproxy import association_proxy
 
 __pudge_all__ = ['Field']
 
@@ -125,6 +139,13 @@ class Field(object):
 class HasField(object):
 
     def __init__(self, entity, name, *args, **kwargs):
+        if 'through' in kwargs:
+            setattr(entity, name, 
+                    association_proxy(kwargs.pop('through'), 
+                                      kwargs.pop('attribute', name),
+                                      **kwargs))
+            return
+
         field = Field(*args, **kwargs)
         field.colname = name
         entity._descriptor.add_field(field)
