@@ -11,7 +11,14 @@ class Address(Entity):
     has_field('city', String)
     using_options(shortnames=True)
 
+
+class Comment(Entity):
+    has_field('id', Integer, primary_key=True)
+    has_field('name', Unicode)
+    has_field('text', String)
+
 is_addressable = associable(Address, 'addresses')
+is_commentable = associable(Comment, 'comments')
 
 class Person(Entity):
     has_field('id', Integer, primary_key=True)
@@ -19,6 +26,7 @@ class Person(Entity):
     has_many('orders', of_kind='Order')
     using_options(shortnames=True)
     is_addressable()
+    is_commentable()
 
 class Order(Entity):
     has_field('order_num', Integer, primary_key=True)
@@ -26,6 +34,19 @@ class Order(Entity):
     belongs_to('person', of_kind='Person')
     using_options(shortnames=True)
     is_addressable('address', uselist=False)
+
+class Foo(Entity):
+    pass
+
+class Bar(Entity):
+    pass
+
+is_fooable = associable(Foo)
+is_barable = associable(Bar)
+
+class Quux(Entity):
+    is_fooable()
+    is_barable()
 
 class TestOrders(object):
     def setup(self):
@@ -36,7 +57,7 @@ class TestOrders(object):
     def teardown(self):
         cleanup_all()
     
-    def test_bidirectional(self):
+    def test_basic(self):
         home = Address(street='123 Elm St.', city='Spooksville')
         work = Address(street='243 Hooper st.', city='Cupertino')
         user = Person(name='Jane Doe')

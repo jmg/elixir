@@ -119,7 +119,12 @@ def associable(entity, plural_name=None, lazy=True):
     '''
     interface_name = entity.table.name
     able_name = interface_name + 'able'
-    attr_name = "%s_rel" % interface_name
+    
+    if plural_name:
+        attr_name = "%s_rel" % plural_name
+    else:
+        plural_name = interface_name
+        attr_name = "%s_rel" % interface_name
     
     association_table = sa.Table("%s" % able_name, entity._descriptor.metadata,
         sa.Column('%s_id' % able_name, sa.Integer, primary_key=True),

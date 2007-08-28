@@ -1,4 +1,6 @@
 0.4.0
+- Fixed bug in associable not properly picking out its own plural name when
+  none is provided. Added unit test for the bug.
 - Added ext sub-package for additional Elixir statements.
 - Added ext.associable for generating polymorphic associations with Elixir
   Statements. (Many thanks to Mike Bayer for his support on writing this.)
