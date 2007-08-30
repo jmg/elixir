@@ -319,19 +319,6 @@ class Relationship(object):
                 # classes).
                 caller_entities = EntityMeta._entities[self.entity._caller]
                 self._target = caller_entities[classname]
-        if not self._target:
-            # This is ugly but we need it because the class which is
-            # currently being defined (we have to keep in mind we are in 
-            # its metaclass code) is not yet available in the module
-            # namespace, so the getattr above fails. And unfortunately,
-            # this doesn't only happen for the owning entity of this
-            # relation since we might be setting up a deferred relation.
-            e = self.entity
-            if classname == e.__name__ or \
-                    self.of_kind == e.__module__ +'.'+ e.__name__:
-                self._target = e
-            else:
-                return None
         return self._target
     target = property(target)
     
