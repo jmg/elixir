@@ -113,47 +113,23 @@ from elixir.statements import Statement
 import elixir as el
 import sqlalchemy as sa
 
-def associable(entity, plural_name=None, lazy=True):
+def associable(assoc_entity, plural_name=None, lazy=True):
     '''
     Generate an associable Elixir Statement
     '''
-    interface_name = entity.table.name
+    interface_name = assoc_entity._descriptor.tablename
     able_name = interface_name + 'able'
-    
+
     if plural_name:
         attr_name = "%s_rel" % plural_name
     else:
         plural_name = interface_name
         attr_name = "%s_rel" % interface_name
-    
-    association_table = sa.Table("%s" % able_name, entity._descriptor.metadata,
-        sa.Column('%s_id' % able_name, sa.Integer, primary_key=True),
-        sa.Column('%s_type' % able_name, sa.String(40), nullable=False),
-    )
-    
-    association_to_table = sa.Table("%s_to_%s" % (able_name, interface_name), entity._descriptor.metadata,
-        sa.Column('%s_id' % able_name, sa.Integer, sa.ForeignKey(getattr(association_table.c, '%s_id' % able_name), ondelete="CASCADE"), primary_key=True),
-        sa.Column('%s_id' % interface_name, sa.Integer, sa.ForeignKey(entity.table.c.id, ondelete="RESTRICT"), primary_key=True),
-    )
-    
-    entity._assoc_table = association_table
-    entity._assoc_to_table = association_to_table
-    assoc_entity = entity
-    assoc_entity._assoc_relations = []
-    
-    def finder(key):
-        def find_by(cls, value):
-            pass
-        return find_by
-    
-    for col in entity.table.columns.keys():
-        if col != 'id':
-            setattr(entity, 'find_by_%s' % col, finder(col))
-    
+
     class GenericAssoc(object):
-        def __init__(self, name):
-            setattr(self, '%s_type' % able_name, name)
-    
+        def __init__(self, tablename):
+            self.type = tablename
+   
     class Associable(el.relationships.Relationship):
         """An associable Elixir Statement object"""
         def __init__(self, entity, name=None, uselist=True, lazy=True):
@@ -165,38 +141,47 @@ def associable(entity, plural_name=None, lazy=True):
                 self.name = plural_name
             else:
                 self.name = name
-            
-            assoc_entity._assoc_relations.append(entity)
-            
-            field = type('myfield', (object,), {})
-            field.colname = '%s_assoc_id' % interface_name
-            field.deferred = False
-            field.primary_key = False
-            # CHANGE: I had to change the second argument from None to sa.Integer
-            # in order to get associable working with the versioning extension...
-            # Ben: was this the right thing to do?
-            field.column = sa.Column('%s_assoc_id' % interface_name, sa.Integer, 
-                                  sa.ForeignKey('%s.%s_id' % (able_name, able_name)))
-            entity._descriptor.add_field(field)
-            entity._descriptor.relationships[able_name] = self
-            
-            def select_by(cls, **kwargs):
-                return cls.query().join(attr_name).join('targets').filter_by(**kwargs).list()
-            setattr(entity, 'select_by_%s' % self.name, classmethod(select_by))
-            
-            def select(cls, *args, **kwargs):
-                return cls.query().join(attr_name).join('targets').filter(*args, **kwargs).list()
-            setattr(entity, 'select_%s' % self.name, classmethod(select))
-        
-        def setup(self):
-            self.create_properties()
-            return True
+            self.entity._descriptor.relationships[able_name] = self
+
+        def create_keys(self, pk):
+            field = el.Field(sa.Integer, sa.ForeignKey('%s.id' % able_name),
+                          colname='%s_assoc_id' % interface_name)
+            self.entity._descriptor.add_field(field)
+
+        def create_tables(self):
+            if not hasattr(assoc_entity, '_assoc_table'):
+                association_table = sa.Table("%s" % able_name, assoc_entity._descriptor.metadata,
+                    sa.Column('id', sa.Integer, primary_key=True),
+                    sa.Column('type', sa.String(40), nullable=False),
+                )
+                
+                association_to_table = sa.Table("%s_to_%s" % (able_name, interface_name), assoc_entity._descriptor.metadata,
+                    sa.Column('assoc_id', sa.Integer, sa.ForeignKey(association_table.c.id, ondelete="CASCADE"), primary_key=True),
+                    #FIXME: this assumes a single id col
+                    sa.Column('%s_id' % interface_name, sa.Integer, sa.ForeignKey(assoc_entity.table.c.id, ondelete="RESTRICT"), primary_key=True),
+                )
+
+                assoc_entity._assoc_table = association_table
+                assoc_entity._assoc_to_table = association_to_table
+
+        def after_mapper(self):
+            if not hasattr(assoc_entity, '_assoc_mapper'):
+                assoc_entity._assoc_mapper = sa.orm.mapper(GenericAssoc,
+                        assoc_entity._assoc_table, properties={
+                    'targets': sa.orm.relation(assoc_entity,
+                        secondary=assoc_entity._assoc_to_table,
+                                           lazy=lazy, backref='associations',
+                                           order_by=assoc_entity.mapper.order_by)
+                })
         
         def create_properties(self):
             entity = self.entity
-            entity.mapper.add_property(attr_name, sa.relation(GenericAssoc, lazy=self.lazy,
+            entity.mapper.add_property(attr_name, sa.orm.relation(GenericAssoc, lazy=self.lazy,
                                        backref='_backref_%s' % entity.table.name))
-            entity.mapper.add_property(self.name, sa.synonym(attr_name))
+            # this is strange! self.name is both set via mapper synonym and 
+            # the python property
+            entity.mapper.add_property(self.name, sa.orm.synonym(attr_name))
+
             if self.uselist:
                 def get(self):
                     if getattr(self, attr_name) is None:
@@ -219,9 +204,13 @@ def associable(entity, plural_name=None, lazy=True):
                     getattr(self, attr_name).targets = [value]
                 setattr(entity, self.name, property(get, set))
 
-    sa.mapper(GenericAssoc, association_table, properties={
-        'targets': sa.relation(entity, secondary=association_to_table,
-                               lazy=lazy, backref='association',
-                               order_by=entity.mapper.order_by)
-    })
+            # add helper methods
+            def select_by(cls, **kwargs):
+                return cls.query().join([attr_name, 'targets']).filter_by(**kwargs).all()
+            setattr(entity, 'select_by_%s' % self.name, classmethod(select_by))
+            
+            def select(cls, *args, **kwargs):
+                return cls.query().join([attr_name, 'targets']).filter(*args, **kwargs).all()
+            setattr(entity, 'select_%s' % self.name, classmethod(select))
+
     return Statement(Associable)
