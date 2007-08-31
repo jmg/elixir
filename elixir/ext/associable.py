@@ -144,8 +144,10 @@ def associable(assoc_entity, plural_name=None, lazy=True):
             self.entity._descriptor.relationships[able_name] = self
 
         def create_keys(self, pk):
+            if pk:
+                return
             field = el.Field(sa.Integer, sa.ForeignKey('%s.id' % able_name),
-                          colname='%s_assoc_id' % interface_name)
+                             colname='%s_assoc_id' % interface_name)
             self.entity._descriptor.add_field(field)
 
         def create_tables(self):
@@ -166,18 +168,23 @@ def associable(assoc_entity, plural_name=None, lazy=True):
 
         def after_mapper(self):
             if not hasattr(assoc_entity, '_assoc_mapper'):
-                assoc_entity._assoc_mapper = sa.orm.mapper(GenericAssoc,
-                        assoc_entity._assoc_table, properties={
-                    'targets': sa.orm.relation(assoc_entity,
-                        secondary=assoc_entity._assoc_to_table,
-                                           lazy=lazy, backref='associations',
-                                           order_by=assoc_entity.mapper.order_by)
+                assoc_entity._assoc_mapper = sa.orm.mapper(
+                    GenericAssoc, assoc_entity._assoc_table, properties={
+                        'targets': sa.orm.relation(
+                                       assoc_entity,
+                                       secondary=assoc_entity._assoc_to_table,
+                                       lazy=lazy, backref='associations',
+                                       order_by=assoc_entity.mapper.order_by)
                 })
         
         def create_properties(self):
             entity = self.entity
-            entity.mapper.add_property(attr_name, sa.orm.relation(GenericAssoc, lazy=self.lazy,
-                                       backref='_backref_%s' % entity.table.name))
+            entity.mapper.add_property(
+                attr_name, 
+                sa.orm.relation(GenericAssoc, lazy=self.lazy,
+                                backref='_backref_%s' % entity.table.name)
+            )
+
             # this is strange! self.name is both set via mapper synonym and 
             # the python property
             entity.mapper.add_property(self.name, sa.orm.synonym(attr_name))
