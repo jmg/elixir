@@ -115,7 +115,7 @@ class Field(object):
 
     def copy(self):
         '''
-        Returns a copy of the field
+        Returns a copy of the field.
         '''
 
         kwargs = self.kwargs

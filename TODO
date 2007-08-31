@@ -4,8 +4,6 @@ TODO
 Website/doc related
 -------------------
 
-- make a news page
-
 - make a page with "extras" (like the bindings for vim and textmate that were
   posted on the "group" page). Nobody will find them on the google page unless 
   they saw the initial announcement on the list.
@@ -28,7 +26,7 @@ Website/doc related
     ? multi-database
     ? deferred fields
 
-- complete the FAQ, and possibly create a page on the website for it.
+- complete the FAQ
 
 - document basic Types (at least link to the SQLAlchemy page listing available
   types)
@@ -41,6 +39,9 @@ Code related
 - change setup order so that you can order_by a column created by a belongs_to
   relationship.
 
+- check that relations/fields setup with through kwargs endup with correct type
+  and cardinality (using a finalize method in HasField and Relationship)
+
 - make it possible to make a relation to an SA-mapped class (add test case)
   it'll be slightly problematic for the translate_order_by in HasMany and
   HABTM. We'll need to extract that method as a global function.
@@ -49,7 +50,7 @@ Code related
 - add a test case for a relation from an SA-mapped class to an Elixir Entity
   (it works but we need a proper test for that).
 
-- support Overriding Column Names and wrapping column in properties
+- support Overriding Column Names and wrapping column in python properties
   http://www.sqlalchemy.org/docs/adv_datamapping.html#advdatamapping_properties_overriding
   (ie support synonym).
 
@@ -102,11 +103,6 @@ discussed before doing anything.
 
 - Make the session context extension/assign_mapper optional
 
-- Provide something to facilitate mapper extensions.
-  Beachcoder's code (see below) seem pretty cool but I wonder if it wouldn't
-  be possible to do something simpler.
-  http://beachcoder.wordpress.com/2007/05/02/adding-event-callbacks-to-sqlalchemyelixir-classes/
-
 - I'm not sure it would be worth it but we might want to put a section
   "contributing" on the website. In that case it might be a good idea to point
   to this file so that people know what can be done.
@@ -128,12 +124,7 @@ discussed before doing anything.
         has_field('extra', Integer)
         belongs_to('a', of_kind='A')
 
-- support primary_key mapper argument (and all other arguments which take
-  column arguments in a generic way)
-
-- use a list for delayed entities, instead of a set, this might solve some
-  init problems in delayed_setup mode because then entities would be
-  initialized in the order they are defined.
+- support all mapper arguments which take column arguments in a generic way
 
 - instead of linking the descriptor in the entity (cls._descriptor) we could 
   do it externally, like the mappers in SA. This would solve some of the 

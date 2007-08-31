@@ -3,7 +3,7 @@ Entity baseclass, metaclass and descriptor
 '''
 
 from sqlalchemy                     import Table, Integer, String, desc,\
-                                           ForeignKey
+                                           ForeignKey, and_
 from sqlalchemy.orm                 import deferred, Query, MapperExtension
 from sqlalchemy.ext.assignmapper    import assign_mapper
 from sqlalchemy.ext.sessioncontext  import SessionContext
@@ -30,16 +30,13 @@ DEFAULT_AUTO_PRIMARYKEY_NAME = "id"
 DEFAULT_AUTO_PRIMARYKEY_TYPE = Integer
 DEFAULT_VERSION_ID_COL = "row_version"
 DEFAULT_POLYMORPHIC_COL_NAME = "row_type"
-DEFAULT_POLYMORPHIC_COL_SIZE = 20
+DEFAULT_POLYMORPHIC_COL_SIZE = 40
 DEFAULT_POLYMORPHIC_COL_TYPE = String(DEFAULT_POLYMORPHIC_COL_SIZE)
 
 class EntityDescriptor(object):
     '''
     EntityDescriptor describes fields and options needed for table creation.
     '''
-    
-    uninitialized_rels = set()
-    current = None
     
     def __init__(self, entity):
         entity.table = None
@@ -64,8 +61,7 @@ class EntityDescriptor(object):
                     self.parent._descriptor.children.append(entity)
 
         self.fields = OrderedDict()
-        #TODO Ordered
-        self.relationships = dict()
+        self.relationships = OrderedDict()
         self.delayed_properties = dict()
         self.constraints = list()
 
@@ -108,8 +104,131 @@ class EntityDescriptor(object):
                 self.tablename = tablename.lower()
         elif callable(self.tablename):
             self.tablename = self.tablename(entity)
-    
+
+    def setup_autoload_table(self):
+        self.setup_table(True)
+
+    def create_pk_cols(self):
+        """
+        Create primary_key columns. That is, add columns from belongs_to
+        relationships marked as being a primary_key and then add a primary 
+        key to the table if it hasn't already got one and needs one. 
+        
+        This method is "semi-recursive" in that it calls the create_keys 
+        method on BelongsTo relationships and those in turn call create_pk_cols
+        on their target. It shouldn't be possible to have an infinite loop 
+        since a loop of primary_keys is not a valid situation.
+        """
+        for rel in self.relationships.itervalues():
+            rel.create_keys(True)
+
+        if not self.autoload:
+            if self.parent and self.inheritance == 'multi':
+                # add foreign keys to the parent's primary key columns 
+                parent_desc = self.parent._descriptor
+                for pk_col in parent_desc.primary_keys:
+                    colname = "%s_%s" % (self.parent.__name__.lower(),
+                                         pk_col.key)
+
+                    # it seems like SA ForeignKey is not happy being given a 
+                    # real column object when said column is not yet attached 
+                    # to a table
+                    pk_col_name = "%s.%s" % (parent_desc.tablename, pk_col.key)
+                    field = Field(pk_col.type, ForeignKey(pk_col_name), 
+                                  colname=colname, primary_key=True)
+                    self.add_field(field)
+            if not self.has_pk and self.auto_primarykey:
+                #FIXME: we'll need to do a special case for concrete 
+                # inheritance too
+                if self.parent and self.inheritance == 'single':
+                    return
+
+                if isinstance(self.auto_primarykey, basestring):
+                    colname = self.auto_primarykey
+                else:
+                    colname = DEFAULT_AUTO_PRIMARYKEY_NAME
+                
+                self.add_field(Field(DEFAULT_AUTO_PRIMARYKEY_TYPE,
+                                     colname=colname, primary_key=True))
+
+    def setup_relkeys(self):
+        for rel in self.relationships.itervalues():
+            rel.create_keys(False)
+
+    def before_table(self):
+        Statement.process(self.entity, 'before_table')
+        
+    def setup_table(self, only_autoloaded=False):
+        '''
+        Create a SQLAlchemy table-object with all columns that have been 
+        defined up to this point.
+        '''
+        if self.entity.table:
+            return
+
+        if self.autoload != only_autoloaded:
+            return
+        
+        if self.parent:
+            if self.inheritance == 'single':
+                # we know the parent is setup before the child
+                self.entity.table = self.parent.table 
+
+                # re-add the entity fields to the parent entity so that they
+                # are added to the parent's table (whether the parent's table
+                # is already setup or not).
+                for field in self.fields.itervalues():
+                    self.parent._descriptor.add_field(field)
+                for constraint in self.constraints:
+                    self.parent._descriptor.add_constraint(constraint)
+                return
+            elif self.inheritance == 'concrete':
+               # copy all fields from parent table
+               for field in self.parent._descriptor.fields.itervalues():
+                    self.add_field(field.copy())
+               #FIXME: copy constraints. But those are not as simple to copy
+               #since the source column must be changed
+
+        if self.polymorphic and self.inheritance in ('single', 'multi') and \
+           self.children and not self.parent:
+            if not isinstance(self.polymorphic, basestring):
+                self.polymorphic = DEFAULT_POLYMORPHIC_COL_NAME
+                
+            self.add_field(Field(DEFAULT_POLYMORPHIC_COL_TYPE, 
+                                 colname=self.polymorphic))
+
+        if self.version_id_col:
+            if not isinstance(self.version_id_col, basestring):
+                self.version_id_col = DEFAULT_VERSION_ID_COL
+            self.add_field(Field(Integer, colname=self.version_id_col))
+
+        # create list of columns and constraints
+        args = [field.column for field in self.fields.itervalues()] \
+                    + self.constraints + self.table_args
+        
+        # specify options
+        kwargs = self.table_options
+
+        if self.autoload:
+            kwargs['autoload'] = True
+
+        self.entity.table = Table(self.tablename, self.metadata, 
+                                  *args, **kwargs)
+
+    def setup_reltables(self):
+        for rel in self.relationships.itervalues():
+            rel.create_tables()
+
+    def after_table(self):
+        Statement.process(self.entity, 'after_table')
+
     def setup_events(self):
+        def make_proxy_method(methods):
+            def proxy_method(self, mapper, connection, instance):
+                for func in methods:
+                    func(instance)
+            return proxy_method
+
         # create a list of callbacks for each event
         methods = {}
         for name, func in inspect.getmembers(self.entity, inspect.ismethod):
@@ -123,20 +242,29 @@ class EntityDescriptor(object):
         
         # transform that list into methods themselves
         for event in methods:
-            methods[event] = self.make_proxy_method(methods[event])
+            methods[event] = make_proxy_method(methods[event])
         
         # create a custom mapper extension class, tailored to our entity
         ext = type('EventMapperExtension', (MapperExtension,), methods)()
         
         # then, make sure that the entity's mapper has our mapper extension
         self.add_mapper_extension(ext)
-    
-    def make_proxy_method(self, methods):
-        def proxy_method(self, mapper, connection, instance):
-            for func in methods:
-                func(instance)
-        return proxy_method
-    
+
+    def before_mapper(self):
+        Statement.process(self.entity, 'before_mapper')
+
+    def _get_children(self):
+        children = self.children[:]
+        for child in self.children:
+            children.extend(child._descriptor._get_children())
+        return children
+
+    def evaluate_property(self, prop):
+        if callable(prop):
+            return prop(self.entity.table.c)
+        else:
+            return prop
+
     def translate_order_by(self, order_by):
         if isinstance(order_by, basestring):
             order_by = [order_by]
@@ -178,16 +306,26 @@ class EntityDescriptor(object):
                not (self.inheritance == 'concrete' and not self.polymorphic):
                 kwargs['inherits'] = self.parent.mapper
 
+            if self.inheritance == 'multi' and self.parent:
+                col_pairs = zip(self.primary_keys,
+                                self.parent._descriptor.primary_keys)
+                kwargs['inherit_condition'] = \
+                    and_(*[pc == c for c,pc in col_pairs])
+
             if self.polymorphic:
                 if self.children and not self.parent:
                     kwargs['polymorphic_on'] = \
                         self.fields[self.polymorphic].column
-                    if self.inheritance == 'multi':
-                        children = self._get_children()
-                        join = self.entity.table
-                        for child in children:
-                            join = join.outerjoin(child.table)
-                        kwargs['select_table'] = join
+                    #TODO: this is an optimization, and it breaks the multi
+                    # table polymorphic inheritance test with a relation. 
+                    # So I turn it off for now. We might want to provide an 
+                    # option to turn it on.
+#                    if self.inheritance == 'multi':
+#                        children = self._get_children()
+#                        join = self.entity.table
+#                        for child in children:
+#                            join = join.outerjoin(child.table)
+#                        kwargs['select_table'] = join
                     
                 if self.children or self.parent:
                     #TODO: make this customizable (both callable and string)
@@ -222,20 +360,42 @@ class EntityDescriptor(object):
             args = [self.entity.table]
 
         self.objectstore.mapper(self.entity, properties=properties, 
-                      *args, **kwargs)
+                                *args, **kwargs)
 
-    def _get_children(self):
-        children = self.children[:]
-        for child in self.children:
-            children.extend(child._descriptor._get_children())
-        return children
+    def after_mapper(self):
+        Statement.process(self.entity, 'after_mapper')
 
-    def evaluate_property(self, prop):
-        if callable(prop):
-            return prop(self.entity.table.c)
-        else:
-            return prop
+    def setup_properties(self):
+        for rel in self.relationships.itervalues():
+            rel.create_properties()
 
+    def finalize(self):
+        Statement.process(self.entity, 'finalize')
+
+    #--------------
+
+    def add_field(self, field):
+#        if field.colname in self.fields:
+#            print "duplicate field", field.colname
+        self.fields[field.colname] = field
+        
+        if field.primary_key:
+            self.has_pk = True
+
+        # we don't want to trigger setup_all too early
+        table = type.__getattribute__(self.entity, 'table')
+        if table:
+#TODO: we might want to check for that case
+#            if field.colname in table.columns.keys():
+            table.append_column(field.column)
+    
+    def add_constraint(self, constraint):
+        self.constraints.append(constraint)
+        
+        table = self.entity.table
+        if table:
+            table.append_constraint(constraint)
+        
     def add_property(self, name, prop):
         if self.entity.mapper:
             prop_value = self.evaluate_property(prop)
@@ -249,118 +409,7 @@ class EntityDescriptor(object):
             extensions = [extensions]
         extensions.append(extension)
         self.mapper_options['extension'] = extensions
-    
-    def setup_table(self):
-        '''
-        Create a SQLAlchemy table-object with all columns that have been 
-        defined up to this point.
-        '''
-        if self.entity.table:
-            return
-        
-        if self.parent:
-            if self.inheritance == 'single':
-                # we know the parent is setup before the child
-                self.entity.table = self.parent.table 
 
-                # re-add the entity fields to the parent entity so that they
-                # are added to the parent's table (whether the parent's table
-                # is already setup or not).
-                for field in self.fields.itervalues():
-                    self.parent._descriptor.add_field(field)
-
-                return
-            elif self.inheritance == 'concrete':
-               # copy all fields from parent table
-               for field in self.parent._descriptor.fields.itervalues():
-                    self.add_field(field.copy())
-
-        if self.polymorphic and self.inheritance in ('single', 'multi') and \
-           self.children and not self.parent:
-            if not isinstance(self.polymorphic, basestring):
-                self.polymorphic = DEFAULT_POLYMORPHIC_COL_NAME
-                
-            self.add_field(Field(DEFAULT_POLYMORPHIC_COL_TYPE, 
-                                 colname=self.polymorphic))
-
-        if self.version_id_col:
-            if not isinstance(self.version_id_col, basestring):
-                self.version_id_col = DEFAULT_VERSION_ID_COL
-            self.add_field(Field(Integer, colname=self.version_id_col))
-
-        # create list of columns and constraints
-        args = [field.column for field in self.fields.itervalues()] \
-                    + self.constraints + self.table_args
-        
-        # specify options
-        kwargs = self.table_options
-
-        if self.autoload:
-            kwargs['autoload'] = True
-       
-        self.entity.table = Table(self.tablename, self.metadata, 
-                                  *args, **kwargs)
-
-
-    def create_pk_cols(self):
-        """
-        Create primary_key columns. That is, add columns from belongs_to
-        relationships marked as being a primary_key and then adds a primary 
-        key to the table if it hasn't already got one and needs one. 
-        
-        This method is "semi-recursive" in that it calls the create_keys 
-        method on BelongsTo relationships and those in turn call create_pk_cols
-        on their target. It shouldn't be possible to have an infinite loop 
-        since a loop of primary_keys is not a valid situation.
-        """
-        for rel in self.relationships.itervalues():
-            rel.create_keys(True)
-
-        if not self.autoload:
-            if self.parent and self.inheritance == 'multi':
-                # add foreign keys to the parent's primary key columns 
-                parent_desc = self.parent._descriptor
-                for pk_col in parent_desc.primary_keys:
-                    colname = "%s_%s" % (self.parent.__name__.lower(),
-                                         pk_col.name)
-                    field = Field(pk_col.type, ForeignKey(pk_col), 
-                                  colname=colname, primary_key=True)
-                    self.add_field(field)
-            if not self.has_pk and self.auto_primarykey:
-                self.create_auto_primary_key()
-
-
-    def create_auto_primary_key(self):
-        '''
-        Creates a primary key
-        '''
-        
-        if isinstance(self.auto_primarykey, basestring):
-            colname = self.auto_primarykey
-        else:
-            colname = DEFAULT_AUTO_PRIMARYKEY_NAME
-        
-        self.add_field(Field(DEFAULT_AUTO_PRIMARYKEY_TYPE,
-                             colname=colname, primary_key=True))
-        
-    def add_field(self, field):
-        self.fields[field.colname] = field
-        
-        if field.primary_key:
-            self.has_pk = True
-
-        # we don't want to trigger setup_all too early
-        table = type.__getattribute__(self.entity, 'table')
-        if table:
-            table.append_column(field.column)
-    
-    def add_constraint(self, constraint):
-        self.constraints.append(constraint)
-        
-        table = self.entity.table
-        if table:
-            table.append_constraint(constraint)
-        
     def get_inverse_relation(self, rel, reverse=False):
         '''
         Return the inverse relation of rel, if any, None otherwise.
@@ -391,8 +440,11 @@ class EntityDescriptor(object):
         if self.autoload:
             return [col for col in self.entity.table.primary_key.columns]
         else:
-            return [field.column for field in self.fields.itervalues() if
-                    field.primary_key]
+            if self.parent and self.inheritance == 'single':
+                return self.parent._descriptor.primary_keys
+            else:
+                return [field.column for field in self.fields.itervalues() if
+                        field.primary_key]
     primary_keys = property(primary_keys)
 
     def all_relationships(self):
@@ -461,7 +513,7 @@ class EntityMeta(type):
         schema = cls._descriptor.table_options.get('schema', None)
         cls._table_key = sqlalchemy.schema._get_table_key(tablename, schema)
 
-        elixir._delayed_descriptors.append(cls._descriptor)
+        elixir._delayed_entities.append(cls)
         
         mapper_proxy = TriggerProxy(cls, 'mapper', elixir.setup_all)
         table_proxy = TriggerProxy(cls, 'table', elixir.setup_all)

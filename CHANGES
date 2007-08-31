@@ -1,6 +1,10 @@
 0.4.0
-- Fixed bug in associable not properly picking out its own plural name when
-  none is provided. Added unit test for the bug.
+- Implemented polymorphic single-table inheritance as well as polymorphic and
+  non-polymorphic multi-table (aka joined table) inheritance.
+- Made the statement system more powerfull.
+- Autodelay and init order changed => order_by + belongs_to, belongs_to + pk, 
+  ...
+- Classes defined inside a function can now have relationships to each other.
 - Added ext sub-package for additional Elixir statements.
 - Added ext.associable for generating polymorphic associations with Elixir
   Statements. (Many thanks to Mike Bayer for his support on writing this.)
@@ -9,6 +13,8 @@
   declared). See tests/test_has_property.py for an example.
 - Added default __init__ method on entities so that subclasses can override it
   and still have the "set attribute by keyword" behavior by calling super()
+- Added "through" and "via" keyword arguments on relationships and has_field
+  statement, to proxy values through relationships (uses association_proxy)
 - Added .q property on the metaclass, so that you can get a query on an entity
   by just using Entity.q, instead of using Entity.query()
 - Made EntityMeta public, so that people can actually define their own base 
@@ -27,9 +33,8 @@
 - Added translation (from column name to column object) of the primary_key 
   mapper option so that it can actually be used. This allows to have entities
   without any primary key defined at the table level.
-- Applied (a modified version of a) patch from Ivanov Maxim to fix the 
-  relationship target code (target should fail when a module is not found, 
-  because it can simply not be loaded yet).
+- Fixed relationships to entities whose primary_key field has been defined
+  with a "key" argument (based on a patch by Paul Johnston).
 - Fixed some buggy tests.
 - Fixed relationships to tables using a schema (Patch by Neil Blakey-Milner)
 - Made inverse relationships use backrefs. This fixes the "bidirectional

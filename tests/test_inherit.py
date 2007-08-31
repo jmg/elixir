@@ -3,21 +3,28 @@
 """
 
 from elixir import *
+import elixir
 
 def setup():
     metadata.bind = 'sqlite:///'
+#    metadata.bind.echo = True
+    elixir.options_defaults['shortnames'] = True
 
-def do_tst(inheritance, polymorphic, expected_res):
+def do_tst(inheritance, polymorphic, with_rel, expected_res):
     class A(Entity):
         has_field('data1', String(20))
         using_options(inheritance=inheritance, polymorphic=polymorphic)
 
     class B(A):
         has_field('data2', String(20))
+        if with_rel:
+            has_many('many_c', of_kind='C', inverse='some_b')        
         using_options(inheritance=inheritance, polymorphic=polymorphic)
 
     class C(B):
         has_field('data3', String(20))
+        if with_rel:
+            belongs_to('some_b', of_kind='B', inverse='many_c')
         using_options(inheritance=inheritance, polymorphic=polymorphic)
 
     class D(A):
@@ -50,7 +57,7 @@ class TestInheritance(object):
         cleanup_all(True)
 
     def test_singletable_inheritance(self):
-        do_tst('single', False, {
+        do_tst('single', False, True, {
             'A': ('A', 'A', 'A', 'A'),
             'B': ('B', 'B', 'B', 'B'),
             'C': ('C', 'C', 'C', 'C'),
@@ -58,7 +65,7 @@ class TestInheritance(object):
         })
 
     def test_polymorphic_singletable_inheritance(self):
-        do_tst('single', True, {
+        do_tst('single', True, True, {
             'A': ('A', 'B', 'C', 'D'),
             'B': ('B', 'C'),
             'C': ('C',),
@@ -66,7 +73,8 @@ class TestInheritance(object):
         })
 
     def test_concrete_inheritance(self):
-        do_tst('concrete', False, {
+        # concrete fails when there are relationships involved !
+        do_tst('concrete', False, False, {
             'A': ('A',),
             'B': ('B',),
             'C': ('C',),
@@ -74,15 +82,15 @@ class TestInheritance(object):
         })
 
     def test_multitable_inheritance(self):
-        do_tst('multi', False, {
+        do_tst('multi', False, True, {
             'A': ('A', 'A', 'A', 'A'),
             'B': ('B', 'B'),
             'C': ('C',),
             'D': ('D',),
         })
-
+ 
     def test_polymorphic_multitable_inheritance(self):
-        do_tst('multi', True, {
+        do_tst('multi', True, True, {
             'A': ('A', 'B', 'C', 'D'),
             'B': ('B', 'C'),
             'C': ('C',),
