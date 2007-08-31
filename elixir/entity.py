@@ -486,9 +486,19 @@ class EntityMeta(type):
         if bases[0] is object:
             return
 
-        cid = cls._caller = id(sys._getframe(1))
+        # build a dict of entities for each frame where there are entities
+        # defined
+        caller_frame = sys._getframe(1)
+        cid = cls._caller = id(caller_frame)
         caller_entities = EntityMeta._entities.setdefault(cid, {})
         caller_entities[name] = cls
+
+        # Append all entities which are currently visible by the entity. This 
+        # will find more entities only if some of them where imported from another
+        # module.
+        for entity in [e for e in caller_frame.f_locals.values() 
+                         if e.__class__.__name__ == 'EntityMeta']:
+            caller_entities[entity.__name__] = entity
 
         # create the entity descriptor
         desc = cls._descriptor = EntityDescriptor(cls)
