@@ -25,6 +25,8 @@
 - Changed the order of relationship kwargs processing so that computed kwargs
   can be overridden by kwargs manually passed to the statement. This should
   only be used if you know what you are doing.
+- Added onupdate kwarg to BelongsTo relationships for consistency with the
+  ondelete kwarg
 - Applied patch from Ants Aasma to make Elixir compatible with the 0.4 branch
   of SQLAlchemy.
 - Reworked how entities look for primary keys on related entities. This

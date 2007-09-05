@@ -97,6 +97,10 @@ ForeignKeyConstraint that is created:
 |                      | May be one of: ``cascade``, ``restrict``,            |
 |                      | ``set null``, or ``set default``.                    |
 +----------------------+------------------------------------------------------+
+| ``onupdate``         | Value for the foreign key constraint onupdate clause.|
+|                      | May be one of: ``cascade``, ``restrict``,            |
+|                      | ``set null``, or ``set default``.                    |
++----------------------+------------------------------------------------------+
 | ``constraint_kwargs``| A dictionary holding any other keyword argument you  |
 |                      | might want to pass to the Constraint.                |
 +----------------------+------------------------------------------------------+
@@ -379,6 +383,8 @@ class BelongsTo(Relationship):
         
         if 'ondelete' in kwargs:
             self.constraint_kwargs['ondelete'] = kwargs.pop('ondelete')
+        if 'onupdate' in kwargs:
+            self.constraint_kwargs['onupdate'] = kwargs.pop('onupdate')
         
         self.foreign_key = list()
         self.primaryjoin_clauses = list()
