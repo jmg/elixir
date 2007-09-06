@@ -238,21 +238,12 @@ class Relationship(object):
     Base class for relationships.
     '''
     
-    def __init__(self, entity, name, *args, **kwargs):
-        self.entity = entity
-        self.name = name
+    def __init__(self, of_kind, *args, **kwargs):
+        self.entity = None
+        self.name = None
         self.inverse_name = kwargs.pop('inverse', None)
 
-        if 'through' in kwargs and 'via' in kwargs:
-            setattr(entity, name, 
-                    association_proxy(kwargs.pop('through'), kwargs.pop('via'),
-                                      **kwargs))
-            return
-        elif 'through' in kwargs or 'via' in kwargs:
-            raise Exception("'through' and 'via' relationship keyword "
-                            "arguments should be used in combination.")
-
-        self.of_kind = kwargs.pop('of_kind')
+        self.of_kind = of_kind
 
         self._target = None
         self._inverse = None
@@ -264,7 +255,6 @@ class Relationship(object):
         self.args = args
         self.kwargs = kwargs
 
-        self.entity._descriptor.relationships[self.name] = self
     
     def create_keys(self, pk):
         '''
@@ -309,20 +299,23 @@ class Relationship(object):
     
     def target(self):
         if not self._target:
-            path = self.of_kind.rsplit('.', 1)
-            classname = path.pop()
-
-            if path:
-                # do we have a fully qualified entity name?
-                module = sys.modules[path.pop()]
-                self._target = getattr(module, classname, None)
+            if isinstance(self.of_kind, EntityMeta):
+                self._target = self.of_kind
             else:
-                # If not, try the list of entities of the "caller" of the 
-                # source class. Most of the time, this will be the module the
-                # class is defined in. But it could also be a method (inner
-                # classes).
-                caller_entities = EntityMeta._entities[self.entity._caller]
-                self._target = caller_entities[classname]
+                path = self.of_kind.rsplit('.', 1)
+                classname = path.pop()
+
+                if path:
+                    # do we have a fully qualified entity name?
+                    module = sys.modules[path.pop()]
+                    self._target = getattr(module, classname, None)
+                else:
+                    # If not, try the list of entities of the "caller" of the 
+                    # source class. Most of the time, this will be the module 
+                    # the class is defined in. But it could also be a method 
+                    # (inner classes).
+                    caller_entities = EntityMeta._entities[self.entity._caller]
+                    self._target = caller_entities[classname]
         return self._target
     target = property(target)
     
@@ -330,9 +323,7 @@ class Relationship(object):
         if not self._inverse:
             if self.inverse_name:
                 desc = self.target._descriptor
-                # we use all_relationships so that relationships from parent
-                # entities are included too
-                inverse = desc.all_relationships.get(self.inverse_name, None)
+                inverse = desc.find_relationship(self.inverse_name)
                 if inverse is None:
                     raise Exception(
                               "Couldn't find a relationship named '%s' in "
@@ -361,12 +352,12 @@ class Relationship(object):
                (other.inverse_name == self.name or not other.inverse_name)
 
 
-class BelongsTo(Relationship):
+class ManyToOne(Relationship):
     '''
     
     '''
     
-    def __init__(self, entity, name, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         self.colname = kwargs.pop('colname', [])
         if self.colname and not isinstance(self.colname, list):
             self.colname = [self.colname]
@@ -388,10 +379,10 @@ class BelongsTo(Relationship):
         
         self.foreign_key = list()
         self.primaryjoin_clauses = list()
-        super(BelongsTo, self).__init__(entity, name, *args, **kwargs)
+        super(ManyToOne, self).__init__(*args, **kwargs)
     
     def match_type_of(self, other):
-        return isinstance(other, (HasMany, HasOne))
+        return isinstance(other, (OneToMany, OneToOne))
 
     def create_keys(self, pk):
         '''
@@ -496,11 +487,11 @@ class BelongsTo(Relationship):
         return kwargs
 
 
-class HasOne(Relationship):
+class OneToOne(Relationship):
     uselist = False
 
     def match_type_of(self, other):
-        return isinstance(other, BelongsTo)
+        return isinstance(other, ManyToOne)
 
     def create_keys(self, pk):
         # make sure an inverse relationship exists
@@ -536,11 +527,11 @@ class HasOne(Relationship):
         return kwargs
 
 
-class HasMany(HasOne):
+class OneToMany(OneToOne):
     uselist = True
     
     def get_prop_kwargs(self):
-        kwargs = super(HasMany, self).get_prop_kwargs()
+        kwargs = super(OneToMany, self).get_prop_kwargs()
 
         if 'order_by' in kwargs:
             kwargs['order_by'] = \
@@ -550,10 +541,10 @@ class HasMany(HasOne):
         return kwargs
 
 
-class HasAndBelongsToMany(Relationship):
+class ManyToMany(Relationship):
     uselist = True
 
-    def __init__(self, entity, name, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         self.user_tablename = kwargs.pop('tablename', None)
         self.local_side = kwargs.pop('local_side', [])
         if self.local_side and not isinstance(self.local_side, list):
@@ -564,11 +555,10 @@ class HasAndBelongsToMany(Relationship):
         self.secondary_table = None
         self.primaryjoin_clauses = list()
         self.secondaryjoin_clauses = list()
-        super(HasAndBelongsToMany, self).__init__(entity, name, 
-                                                  *args, **kwargs)
+        super(ManyToMany, self).__init__(*args, **kwargs)
 
     def match_type_of(self, other):
-        return isinstance(other, HasAndBelongsToMany)
+        return isinstance(other, ManyToMany)
 
     def create_tables(self):
         if self.secondary_table:
@@ -717,7 +707,7 @@ class HasAndBelongsToMany(Relationship):
         return kwargs
 
     def is_inverse(self, other):
-        return super(HasAndBelongsToMany, self).is_inverse(other) and \
+        return super(ManyToMany, self).is_inverse(other) and \
                (self.user_tablename == other.user_tablename or 
                 (not self.user_tablename and not other.user_tablename))
 
@@ -775,7 +765,26 @@ def _get_join_clauses(local_table, local_cols1, local_cols2, target_table):
     return primary_join, secondary_join
 
 
-belongs_to = Statement(BelongsTo)
-has_one = Statement(HasOne)
-has_many = Statement(HasMany)
-has_and_belongs_to_many = Statement(HasAndBelongsToMany)
+def rel_statement_handler(target):
+    class Handler(object):
+        def __init__(self, entity, name, *args, **kwargs):
+            if 'through' in kwargs and 'via' in kwargs:
+                setattr(entity, name, 
+                        association_proxy(kwargs.pop('through'), 
+                                          kwargs.pop('via'),
+                                          **kwargs))
+                return
+            elif 'through' in kwargs or 'via' in kwargs:
+                raise Exception("'through' and 'via' relationship keyword "
+                                "arguments should be used in combination.")
+            rel = target(kwargs.pop('of_kind'), *args, **kwargs)
+            rel.name = name
+            rel.entity = entity
+            entity._descriptor.relationships.append(rel)
+    return Handler
+
+
+belongs_to = Statement(rel_statement_handler(ManyToOne))
+has_one = Statement(rel_statement_handler(OneToOne))
+has_many = Statement(rel_statement_handler(OneToMany))
+has_and_belongs_to_many = Statement(rel_statement_handler(ManyToMany))

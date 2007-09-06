@@ -37,11 +37,9 @@ containing the following lines:
     metadata.connect("sqlite:///movies.sqlite")
 
     class Movie(Entity):
-        with_fields(
-            title = Field(Unicode(30)),
-            year = Field(Integer),
-            description = Field(Unicode)
-        )
+        title = Field(Unicode(30))
+        year = Field(Integer)
+        description = Field(Unicode)
         
         def __repr__(self):
             return '<Movie "%s" (%d)>' % (self.title, self.year)
@@ -61,12 +59,12 @@ the python interpreter to print objects in a human-readable way. It's nice to
 have, but fully optional.  We have put this into our model so that we can 
 easily trace what is happening in an interactive python interpreter.
 
-Also, please note that elixir currently provide two different ways to declare
-the fields on your entities. We have not decided yet on which one we like best,
-or if we will always keep both. The other way to declare your fields is using
-the ``has_field`` statement, rather than the ``with_fields`` statement.  The
-``Movie`` example above can be declared using the ``has_field`` statement like
-so:
+Also, please note that elixir currently provide two different ways to
+declare the fields on your entities. We have not decided yet on which
+one we like best, or if we will always keep both. The other way to
+declare your fields is using the ``has_field`` statement, rather than
+assigning directly to the class attributes.  The ``Movie`` example
+above could be declared using the ``has_field`` statement like so:
 
 ::
 
@@ -150,9 +148,8 @@ entity "``Genre``" to our ``model.py``:
 ::
 
     class Genre(Entity):
-        with_fields(
-            name = Field(Unicode(15), unique=True)
-        )
+        name = Field(Unicode(15), unique=True)
+
         
         def __repr__(self):
             return '<Genre "%s">' % self.name
@@ -168,11 +165,9 @@ excitement. Add two lines to your ``model.py``, so it reads:
 ::
 
     class Movie(Entity):
-        with_fields(
-            title = Field(Unicode(30)),
-            year = Field(Integer),
-            description = Field(Unicode)
-        )
+        title = Field(Unicode(30)),
+        year = Field(Integer),
+        description = Field(Unicode)
         
         belongs_to('genre', of_kind='Genre')                # add this line
     
@@ -181,9 +176,7 @@ excitement. Add two lines to your ``model.py``, so it reads:
     
     
     class Genre(Entity):
-        with_fields(
-            name = Field(Unicode(15))
-        )
+        name = Field(Unicode(15))
         
         has_many('movies', of_kind='Movie')                 # and this one
         

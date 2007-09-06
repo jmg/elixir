@@ -3,42 +3,68 @@
 """
 
 from elixir import *
-import elixir
+import sys
 
-def teardown():
-    cleanup_all()
+def setup(self):
+    metadata.bind = 'sqlite:///'
 
 class TestPackages(object):
-    def setup(self):
-        metadata.bind = 'sqlite:///'
-    
     def teardown(self):
-        drop_all()
-        objectstore.clear()
+        cleanup_all(True)
     
     def test_packages(self):
         # This is an ugly workaround because when nosetest is run globally (ie
         # either on the tests directory or in the "trunk" directory, it imports
-        # all modules, including a and b and thus their entities are
-        # immediately setup but then the other tests clear all mappers, and 
-        # when we get here, this tests doesn't reinit those because the modules
-        # are not reimported. 
-        # In short, one more reason to use delay_setup by default. 
-        # Note that even if we set delay setup in this particular test, before
-        # the module imports, it'll fail because we'd need to set delay_setup
-        # before the a and b modules are imported by nosetests.
-        import sys
+        # all modules, including a and b. Then when any other test calls
+        # setup_all(), A and B are also setup, but then the other test also
+        # calls cleanup_all(), so when we get here, A and B are already dead and
+        # reimporting their modules does nothing because they were already
+        # imported.
         sys.modules.pop('tests.a', None)
         sys.modules.pop('tests.b', None)
 
         from tests.a import A
         from tests.b import B
-        create_all()
 
-        a = A(name='a1')
-        b = B(name='b1')
+        setup_all(True)
 
-        b.a.append(a)
+        b1 = B(name='b1', as_=[A(name='a1')])
 
         objectstore.flush()
+        objectstore.clear()
+
+        a = A.query().one()
+
+        assert a in a.b.as_
+
+    def test_ref_to_imported_entity_using_class(self):
+        sys.modules.pop('tests.a', None)
+        sys.modules.pop('tests.b', None)
+
+        from tests.a import A
+        from tests.b import B
+
+        class C(Entity):
+            has_field('name', String(30))
+            belongs_to('a', of_kind=A)
+
+        setup_all(True)
+
+        # 'a_id' in ... is not supported before SA 0.4
+        assert C.table.columns.has_key('a_id')
+
+    def test_ref_to_imported_entity_using_name(self):
+        sys.modules.pop('tests.a', None)
+        sys.modules.pop('tests.b', None)
+
+        from tests.a import A
+        from tests.b import B
+
+        class C(Entity):
+            has_field('name', String(30))
+            belongs_to('a', of_kind='A')
+
+        setup_all(True)
+
+        assert C.table.columns.has_key('a_id')
 

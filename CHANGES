@@ -2,6 +2,14 @@
 - Implemented polymorphic single-table inheritance as well as polymorphic and
   non-polymorphic multi-table (aka joined table) inheritance.
 - Made the statement system more powerfull.
+- Implemented a new syntax to declare fiels and relationships, much closer to
+  what is found in other Python ORM's. The with_fields syntax is now
+  deprecated in favor of a that new syntax. The old statement based (has_field et
+  al.) syntax stays the default for now. This was done with help from a patch
+  by Adam Gomaa.
+- Relationships to other classes can now also be defined using the classes
+  themselves in addition to the class namees. Obviously, this doesn't work for
+  forward references.
 - Autodelay and init order changed => order_by + belongs_to, belongs_to + pk, 
   ...
 - Classes defined inside a function can now have relationships to each other.

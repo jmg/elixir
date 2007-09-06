@@ -2,13 +2,15 @@
 Entity baseclass, metaclass and descriptor
 '''
 
+import sqlalchemy
+
 from sqlalchemy                     import Table, Integer, String, desc,\
                                            ForeignKey, and_
 from sqlalchemy.orm                 import deferred, Query, MapperExtension
 from sqlalchemy.ext.assignmapper    import assign_mapper
 from sqlalchemy.ext.sessioncontext  import SessionContext
 from sqlalchemy.util                import OrderedDict
-import sqlalchemy
+
 from elixir.statements              import Statement
 from elixir.fields                  import Field
 from elixir.options                 import options_defaults
@@ -61,7 +63,7 @@ class EntityDescriptor(object):
                     self.parent._descriptor.children.append(entity)
 
         self.fields = OrderedDict()
-        self.relationships = OrderedDict()
+        self.relationships = list()
         self.delayed_properties = dict()
         self.constraints = list()
 
@@ -119,7 +121,7 @@ class EntityDescriptor(object):
         on their target. It shouldn't be possible to have an infinite loop 
         since a loop of primary_keys is not a valid situation.
         """
-        for rel in self.relationships.itervalues():
+        for rel in self.relationships:
             rel.create_keys(True)
 
         if not self.autoload:
@@ -152,7 +154,7 @@ class EntityDescriptor(object):
                                      colname=colname, primary_key=True))
 
     def setup_relkeys(self):
-        for rel in self.relationships.itervalues():
+        for rel in self.relationships:
             rel.create_keys(False)
 
     def before_table(self):
@@ -216,7 +218,7 @@ class EntityDescriptor(object):
                                   *args, **kwargs)
 
     def setup_reltables(self):
-        for rel in self.relationships.itervalues():
+        for rel in self.relationships:
             rel.create_tables()
 
     def after_table(self):
@@ -366,7 +368,7 @@ class EntityDescriptor(object):
         Statement.process(self.entity, 'after_mapper')
 
     def setup_properties(self):
-        for rel in self.relationships.itervalues():
+        for rel in self.relationships:
             rel.create_properties()
 
     def finalize(self):
@@ -416,7 +418,7 @@ class EntityDescriptor(object):
         '''
 
         matching_rel = None
-        for other_rel in self.relationships.itervalues():
+        for other_rel in self.relationships:
             if other_rel.is_inverse(rel):
                 if matching_rel is None:
                     matching_rel = other_rel
@@ -436,6 +438,15 @@ class EntityDescriptor(object):
 
         return matching_rel
 
+    def find_relationship(self, name):
+        for rel in self.relationships:
+            if rel.name == name:
+                return rel
+        if self.parent:
+            return self.parent.find_relationship(name)
+        else:
+            return None
+
     def primary_keys(self):
         if self.autoload:
             return [col for col in self.entity.table.primary_key.columns]
@@ -447,17 +458,17 @@ class EntityDescriptor(object):
                         field.primary_key]
     primary_keys = property(primary_keys)
 
-    def all_relationships(self):
-        if self.parent:
-            res = self.parent._descriptor.all_relationships
-        else:
-            res = dict()
-        res.update(self.relationships)
-        return res
-    all_relationships = property(all_relationships)
-
 
 class TriggerProxy(object):
+    """A class that serves as a "trigger" ; accessing its attributes runs
+    the function that is set at initialization.
+
+    Primarily used for setup_all().
+
+    Note that the `setupfunc` parameter is called on each access of
+    the attribute.
+
+    """
     def __init__(self, class_, attrname, setupfunc):
         self.class_ = class_
         self.attrname = attrname
@@ -471,6 +482,9 @@ class TriggerProxy(object):
     def __repr__(self):
         proxied_attr = getattr(self.class_, self.attrname)
         return "<TriggerProxy (%s)>" % (self.class_.__name__)
+
+def _is_entity(class_):
+    return isinstance(class_, EntityMeta)
 
 class EntityMeta(type):
     """
@@ -494,10 +508,10 @@ class EntityMeta(type):
         caller_entities[name] = cls
 
         # Append all entities which are currently visible by the entity. This 
-        # will find more entities only if some of them where imported from another
-        # module.
+        # will find more entities only if some of them where imported from 
+        # another module.
         for entity in [e for e in caller_frame.f_locals.values() 
-                         if e.__class__.__name__ == 'EntityMeta']:
+                         if _is_entity(e)]:
             caller_entities[entity.__name__] = entity
 
         # create the entity descriptor
@@ -506,15 +520,18 @@ class EntityMeta(type):
         # process statements. Needed before the proxy for metadata
         Statement.process(cls)
 
+        # Process attributes, for the assignment syntax.
+        cls._process_attrs(dict_)
+
         # setup misc options here (like tablename etc.)
         desc.setup_options()
 
         # create trigger proxies
         # TODO: support entity_name... or maybe not. I'm not sure it makes 
         # sense in Elixir.
-        cls.setup_proxy()
+        cls._setup_proxy()
 
-    def setup_proxy(cls, entity_name=None):
+    def _setup_proxy(cls, entity_name=None):
         #TODO: move as much as possible of those "_private" values to the
         # descriptor, so that we don't mess the initial class.
         cls._class_key = sqlalchemy.orm.mapperlib.ClassKey(cls, entity_name)
@@ -554,6 +571,28 @@ class EntityMeta(type):
 
         cls._ready = True
 
+    def _process_attrs(cls, attr_dict):
+        """Process class attributes, looking for Elixir `Field`s or
+        `Relationship`.
+        """
+
+        for name, attr in attr_dict.iteritems():
+            # Check if it's Elixir related. 
+            if isinstance(attr, Field):
+                # If no colname was defined (through the 'colname' kwarg), set
+                # it to the name of the attr.
+                if attr.colname is None:
+                    attr.colname = name
+                cls._descriptor.add_field(attr)
+            elif isinstance(attr, elixir.relationships.Relationship):
+                attr.name = name 
+                attr.entity = cls
+                cls._descriptor.relationships.append(attr)
+            else:
+                # Not an Elixir field, let it be. 
+                pass
+        return
+
     def __getattribute__(cls, name):
         if type.__getattribute__(cls, "_ready"):
             #TODO: we need to add all assign_mapper methods
@@ -592,7 +631,6 @@ class Entity(object):
     For further information, please refer to the provided examples or
     tutorial.
     '''
-
     __metaclass__ = EntityMeta
 
     def __init__(self, **kwargs):

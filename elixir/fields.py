@@ -7,11 +7,14 @@ Fields
 
 This module contains DSL statements which allow you to declare which 
 fields (columns) your Elixir entities have.  There are currently two
-different statements that you can use to declare fields:
+different ways to declare your entities fields: through the has_field_
+statement, and by using the `Object-oriented syntax`_. Note that the 
+with_fields_ statement is currently deprecated in favor of the 
+`Object-oriented syntax`_.
 
 
-`has_field`
------------
+has_field
+---------
 The `has_field` statement allows you to define fields one at a time.
 
 The first argument is the name of the field, the second is its type. Following
@@ -64,11 +67,21 @@ Here is a quick example of how to use ``has_field``.
         has_field('id', Integer, primary_key=True)
         has_field('name', String(50))
 
+Object-oriented syntax
+----------------------
 
-`with_fields`
--------------
-The `with_fields` statement allows you to define fields all at once.
+Here is a quick example of how to use the object-oriented syntax.
 
+::
+
+    class Person(Entity):
+        id = Field(Integer, primary_key=True)
+        name = Field(String(50))
+
+with_fields
+-----------
+The `with_fields` statement is **deprecated** in favor of the `Object-oriented
+syntax`_. It allows you to define all fields of an entity at once. 
 Each keyword argument to this statement represents one field, which should
 be a `Field` object. The first argument to a Field object is its type. 
 Following it, any number of keyword arguments can be specified for
