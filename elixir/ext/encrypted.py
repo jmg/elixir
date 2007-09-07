@@ -69,8 +69,8 @@ class ActsAsEncrypted(object):
                 perform_encryption(instance)
                 return EXT_PASS
             
-            def populate_instance(self, mapper, selectcontext, row, instance, identitykey, isnew):
-                mapper.populate_instance(selectcontext, instance, row, identitykey, isnew)
+            def populate_instance(self, mapper, selectcontext, row, instance, *args, **kwargs):
+                mapper.populate_instance(selectcontext, instance, row, *args, **kwargs)
                 perform_decryption(instance)
                 return True
         
