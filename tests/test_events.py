@@ -73,11 +73,11 @@ class TestEvents(object):
         d = Document(name='My Document')
         objectstore.flush(); objectstore.clear()
         
-        d = Document.get(1)
+        d = Document.query().get(1)
         d.name = 'My Document Updated'
         objectstore.flush(); objectstore.clear()
         
-        d = Document.get(1)
+        d = Document.query().get(1)
         d.delete()
         objectstore.flush(); objectstore.clear()
         

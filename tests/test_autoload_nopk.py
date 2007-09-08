@@ -32,7 +32,7 @@ class TestAutoload(object):
         objectstore.flush()
         objectstore.clear()
 
-        persons = Person.q.all()
+        persons = Person.query().all()
 
         assert len(persons) == 1
         assert persons[0].name == "Barney"

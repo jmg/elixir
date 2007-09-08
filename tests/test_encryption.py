@@ -52,7 +52,7 @@ class TestEncryption(object):
 
         objectstore.flush(); objectstore.clear()
 
-        p = Person.q.get_by(name='Jonathan LaCour')
+        p = Person.get_by(name='Jonathan LaCour')
         assert p.password == 's3cr3tw0RD'
         assert p.ssn == '123-45-6789'
         assert p.pets[0].name == 'Winston'
@@ -64,7 +64,7 @@ class TestEncryption(object):
 
         objectstore.flush(); objectstore.clear()
 
-        p = Person.q.get_by(name='Jonathan LaCour')
+        p = Person.get_by(name='Jonathan LaCour')
         assert p.password == 'N3wpAzzw0rd'
         p.name = 'Jon LaCour'
 

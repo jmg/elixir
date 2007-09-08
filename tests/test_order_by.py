@@ -64,7 +64,7 @@ class TestOrderBy(object):
         objectstore.clear()
     
     def test_mapper_order_by(self):
-        records = Record.select()
+        records = Record.query().all()
 
         print "-year, +title"
         for record in records:

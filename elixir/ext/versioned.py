@@ -142,22 +142,21 @@ class ActsAsVersioned(object):
                         
         # attach utility methods and properties to the entity
         def get_versions(self):
-            return entity._descriptor.objectstore.query(Version).select(get_history_where(self))
+            return entity._descriptor.objectstore.query(Version).filter(get_history_where(self)).all()
         
         def get_as_of(self, dt):
             # if the passed in timestamp is older than our current version's
             # time stamp, then the most recent version is our current version
-            if self.timestamp < dt: return self
+            if self.timestamp < dt: 
+                return self
             
             # otherwise, we need to look to the history table to get our
             # older version
-            items = entity._descriptor.objectstore.query(Version).select(
-                and_(get_history_where(self), Version.c.timestamp <= dt),
-                order_by=desc(Version.c.timestamp),
-                limit=1
-            )
-            if items: return items[0]
-            else: return None
+            query = entity._descriptor.objectstore.query(Version)
+            query = query.filter(and_(get_history_where(self), 
+                                      Version.c.timestamp <= dt))
+            query = query.order_by(desc(Version.c.timestamp)).limit(1)
+            return query.first()
         
         def revert_to(self, to_version):
             hist = entity.__history_table__
@@ -171,7 +170,8 @@ class ActsAsVersioned(object):
             )
             
             hist.delete(and_(get_history_where(self), hist.c.version>=to_version)).execute()
-            for event in after_revert_events: event(self)
+            for event in after_revert_events: 
+                event(self)
         
         def revert(self):
             assert self.version > 1

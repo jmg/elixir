@@ -50,7 +50,7 @@ class TestMultiBelongsTo(object):
         
         homer = Person.get_by(name="Homer")
         lisa = Person.get_by(name="Lisa")
-        slh = Animal.q.filter(Animal.c.name.like("Santa%")).scalar()
+        slh = Animal.query().filter(Animal.c.name.like("Santa%")).first()
         
         print homer
 
@@ -88,7 +88,7 @@ class TestMultiHasAndBelongsToMany(object):
         objectstore.flush()
         objectstore.clear()
         
-        articles = Article.select()
+        articles = Article.query().all()
         physics = Tag.get_by(name='Physics')
         good = Tag.get_by(name='Good')
 

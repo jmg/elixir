@@ -638,17 +638,15 @@ class Entity(object):
             setattr(self, key, value)
 
     def get_by(cls, *args, **kwargs):
-#        warnings.warn("The get_by method on the class is deprecated."
-#                      "You should use cls.query.get_by", DeprecationWarning,
-#                      stacklevel=2)
-        return cls.q.get_by(*args, **kwargs)
+        return cls.query().filter_by(*args, **kwargs).first()
     get_by = classmethod(get_by)
 
+    # DEPRECATED LAND
     def select(cls, *args, **kwargs):
-#        warnings.warn("The select method on the class is deprecated."
-#                      "You should use cls.query.select", DeprecationWarning,
-#                      stacklevel=2)
-        return cls.q.select(*args, **kwargs)
+        warnings.warn("The select method on the class is deprecated."
+                      "You should use cls.query.filter(...).all()", DeprecationWarning,
+                      stacklevel=2)
+        return cls.query().filter(*args, **kwargs).all()
     select = classmethod(select)
 
 

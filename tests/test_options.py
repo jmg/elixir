@@ -27,24 +27,24 @@ class TestOptions(object):
         objectstore.flush()
         objectstore.clear()
         
-        person = Person.select()[0]
+        person = Person.query().first()
         person.name = 'Gaetan'
         objectstore.flush()
         objectstore.clear()
         assert person.row_version == 2
 
-        person = Person.select()[0]
+        person = Person.query().first()
         person.name = 'Jonathan'
         objectstore.flush()
         objectstore.clear()
         assert person.row_version == 3
 
         # check that a concurrent modification raises exception
-        p1 = Person.select()[0]
+        p1 = Person.query().first()
         s1 = objectstore.session
         s2 = create_session()
         objectstore.context.current = s2
-        p2 = Person.select()[0]
+        p2 = Person.query().first()
         p1.name = "Daniel"
         p2.name = "Gaetan"
         objectstore.flush()

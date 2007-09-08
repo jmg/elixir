@@ -114,7 +114,7 @@ class TestAutoload(object):
         objectstore.flush()
         objectstore.clear()
         
-        p = Person.q.filter_by(name="Homer").one()
+        p = Person.get_by(name="Homer")
         
         assert p in p.father.children
         assert p.father.name == "Abe"
