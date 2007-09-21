@@ -641,6 +641,12 @@ class Entity(object):
         return cls.query().filter_by(*args, **kwargs).first()
     get_by = classmethod(get_by)
 
+
+    def get(cls, *args, **kwargs):
+        return cls._descriptor.objectstore.session.get(*args, **kwargs)
+    get = classmethod(get)
+
+
     # DEPRECATED LAND
     def select(cls, *args, **kwargs):
         warnings.warn("The select method on the class is deprecated."

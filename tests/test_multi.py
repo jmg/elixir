@@ -8,55 +8,41 @@ from elixir import *
 
 class TestMultiBelongsTo(object):
     def setup(self):
-        global Person, Animal
-        
-        #---------------------------------------
-        # classes for the multi belongs_to test
-
-        class Person(Entity):
-            has_field('name', Unicode(32))
-            
-            has_many('pets', of_kind='Animal', inverse='owner')
-            has_many('animals', of_kind='Animal', inverse='feeder')
-            
-            def __str__(self):
-                s = '%s\n' % self.name.encode('utf-8')  
-                for pet in self.pets:
-                    s += '  * pet: %s\n' % pet.name
-                return s
-
-        class Animal(Entity):
-            has_field('name', String(15))
-            has_field('color', String(15))
-            
-            belongs_to('owner', of_kind='Person')
-            belongs_to('feeder', of_kind='Person')
-
         metadata.bind = 'sqlite:///'
-        create_all()
     
     def teardown(self):
         cleanup_all()
-        objectstore.clear()
     
     def test_belongs_to_multi_ref(self):
-        snowball = Animal(name="Snowball II", color="grey")
-        slh = Animal(name="Santa's Little Helper")
-        homer = Person(name="Homer", animals=[snowball, slh], pets=[slh])
-        lisa = Person(name="Lisa", pets=[snowball])
+        class A(Entity):
+            has_field('name', String(32))
+            
+            has_many('brel1', of_kind='B', inverse='arel1')
+            has_many('brel2', of_kind='B', inverse='arel2')
+            
+        class B(Entity):
+            has_field('name', String(15))
+            
+            belongs_to('arel1', of_kind='A')
+            belongs_to('arel2', of_kind='A')
+
+        setup_all(True)
+
+        b1 = B(name="b1")
+        b2 = B(name="b2")
+        a1 = A(name="a1", brel1=[b1, b2], brel2=[b2])
+        a2 = A(name="a2", brel2=[b1])
         
         objectstore.flush()
         objectstore.clear()
         
-        homer = Person.get_by(name="Homer")
-        lisa = Person.get_by(name="Lisa")
-        slh = Animal.query().filter(Animal.c.name.like("Santa%")).first()
+        a1 = A.get_by(name="a1")
+        a2 = A.get_by(name="a2")
+        b1 = B.get_by(name="b1")
         
-        print homer
-
-        assert len(homer.animals) == 2
-        assert homer == lisa.pets[0].feeder
-        assert homer == slh.owner
+        assert len(a1.brel1) == 2
+        assert a1 == a2.brel2[0].arel1
+        assert a2 == b1.arel2
 
 class TestMultiHasAndBelongsToMany(object):
     def setup(self):
