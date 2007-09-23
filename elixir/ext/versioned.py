@@ -78,11 +78,22 @@ class VersionedMapperExtension(MapperExtension):
     def before_insert(self, mapper, connection, instance):
         instance.version = 1
         instance.timestamp = datetime.now()
+        colvalues = dict([(key, getattr(instance, key)) for key in instance.c.keys()])
+        instance.__class__.__history_table__.insert().execute(colvalues)
         return EXT_PASS
     
     def before_update(self, mapper, connection, instance):        
-        values = instance.table.select(get_entity_where(instance)).execute().fetchone()
-        colvalues = dict(values.items())
+        # In SQLAlchemy 0.3.X, and possibly 0.4 (unknown), objects can 
+        # sometimes be implicated to be saved when in fact they haven't been
+        # updated. If we've already inserted this version, we don't need to
+        # insert it again.
+        values = instance.__class__.__history_table__.select(get_entity_where(instance), 
+                                       order_by=[desc(instance.c.timestamp)]).execute().fetchone()
+        if values and instance.version == values['version']:
+          return EXT_PASS
+        
+        colvalues = dict([(key, getattr(instance, key)) for key in instance.c.keys()])
+        
         instance.__class__.__history_table__.insert().execute(colvalues)
         instance.version += 1
         instance.timestamp = datetime.now()
@@ -147,7 +158,7 @@ class ActsAsVersioned(object):
         def get_as_of(self, dt):
             # if the passed in timestamp is older than our current version's
             # time stamp, then the most recent version is our current version
-            if self.timestamp < dt: 
+            if self.timestamp < dt:
                 return self
             
             # otherwise, we need to look to the history table to get our

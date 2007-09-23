@@ -1,4 +1,7 @@
 0.4.0
+- Fixed bug in versioning that could cause repeat inserts of duplicates into
+  the version history. This was due to SA flagging items for update when they
+  weren't actually going to be updated.
 - Implemented ondelete/onupdate options for use with has_and_belongs_to_many
   to apply on delete clauses to foreign key constraints on the m2m table.
 - Implemented primary keys on m2m table.
