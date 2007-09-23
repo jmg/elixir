@@ -1,4 +1,7 @@
 0.4.0
+- Implemented ondelete/onupdate options for use with has_and_belongs_to_many
+  to apply on delete clauses to foreign key constraints on the m2m table.
+- Implemented primary keys on m2m table.
 - Implemented polymorphic single-table inheritance as well as polymorphic and
   non-polymorphic multi-table (aka joined table) inheritance.
 - Made the statement system more powerfull.

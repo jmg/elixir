@@ -555,6 +555,8 @@ class ManyToMany(Relationship):
         self.secondary_table = None
         self.primaryjoin_clauses = list()
         self.secondaryjoin_clauses = list()
+        self.ondelete = kwargs.pop('ondelete', None)
+        self.onupdate = kwargs.pop('onupdate', None)
         super(ManyToMany, self).__init__(*args, **kwargs)
 
     def match_type_of(self, other):
@@ -563,7 +565,7 @@ class ManyToMany(Relationship):
     def create_tables(self):
         if self.secondary_table:
             return
-
+        
         if self.inverse:
             if self.inverse.secondary_table:
                 self.secondary_table = self.inverse.secondary_table
@@ -621,8 +623,8 @@ class ManyToMany(Relationship):
             constraints = list()
 
             joins = (self.primaryjoin_clauses, self.secondaryjoin_clauses)
-            for num, desc, fk_name in ((0, e1_desc, source_fk_name), 
-                                       (1, e2_desc, target_fk_name)):
+            for num, desc, fk_name, m2m in ((0, e1_desc, source_fk_name, self), 
+                                            (1, e2_desc, target_fk_name, self.inverse)):
                 fk_colnames = list()
                 fk_refcols = list()
             
@@ -634,8 +636,8 @@ class ManyToMany(Relationship):
                     # don't end up with twice the same column name.
                     if self.entity is self.target:
                         colname += str(num + 1)
-
-                    col = Column(colname, pk_col.type)
+                    
+                    col = Column(colname, pk_col.type, primary_key=True)
                     columns.append(col)
 
                     # Build the list of local columns which will be part 
@@ -650,9 +652,12 @@ class ManyToMany(Relationship):
                     if self.entity is self.target:
                         joins[num].append(col == pk_col)
                 
+                onupdate = m2m and m2m.onupdate
+                ondelete = m2m and m2m.ondelete
+                
                 constraints.append(
                     ForeignKeyConstraint(fk_colnames, fk_refcols,
-                                         name=fk_name))
+                                         name=fk_name, onupdate=onupdate, ondelete=ondelete))
 
             args = columns + constraints
             
