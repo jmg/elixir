@@ -1,58 +1,74 @@
 0.4.0
-- Fixed bug in versioning that could cause repeat inserts of duplicates into
-  the version history. This was due to SA flagging items for update when they
-  weren't actually going to be updated.
-- Implemented ondelete/onupdate options for use with has_and_belongs_to_many
-  to apply on delete clauses to foreign key constraints on the m2m table.
-- Implemented primary keys on m2m table.
-- Implemented polymorphic single-table inheritance as well as polymorphic and
-  non-polymorphic multi-table (aka joined table) inheritance.
-- Made the statement system more powerfull.
+New features:
 - Implemented a new syntax to declare fields and relationships, much closer to
   what is found in other Python ORM's. The with_fields syntax is now
   deprecated in favor of a that new syntax. The old statement based (has_field 
   et al.) syntax stays the default for now. This was done with help from a 
   patch by Adam Gomaa.
+- Implemented polymorphic single-table inheritance as well as polymorphic and
+  non-polymorphic multi-table (aka joined table) inheritance.
+- Added a .query attribute on all entities. The old .query() syntax is still
+  available.
+- Added support for "manual session management" (ie you can now define an 
+  entity with "using_options(session=None)" and it won't use any
+  SessionContext extension, nor receive the "query" attribute.
+- Added ext sub-package for additional Elixir statements.
+- Added ext.associable for generating polymorphic associations with Elixir
+  statements.
+- versioning, encrypt ext [TODO]
+- Added has_property statement to add properties on the entity mapper which
+  rely on columns (an thus need them to be defined before the property can be
+  declared). See tests/test_has_property.py for an example.
+- Made the statement system more powerfull.
+
+Changes:
+- Made Elixir work with both SQLAlchemy 0.4 and 0.3.10 (with help from a patch
+  by Ants Aasma).
+- Moved away from assign_mapper, now all assign_mapper-provided methods are on
+  the Entity class. Now, if people don't like them, they have the option to
+  simply provide another base class.
+- Default objectstore is now a ScopedSession when working on SQLAlchemy 0.4. 
+  It means that it's not wrapped in an Objectstore object at all. This means, 
+  that depending on the version of SA you are using, you'll get a slightly 
+  different behavior.
 - Relationships to other classes can now also be defined using the classes
   themselves in addition to the class namees. Obviously, this doesn't work for
   forward references.
 - Autodelay and init order changed => order_by + belongs_to, belongs_to + pk, 
-  ...
+  ... [TODO]
 - Classes defined inside a function can now have relationships to each other.
-- Added ext sub-package for additional Elixir statements.
-- Added ext.associable for generating polymorphic associations with Elixir
-  Statements. (Many thanks to Mike Bayer for his support on writing this.)
-- Added has_property statement to add properties on the entity mapper which
-  rely on columns (an thus need them to be defined before the property can be
-  declared). See tests/test_has_property.py for an example.
 - Added default __init__ method on entities so that subclasses can override it
   and still have the "set attribute by keyword" behavior by calling super()
 - Added "through" and "via" keyword arguments on relationships and has_field
   statement, to proxy values through relationships (uses association_proxy)
-- Added .q property on the metaclass, so that you can get a query on an entity
-  by just using Entity.q, instead of using Entity.query()
 - Made EntityMeta public, so that people can actually define their own base 
   class.
-- Reworked/cleaned tests so that they don't leak stuff to other tests (both at
-  the method level and module level) anymore. Uses nosetest's module level 
-  fixture.
 - Changed the order of relationship kwargs processing so that computed kwargs
   can be overridden by kwargs manually passed to the statement. This should
   only be used if you know what you are doing.
 - Added onupdate kwarg to BelongsTo relationships for consistency with the
   ondelete kwarg
-- Applied patch from Ants Aasma to make Elixir compatible with the 0.4 branch
-  of SQLAlchemy.
+- Added ondelete and onupdate kwargs for use with has_and_belongs_to_many
+  to apply on delete clauses to foreign key constraints on the m2m table.
+- Columns of the intermediary table of an has_and_belongs_to_many relationship
+  are now marked as primary keys.
 - Reworked how entities look for primary keys on related entities. This
   enables one "normal" entity (fully defined in Elixir) to refer to an entity
   which is autoloaded.
 - Added translation (from column name to column object) of the primary_key 
   mapper option so that it can actually be used. This allows to have entities
   without any primary key defined at the table level.
+- Dropped support for the old threadlocal SA extension (which doesn't even exist
+  anymore in SA 0.4)
+
+Bug fixes:
+- Reworked/cleaned tests so that they don't leak stuff to other tests (both at
+  the method level and module level) anymore. Uses nosetest's module level 
+  fixture.
 - Fixed relationships to entities whose primary_key field has been defined
   with a "key" argument (based on a patch by Paul Johnston).
 - Fixed some buggy tests.
-- Fixed relationships to tables using a schema (Patch by Neil Blakey-Milner)
+- Fixed relationships to tables using a schema (patch by Neil Blakey-Milner)
 - Made inverse relationships use backrefs. This fixes the "bidirectional
   coherency" problem some people had before doing a flush. (based on a patch 
   from Remi Jolin).
