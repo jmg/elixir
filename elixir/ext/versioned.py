@@ -78,27 +78,46 @@ class VersionedMapperExtension(MapperExtension):
     def before_insert(self, mapper, connection, instance):
         instance.version = 1
         instance.timestamp = datetime.now()
+        
+    def after_insert(self, mapper, connection, instance):
         colvalues = dict([(key, getattr(instance, key)) for key in instance.c.keys()])
         instance.__class__.__history_table__.insert().execute(colvalues)
         return EXT_PASS
     
-    def before_update(self, mapper, connection, instance):        
-        # In SQLAlchemy 0.3.X, and possibly 0.4 (unknown), objects can 
-        # sometimes be implicated to be saved when in fact they haven't been
-        # updated. If we've already inserted this version, we don't need to
-        # insert it again.
-        values = instance.__class__.__history_table__.select(get_entity_where(instance), 
-                                       order_by=[desc(instance.c.timestamp)]).execute().fetchone()
-        if values and instance.version == values['version']:
-          return EXT_PASS
-        
+    def before_update(self, mapper, connection, instance):
         colvalues = dict([(key, getattr(instance, key)) for key in instance.c.keys()])
+        history = instance.__class__.__history_table__
         
-        instance.__class__.__history_table__.insert().execute(colvalues)
-        instance.version += 1
-        instance.timestamp = datetime.now()
+        values = history.select(get_history_where(instance), 
+                                order_by=[desc(history.c.timestamp)]).execute().fetchone()
+        # In case the data was dumped into the db, the initial version might 
+        # be missing so we put this version in as the original.
+        if not values:
+            instance.version = 1
+            instance.timestamp = datetime.now()
+            colvalues = dict([(key, getattr(instance, key)) for key in instance.c.keys()])
+            history.insert().execute(colvalues)
+            return EXT_PASS
+        
+        # SA might've flagged this for an update even though it didn't change.
+        # This occurs when a relation is updated, thus marking this instance
+        # for a save/update operation. We check here against the last version
+        # to ensure we really should save this version and update the version
+        # data.
+        new = False
+        for key in instance.c.keys():
+            if key in ['version', 'timestamp']: continue
+            if getattr(instance, key) != values[key]:
+                new = True
+                break
+        
+        if new:
+            instance.version += 1
+            instance.timestamp = datetime.now()
+            colvalues = dict([(key, getattr(instance, key)) for key in instance.c.keys()])
+            history.insert().execute(colvalues)
         return EXT_PASS
-    
+        
     def before_delete(self, mapper, connection, instance):
         instance.__history_table__.delete(
             get_history_where(instance)
