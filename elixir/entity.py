@@ -643,7 +643,7 @@ class Entity(object):
 
 
     def get(cls, *args, **kwargs):
-        return cls._descriptor.objectstore.session.get(*args, **kwargs)
+        return cls.query().get(*args, **kwargs)
     get = classmethod(get)
 
 
