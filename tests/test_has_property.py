@@ -8,17 +8,12 @@ from elixir import *
 def setup():
     metadata.bind = 'sqlite:///'
 
-def teardown():
-    cleanup_all()
-
 
 class TestHasProperty(object):
     def teardown(self):
-        objectstore.clear()
+        cleanup_all()
     
     def test_has_property(self):
-        global Tag, User
-
         class Tag(Entity):
             has_field('score1', Float)
             has_field('score2', Float)
@@ -48,7 +43,7 @@ class TestHasProperty(object):
         objectstore.flush()
         objectstore.clear()
         
-        for user in User.q:
+        for user in User.query.all():
             for tag in user.tags:
                 assert tag.query_score == tag.prop_score
 

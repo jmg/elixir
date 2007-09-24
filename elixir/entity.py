@@ -6,14 +6,15 @@ import sqlalchemy
 
 from sqlalchemy                     import Table, Integer, String, desc,\
                                            ForeignKey, and_
-from sqlalchemy.orm                 import deferred, Query, MapperExtension
-from sqlalchemy.ext.assignmapper    import assign_mapper
+from sqlalchemy.orm                 import deferred, Query, MapperExtension,\
+                                           mapper, object_session
 from sqlalchemy.ext.sessioncontext  import SessionContext
 from sqlalchemy.util                import OrderedDict
 
 from elixir.statements              import Statement
 from elixir.fields                  import Field
 from elixir.options                 import options_defaults
+
 
 try:
     set
@@ -34,6 +35,37 @@ DEFAULT_VERSION_ID_COL = "row_version"
 DEFAULT_POLYMORPHIC_COL_NAME = "row_type"
 DEFAULT_POLYMORPHIC_COL_SIZE = 40
 DEFAULT_POLYMORPHIC_COL_TYPE = String(DEFAULT_POLYMORPHIC_COL_SIZE)
+
+try: 
+    from sqlalchemy.orm import ScopedSession
+except ImportError: 
+    # Not on sqlalchemy version 0.4
+    ScopedSession = type(None)
+    
+def _do_mapping(session, cls, *args, **kwargs):
+    if session is None:
+        return mapper(cls, *args, **kwargs)
+    elif isinstance(session, ScopedSession):
+        return session.mapper(cls, *args, **kwargs)
+    elif isinstance(session, SessionContext):
+        extension = kwargs.pop('extension', None)
+        if extension is not None:
+            if not isinstance(extension, list):
+                extension = [extension]
+            extension.append(session.mapper_extension)
+        else:
+            extension = session.mapper_extension
+
+        class query(object):
+            def __getattr__(s, key):
+                return getattr(session.registry().query(cls), key)
+            def __call__(s):
+                return session.registry().query(cls)
+
+        if not 'query' in cls.__dict__: 
+            cls.query = query()
+
+        return mapper(cls, extension=extension, *args, **kwargs)
 
 class EntityDescriptor(object):
     '''
@@ -71,22 +103,39 @@ class EntityDescriptor(object):
         self.order_by = None
         self.table_args = list()
         self.metadata = getattr(self.module, 'metadata', elixir.metadata)
+        self.session = getattr(self.module, 'session', elixir.session)
 
         for option in ('inheritance', 'polymorphic',
                        'autoload', 'tablename', 'shortnames', 
-                       'auto_primarykey',
-                       'version_id_col'):
+                       'auto_primarykey', 'version_id_col'):
             setattr(self, option, options_defaults[option])
 
         for option_dict in ('mapper_options', 'table_options'):
             setattr(self, option_dict, options_defaults[option_dict].copy())
-   
+ 
     def setup_options(self):
         '''
         Setup any values that might depend on using_options. For example, the 
         tablename or the metadata.
         '''
         elixir.metadatas.add(self.metadata)
+
+        objectstore = None
+        session = self.session
+        if session is None or isinstance(session, ScopedSession):
+            # no stinking objectstore
+            pass
+        elif isinstance(session, SessionContext):
+            objectstore = Objectstore(session)
+        elif not hasattr(session, 'registry'):
+            # Both SessionContext and ScopedSession have a registry attribute,
+            # but objectstores (whether Elixir's or Activemapper's) don't, so 
+            # if we are here, it means an Objectstore is used for the session.
+            objectstore = session
+            session = objectstore.context
+
+        self.session = session
+        self.objectstore = objectstore
 
         entity = self.entity
         if self.inheritance == 'concrete' and self.polymorphic:
@@ -286,16 +335,6 @@ class EntityDescriptor(object):
         if self.entity.mapper:
             return
         
-        # look for a 'session' attribute assigned to the entity
-        # (or entity's base class)
-        session = getattr(self, 'session', None)
-        if session is None:
-            session = getattr(self.module, 'session', elixir.objectstore)
-        if not isinstance(session, Objectstore):
-            session = Objectstore(session)
-            
-        self.objectstore = session
-        
         kwargs = self.mapper_options
         if self.order_by:
             kwargs['order_by'] = self.translate_order_by(self.order_by)
@@ -361,8 +400,9 @@ class EntityDescriptor(object):
         else:
             args = [self.entity.table]
 
-        self.objectstore.mapper(self.entity, properties=properties, 
-                                *args, **kwargs)
+        self.entity.mapper = _do_mapping(self.session, self.entity, 
+                                         properties=properties,
+                                         *args, **kwargs)
 
     def after_mapper(self):
         Statement.process(self.entity, 'after_mapper')
@@ -604,9 +644,6 @@ class EntityMeta(type):
         elixir.setup_all()
         return type.__call__(cls, *args, **kwargs)
 
-    def q(cls):
-        return Query(cls, session=cls._descriptor.objectstore.session)
-    q = property(q)
 
 
 class Entity(object):
@@ -637,23 +674,151 @@ class Entity(object):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+    # session methods
+    def flush(self, *args, **kwargs):
+        return object_session(self).flush([self], *args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        return object_session(self).delete(self, *args, **kwargs)
+
+    def expire(self, *args, **kwargs):
+        return object_session(self).expire(self, *args, **kwargs)
+
+    def refresh(self, *args, **kwargs):
+        return object_session(self).refresh(self, *args, **kwargs)
+
+    def expunge(self, *args, **kwargs):
+        return object_session(self).expunge(self, *args, **kwargs)
+
+    # This bunch of session methods, along with all the query methods below 
+    # only make sense when using a global/scoped/contextual session.
+    def _global_session(self):
+        return self._descriptor.session.registry()
+    _global_session = property(_global_session)
+
+    def merge(self, *args, **kwargs):
+        return self._global_session.merge(self, *args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        return self._global_session.save(self, *args, **kwargs)
+
+    def update(self, *args, **kwargs):
+        return self._global_session.update(self, *args, **kwargs)
+
+    def save_or_update(self, *args, **kwargs):
+        return self._global_session.save_or_update(self, *args, **kwargs)
+
+    # query methods
     def get_by(cls, *args, **kwargs):
-        return cls.query().filter_by(*args, **kwargs).first()
+        return cls.query.filter_by(*args, **kwargs).first()
     get_by = classmethod(get_by)
 
-
     def get(cls, *args, **kwargs):
-        return cls.query().get(*args, **kwargs)
+        return cls.query.get(*args, **kwargs)
     get = classmethod(get)
 
+    #-----------------#
+    # DEPRECATED LAND #
+    #-----------------#
 
-    # DEPRECATED LAND
+    def filter(cls, *args, **kwargs):
+        warnings.warn("The filter method on the class is deprecated."
+                      "You should use cls.query.filter(...)", 
+                      DeprecationWarning, stacklevel=2)
+        return cls.query.filter(*args, **kwargs)
+    filter = classmethod(filter)
+
+    def filter_by(cls, *args, **kwargs):
+        warnings.warn("The filter_by method on the class is deprecated."
+                      "You should use cls.query.filter_by(...)", 
+                      DeprecationWarning, stacklevel=2)
+        return cls.query.filter_by(*args, **kwargs)
+    filter_by = classmethod(filter_by)
+
     def select(cls, *args, **kwargs):
         warnings.warn("The select method on the class is deprecated."
-                      "You should use cls.query.filter(...).all()", DeprecationWarning,
-                      stacklevel=2)
-        return cls.query().filter(*args, **kwargs).all()
+                      "You should use cls.query.filter(...).all()", 
+                      DeprecationWarning, stacklevel=2)
+        return cls.query.filter(*args, **kwargs).all()
     select = classmethod(select)
+
+    def select_by(cls, *args, **kwargs):
+        warnings.warn("The select_by method on the class is deprecated."
+                      "You should use cls.query.filter_by(...).all()", 
+                      DeprecationWarning, stacklevel=2)
+        return cls.query.filter_by(*args, **kwargs).all()
+    select_by = classmethod(select_by)
+
+    def selectfirst(cls, *args, **kwargs):
+        warnings.warn("The selectfirst method on the class is deprecated."
+                      "You should use cls.query.filter(...).first()", 
+                      DeprecationWarning, stacklevel=2)
+        return cls.query.filter(*args, **kwargs).first()
+    selectfirst = classmethod(selectfirst)
+
+    def selectfirst_by(cls, *args, **kwargs):
+        warnings.warn("The selectfirst_by method on the class is deprecated."
+                      "You should use cls.query.filter_by(...).first()", 
+                      DeprecationWarning, stacklevel=2)
+        return cls.query.filter_by(*args, **kwargs).first()
+    selectfirst_by = classmethod(selectfirst_by)
+
+    def selectone(cls, *args, **kwargs):
+        warnings.warn("The selectone method on the class is deprecated."
+                      "You should use cls.query.filter(...).one()", 
+                      DeprecationWarning, stacklevel=2)
+        return cls.query.filter(*args, **kwargs).one()
+    selectone = classmethod(selectone)
+
+    def selectone_by(cls, *args, **kwargs):
+        warnings.warn("The selectone_by method on the class is deprecated."
+                      "You should use cls.query.filter_by(...).one()", 
+                      DeprecationWarning, stacklevel=2)
+        return cls.query.filter_by(*args, **kwargs).one()
+    selectone_by = classmethod(selectone_by)
+
+    def join_to(cls, *args, **kwargs):
+        warnings.warn("The join_to method on the class is deprecated."
+                      "You should use cls.query.join(...)", 
+                      DeprecationWarning, stacklevel=2)
+        return cls.query.join_to(*args, **kwargs).all()
+    join_to = classmethod(join_to)
+
+    def join_via(cls, *args, **kwargs):
+        warnings.warn("The join_via method on the class is deprecated."
+                      "You should use cls.query.join(...)", 
+                      DeprecationWarning, stacklevel=2)
+        return cls.query.join_via(*args, **kwargs).all()
+    join_via = classmethod(join_via)
+
+    def count(cls, *args, **kwargs):
+        warnings.warn("The count method on the class is deprecated."
+                      "You should use cls.query.filter(...).count()", 
+                      DeprecationWarning, stacklevel=2)
+        return cls.query.filter(*args, **kwargs).count()
+    count = classmethod(count)
+
+    def count_by(cls, *args, **kwargs):
+        warnings.warn("The count_by method on the class is deprecated."
+                      "You should use cls.query.filter_by(...).count()", 
+                      DeprecationWarning, stacklevel=2)
+        return cls.query.filter_by(*args, **kwargs).count()
+    count_by = classmethod(count_by)
+
+    def options(cls, *args, **kwargs):
+        warnings.warn("The options method on the class is deprecated."
+                      "You should use cls.query.options(...)", 
+                      DeprecationWarning, stacklevel=2)
+        return cls.query.options(*args, **kwargs)
+    options = classmethod(options)
+
+    def instances(cls, *args, **kwargs):
+        warnings.warn("The instances method on the class is deprecated."
+                      "You should use cls.query.instances(...)", 
+                      DeprecationWarning, stacklevel=2)
+        return cls.query.instances(*args, **kwargs)
+    instances = classmethod(instances)
+
 
 
 class Objectstore(object):
@@ -667,16 +832,9 @@ class Objectstore(object):
     
     def __init__(self, ctx):
         self.context = ctx
-        self.is_ctx = isinstance(ctx, SessionContext)
 
     def __getattr__(self, name):
         return getattr(self.context.registry(), name)
     
-    def mapper(self, cls, *args, **kwargs):
-        if self.is_ctx:
-            assign_mapper(self.context, cls, *args, **kwargs)
-        else:
-            cls.mapper = self.context.mapper(cls, *args, **kwargs)
-        
     session = property(lambda s:s.context.registry())
 

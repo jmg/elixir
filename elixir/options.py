@@ -76,6 +76,11 @@ The list of supported arguments are as follows:
 |                     | list of strings, composed of the field name,          |
 |                     | optionally lead by a minus (descending order).        |
 +---------------------+-------------------------------------------------------+
+| ``session``         | Objectstore or SessionContext or ScopedSession     |
+|                     |           |
+|                     |         |
++---------------------+-------------------------------------------------------+
+
 
 For examples, please refer to the examples and unit tests.
 

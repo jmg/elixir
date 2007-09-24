@@ -18,7 +18,6 @@ with full identity support called 'videostore'.
 
 import sqlalchemy
 
-from sqlalchemy.ext.sessioncontext import SessionContext
 from sqlalchemy.types import *
 
 from elixir.options import using_options, using_table_options, \
@@ -43,7 +42,7 @@ __all__ = ['Entity', 'EntityMeta', 'Field', 'has_field', 'with_fields',
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many',
            'ManyToOne', 'OneToOne', 'OneToMany', 'ManyToMany',
            'using_options', 'using_table_options', 'using_mapper_options',
-           'options_defaults', 'metadata', 'objectstore',
+           'options_defaults', 'metadata', 'objectstore', 'session',
            'create_all', 'drop_all',
            'setup_all', 'cleanup_all'] + sqlalchemy.types.__all__
 
@@ -51,17 +50,23 @@ __pudge_all__ = ['create_all', 'drop_all',
                  'setup_all', 'cleanup_all',
                  'metadata', 'objectstore']
 
-# connect
+# default metadata
 metadata = sqlalchemy.MetaData()
 
-try:
-    # this only happens when the threadlocal extension is used
-    objectstore = sqlalchemy.objectstore
-except AttributeError:
-    objectstore = Objectstore(SessionContext(sqlalchemy.orm.create_session))
+# default session
+try: 
+    from sqlalchemy.orm import scoped_session
+    session = scoped_session(sqlalchemy.orm.create_session)
+except ImportError: 
+    # Not on version 0.4 of sqlalchemy
+    from sqlalchemy.ext.sessioncontext import SessionContext
+    session = Objectstore(SessionContext(sqlalchemy.orm.create_session))
+
+# backward-compatible name
+objectstore = session
+
 
 metadatas = set()
-
 
 def create_all(engine=None):
     'Create all necessary tables for all declared entities'
@@ -141,4 +146,6 @@ def cleanup_all(drop_tables=False):
 
     objectstore.clear()
     sqlalchemy.orm.clear_mappers()
+
+
 

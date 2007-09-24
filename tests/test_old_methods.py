@@ -26,4 +26,3 @@ class TestOldMethods(object):
         
         assert A.get(1).name == "a1"
 
-

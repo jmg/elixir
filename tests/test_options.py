@@ -2,7 +2,7 @@
     test options
 """
 
-from sqlalchemy import UniqueConstraint 
+from sqlalchemy import UniqueConstraint, create_engine
 from sqlalchemy.orm import create_session
 from sqlalchemy.exceptions import SQLError, ConcurrentModificationError 
 from elixir import *
@@ -18,42 +18,40 @@ class TestOptions(object):
     def test_version_id_col(self):
         class Person(Entity):
             has_field('name', Unicode(30))
-
+ 
             using_options(version_id_col=True)
-
+ 
         Person.table.create()
-
+ 
         p1 = Person(name='Daniel')
         objectstore.flush()
         objectstore.clear()
         
-        person = Person.query().first()
+        person = Person.query.first()
         person.name = 'Gaetan'
         objectstore.flush()
         objectstore.clear()
         assert person.row_version == 2
-
-        person = Person.query().first()
+ 
+        person = Person.query.first()
         person.name = 'Jonathan'
         objectstore.flush()
         objectstore.clear()
         assert person.row_version == 3
-
+ 
         # check that a concurrent modification raises exception
-        p1 = Person.query().first()
-        s1 = objectstore.session
+        p1 = Person.query.first()
         s2 = create_session()
-        objectstore.context.current = s2
-        p2 = Person.query().first()
+        p2 = s2.query(Person).first()
         p1.name = "Daniel"
         p2.name = "Gaetan"
-        objectstore.flush()
+        s2.flush()
         try:
-            objectstore.context.current = s1
             objectstore.flush()
             assert False
         except ConcurrentModificationError:
             pass
+        s2.close()
 
     def test_tablename_func(self):
         import re
@@ -63,11 +61,15 @@ class TestOptions(object):
 
         options_defaults['tablename'] = camel_to_underscore
 
+        setup_all(True)
+
         class MyEntity(Entity):
             has_field('name', Unicode(30))
 
         class MySuperTestEntity(Entity):
             has_field('name', Unicode(30))
+
+        setup_all(True)
 
         assert MyEntity.table.name == 'my_entity'
         assert MySuperTestEntity.table.name == 'my_super_test_entity'
@@ -84,8 +86,6 @@ class TestSessionOptions(object):
 
     def test_session_context(self):
         from sqlalchemy.ext.sessioncontext import SessionContext
-        from sqlalchemy.orm import create_session
-        from sqlalchemy import create_engine
 
         engine = create_engine('sqlite:///')
         
@@ -102,9 +102,58 @@ class TestSessionOptions(object):
         bart = Person(firstname="Bart", surname='Simpson')
         ctx.current.flush()
         
-        assert Person.query().session is ctx.current
+        assert Person.query.session is ctx.current
+        assert Person.query.filter_by(firstname='Homer').one() is homer
+
+    def test_manual_session(self):
+        engine = create_engine('sqlite:///')
         
-        assert Person.query().filter_by(firstname='Homer').one() is homer
+        class Person(Entity):
+            using_options(session=None)
+            has_field('firstname', Unicode(30))
+            has_field('surname', Unicode(30))
+
+        create_all(engine)
+
+        session = create_session(bind=engine)
+
+        homer = Person(firstname="Homer", surname='Simpson')
+        bart = Person(firstname="Bart", surname='Simpson')
+
+        session.save(homer)
+        session.save(bart)
+        session.flush()
+       
+        bart.delete()
+        session.flush()
+
+        assert session.query(Person).filter_by(firstname='Homer').one() is homer
+        assert session.query(Person).count() == 1
+
+    def test_activemapper_objectstore(self):
+        try:
+            from sqlalchemy.ext import activemapper
+        except ImportError:
+            return
+            
+        engine = create_engine('sqlite:///')
+
+        store = activemapper.Objectstore(lambda: create_session(bind=engine))
+
+        class Person(Entity):
+            using_options(session=store)
+            has_field('firstname', Unicode(30))
+            has_field('surname', Unicode(30))
+
+        create_all(engine)
+
+        homer = Person(firstname="Homer", surname='Simpson')
+        bart = Person(firstname="Bart", surname='Simpson')
+
+        store.flush()
+
+        assert Person.query.session is store.context.current
+        assert Person.query.filter_by(firstname='Homer').one() is homer
 
     def test_scoped_session(self):
         try:
@@ -113,8 +162,6 @@ class TestSessionOptions(object):
             print "Not on version 0.4 of sqlalchemy"
             return
             
-        from sqlalchemy import create_engine
-
         engine = create_engine('sqlite:///')
 
         Session = scoped_session(sessionmaker(bind=engine))
@@ -130,9 +177,8 @@ class TestSessionOptions(object):
         bart = Person(firstname="Bart", surname='Simpson')
         Session.flush()
 
-        assert Person.query().session is Session()
-
-        assert Person.query().filter_by(firstname='Homer').one() is homer
+        assert Person.query.session is Session()
+        assert Person.query.filter_by(firstname='Homer').one() is homer
         
     def test_global_scoped_session(self):
         try:
@@ -140,8 +186,6 @@ class TestSessionOptions(object):
         except ImportError:
             print "Not on version 0.4 of sqlalchemy"
             return
-
-        from sqlalchemy import create_engine
 
         global session
         
@@ -159,9 +203,8 @@ class TestSessionOptions(object):
         bart = Person(firstname="Bart", surname='Simpson')
         session.flush()
         
-        assert Person.query().session is session()
-        
-        assert Person.query().filter_by(firstname='Homer').one() is homer
+        assert Person.query.session is session()
+        assert Person.query.filter_by(firstname='Homer').one() is homer
 
         del session
         

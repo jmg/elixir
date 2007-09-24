@@ -18,7 +18,7 @@ class TestAttrSyntax(object):
         objectstore.flush()
         objectstore.clear()
 
-        a = A.query().one()
+        a = A.query.one()
 
         assert a.name == "a1"
 
@@ -38,7 +38,7 @@ class TestAttrSyntax(object):
         objectstore.flush()
         objectstore.clear()
 
-        b = B.query().one()
+        b = B.query.one()
         a = b.a
 
         assert b in a.bs
@@ -59,7 +59,7 @@ class TestAttrSyntax(object):
         objectstore.flush()
         objectstore.clear()
 
-        b = B.query().one()
+        b = B.query.one()
         a = b.a
 
         assert b == a.b
@@ -80,8 +80,8 @@ class TestAttrSyntax(object):
         objectstore.flush()
         objectstore.clear()
 
-        a = A.query().one()
-        b = B.query().one()
+        a = A.query.one()
+        b = B.query.one()
 
         assert a in b.as_
         assert b in a.bs_

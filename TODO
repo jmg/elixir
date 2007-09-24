@@ -1,3 +1,5 @@
+METATODO: move all of these to trac tickets!
+
 TODO
 ====
 
@@ -70,13 +72,6 @@ Code related
 - fix inherit VS no field in parent. You should be able to define a base
   class, or even a chain of base classes with no fields, by simply inheriting
   from Entity.
-
-- we should probably pass some extra options to M2M relations, so that if one 
-  of the referenced row is deleted, the M2M row is deleted too, or an error is
-  raised. The solution is probably to set all columns of the table as the
-  primary_key and to allow specifying the ondelete clause for each side of the
-  relationship.
-    cfr http://www.postgresql.org/docs/8.2/interactive/ddl-constraints.html#DDL-CONSTRAINTS-FK
 
 - Besides, the current system also has another case I don't like: if the user 
   specifies an inverse (on one or both sides) but also set a table name on one

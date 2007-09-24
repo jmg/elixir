@@ -43,7 +43,7 @@ def do_tst(inheritance, polymorphic, with_rel, expected_res):
 
     res = {}
     for class_ in (A, B, C, D):
-        res[class_.__name__] = class_.query().all()
+        res[class_.__name__] = class_.query.all()
         res[class_.__name__].sort(key=lambda o: o.__class__.__name__) 
 
     for query_class in ('A', 'B', 'C', 'D'):

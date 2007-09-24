@@ -43,7 +43,8 @@ from elixir                import Integer, DateTime
 from elixir.statements     import Statement
 from elixir.fields         import Field
 from sqlalchemy            import Table, Column, and_, desc
-from sqlalchemy.orm        import mapper, MapperExtension, EXT_PASS
+from sqlalchemy.orm        import mapper, MapperExtension, EXT_PASS, \
+                                  object_session
 from datetime              import datetime
 
 import inspect
@@ -89,13 +90,13 @@ class VersionedMapperExtension(MapperExtension):
         history = instance.__class__.__history_table__
         
         values = history.select(get_history_where(instance), 
-                                order_by=[desc(history.c.timestamp)]).execute().fetchone()
+                                order_by=[desc(history.c.timestamp)],
+                                limit=1).execute().fetchone()
         # In case the data was dumped into the db, the initial version might 
         # be missing so we put this version in as the original.
         if not values:
-            instance.version = 1
-            instance.timestamp = datetime.now()
-            colvalues = dict([(key, getattr(instance, key)) for key in instance.c.keys()])
+            instance.version = colvalues['version'] = 1
+            instance.timestamp = colvalues['timestamp'] = datetime.now()
             history.insert().execute(colvalues)
             return EXT_PASS
         
@@ -104,17 +105,17 @@ class VersionedMapperExtension(MapperExtension):
         # for a save/update operation. We check here against the last version
         # to ensure we really should save this version and update the version
         # data.
-        new = False
+        updated = False
         for key in instance.c.keys():
-            if key in ['version', 'timestamp']: continue
+            if key in ['version', 'timestamp']:
+                continue
             if getattr(instance, key) != values[key]:
-                new = True
+                updated = True
                 break
         
-        if new:
-            instance.version += 1
-            instance.timestamp = datetime.now()
-            colvalues = dict([(key, getattr(instance, key)) for key in instance.c.keys()])
+        if updated:
+            instance.version = colvalues['version'] = instance.version + 1
+            instance.timestamp = colvalues['timestamp'] = datetime.now()
             history.insert().execute(colvalues)
         return EXT_PASS
         
@@ -172,7 +173,7 @@ class ActsAsVersioned(object):
                         
         # attach utility methods and properties to the entity
         def get_versions(self):
-            return entity._descriptor.objectstore.query(Version).filter(get_history_where(self)).all()
+            return object_session(self).query(Version).filter(get_history_where(self)).all()
         
         def get_as_of(self, dt):
             # if the passed in timestamp is older than our current version's
@@ -182,7 +183,7 @@ class ActsAsVersioned(object):
             
             # otherwise, we need to look to the history table to get our
             # older version
-            query = entity._descriptor.objectstore.query(Version)
+            query = object_session(self).query(Version)
             query = query.filter(and_(get_history_where(self), 
                                       Version.c.timestamp <= dt))
             query = query.order_by(desc(Version.c.timestamp)).limit(1)
@@ -192,14 +193,15 @@ class ActsAsVersioned(object):
             hist = entity.__history_table__
             old_version = hist.select(and_(
                 get_history_where(self), 
-                hist.c.version==to_version
+                hist.c.version == to_version
             )).execute().fetchone()
             
             entity.table.update(get_entity_where(self)).execute(
                 dict(old_version.items())
             )
             
-            hist.delete(and_(get_history_where(self), hist.c.version>=to_version)).execute()
+            hist.delete(and_(get_history_where(self), 
+                             hist.c.version >= to_version)).execute()
             for event in after_revert_events: 
                 event(self)
         
@@ -210,7 +212,8 @@ class ActsAsVersioned(object):
         def compare_with(self, version):
             differences = {}
             for column in self.c:
-                if column.name == 'version': continue
+                if column.name == 'version':
+                    continue
                 this = getattr(self, column.name)
                 that = getattr(version, column.name)
                 if this != that:

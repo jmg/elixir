@@ -6,12 +6,12 @@ from elixir import *
 
 #-----------
 
-class TestMultiBelongsTo(object):
+class TestMultipleRelationships(object):
     def setup(self):
         metadata.bind = 'sqlite:///'
     
     def teardown(self):
-        cleanup_all()
+        cleanup_all(True)
     
     def test_belongs_to_multi_ref(self):
         class A(Entity):
@@ -44,52 +44,30 @@ class TestMultiBelongsTo(object):
         assert a1 == a2.brel2[0].arel1
         assert a2 == b1.arel2
 
-class TestMultiHasAndBelongsToMany(object):
-    def setup(self):
-        global Article, Tag
+    def test_has_and_belongs_to_many_multi_ref(self):
+        class A(Entity):
+            has_field('name', String(100))
 
-        class Article(Entity):
-            has_field('title', String(100))
-
-            has_and_belongs_to_many('editor_tags', of_kind='Tag')
-            has_and_belongs_to_many('user_tags', of_kind='Tag')
+            has_and_belongs_to_many('rel1', of_kind='B')
+            has_and_belongs_to_many('rel2', of_kind='B')
             
-        class Tag(Entity):
+        class B(Entity):
             has_field('name', String(20), primary_key=True)
 
-        metadata.bind = 'sqlite:///'
-        create_all()
-
-    def teardown(self):
-        cleanup_all()
-
-    def test_has_and_belongs_to_many_multi_ref(self):
-        physics = Tag(name='Physics')
-        a1 = Article(
-                title="The Foundation of the General Theory of Relativity",
-                editor_tags=[Tag(name='Good'), physics],
-                user_tags=[Tag(name='Complex'), Tag(name='Einstein'), physics],
-             )
+        setup_all(True)
+        
+        b1 = B(name='b1')
+        a1 = A(name='a1', rel1=[B(name='b2'), b1],
+                          rel2=[B(name='b3'), B(name='b4'), b1])
 
         objectstore.flush()
         objectstore.clear()
         
-        articles = Article.query().all()
-        physics = Tag.get_by(name='Physics')
-        good = Tag.get_by(name='Good')
+        a1 = A.query.one()
+        b1 = B.get_by(name='b1')
+        b2 = B.get_by(name='b2')
 
-        assert len(articles) == 1
-        assert physics in articles[0].editor_tags 
-        assert physics in articles[0].user_tags
-        assert good in articles[0].editor_tags
+        assert b1 in a1.rel1 
+        assert b1 in a1.rel2
+        assert b2 in a1.rel1
 
-if __name__ == '__main__':
-    test = TestMultiBelongsTo()
-    test.setup()
-    test.test_belongs_to_multi_ref()
-    test.teardown()
-
-    test = TestMultiHasAndBelongsToMany()
-    test.setup()
-    test.test_has_and_belongs_to_many_multi_ref()
-    test.teardown()

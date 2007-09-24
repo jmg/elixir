@@ -33,7 +33,7 @@ class TestPackages(object):
         objectstore.flush()
         objectstore.clear()
 
-        a = A.query().one()
+        a = A.query.one()
 
         assert a in a.b.as_
 
