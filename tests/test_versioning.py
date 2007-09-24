@@ -93,7 +93,7 @@ class TestVersioning(object):
         differences = latest_version.compare_with(oldest_version)
         assert differences['description'] == ('description three', 'draft description')
     
-        assert len(movie.versions) == 2
+        assert len(movie.versions) == 3
         assert movie.versions[0] == oldest_version
         assert movie.versions[1] == middle_version
     
