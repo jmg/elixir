@@ -7,7 +7,7 @@ import sqlalchemy
 from sqlalchemy                     import Table, Integer, String, desc,\
                                            ForeignKey, and_
 from sqlalchemy.orm                 import deferred, Query, MapperExtension,\
-                                           mapper, object_session
+                                           mapper, object_session, EXT_PASS
 from sqlalchemy.ext.sessioncontext  import SessionContext
 from sqlalchemy.util                import OrderedDict
 
@@ -277,14 +277,15 @@ class EntityDescriptor(object):
         def make_proxy_method(methods):
             def proxy_method(self, mapper, connection, instance):
                 for func in methods:
-                    func(instance)
-# I couldn't commit myself in forcing people to systematicaly return EXT_PASS 
-# in all their event methods. But not doing that prevents people to stop
-# processing. I should try to convince Mike to do EXT_PASS by default, and stop
-# processing as the special case.
-#                    ret = func(instance)
+                    ret = func(instance)
+                    # I couldn't commit myself in forcing people to 
+                    # systematicaly return EXT_PASS in all their event methods.
+                    # But not doing that diverge to how SQLAlchemy works.
+                    # I should try to convince Mike to do EXT_PASS by default,
+                    # and stop processing as the special case.
 #                    if ret != EXT_PASS:
-#                        return ret
+                    if ret is not None:
+                        return ret
                 return EXT_PASS
             return proxy_method
 
