@@ -278,13 +278,13 @@ class EntityDescriptor(object):
             def proxy_method(self, mapper, connection, instance):
                 for func in methods:
                     ret = func(instance)
-                    # I couldn't commit myself in forcing people to 
+                    # I couldn't commit myself to force people to 
                     # systematicaly return EXT_PASS in all their event methods.
                     # But not doing that diverge to how SQLAlchemy works.
                     # I should try to convince Mike to do EXT_PASS by default,
                     # and stop processing as the special case.
 #                    if ret != EXT_PASS:
-                    if ret is not None:
+                    if ret is not None and ret != EXT_PASS:
                         return ret
                 return EXT_PASS
             return proxy_method
