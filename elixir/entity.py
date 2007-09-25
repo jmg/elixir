@@ -644,8 +644,11 @@ class EntityMeta(type):
 
     def __getattribute__(cls, name):
         if type.__getattribute__(cls, "_ready"):
-            #TODO: we need to add all assign_mapper methods
-            if name in ('c', 'table', 'mapper'):
+            #TODO: we might want to add all columns that will be available as
+            #attributes on the class itself (in SA 0.4). This would be a pretty
+            #rare usecase, as people will hit the query attribute before the
+            #column attributes, but still...
+            if name in ('c', 'table', 'mapper', 'query'):
                 elixir.setup_all()
         return type.__getattribute__(cls, name)
 

@@ -50,3 +50,11 @@ class TestAutoDelay(object):
         setup_all()
         assert isinstance(metadata.tables['person'], Table)
 
+    def test_query(self):
+        class Person(Entity):
+            has_field('name', Unicode(30))
+            using_options(tablename='person')
+
+        q = Person.query
+        assert isinstance(metadata.tables['person'], Table)
+
