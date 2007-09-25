@@ -278,6 +278,14 @@ class EntityDescriptor(object):
             def proxy_method(self, mapper, connection, instance):
                 for func in methods:
                     func(instance)
+# I couldn't commit myself in forcing people to systematicaly return EXT_PASS 
+# in all their event methods. But not doing that prevents people to stop
+# processing. I should try to convince Mike to do EXT_PASS by default, and stop
+# processing as the special case.
+#                    ret = func(instance)
+#                    if ret != EXT_PASS:
+#                        return ret
+                return EXT_PASS
             return proxy_method
 
         # create a list of callbacks for each event

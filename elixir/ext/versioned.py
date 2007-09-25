@@ -79,6 +79,7 @@ class VersionedMapperExtension(MapperExtension):
     def before_insert(self, mapper, connection, instance):
         instance.version = 1
         instance.timestamp = datetime.now()
+        return EXT_PASS
         
     def after_insert(self, mapper, connection, instance):
         colvalues = dict([(key, getattr(instance, key)) for key in instance.c.keys()])
