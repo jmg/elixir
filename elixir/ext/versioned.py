@@ -106,18 +106,16 @@ class VersionedMapperExtension(MapperExtension):
         # for a save/update operation. We check here against the last version
         # to ensure we really should save this version and update the version
         # data.
-        updated = False
         for key in instance.c.keys():
             if key in ['version', 'timestamp']:
                 continue
             if getattr(instance, key) != values[key]:
-                updated = True
+                # the instance was really updated, so we create a new version
+                instance.version = colvalues['version'] = instance.version + 1
+                instance.timestamp = colvalues['timestamp'] = datetime.now()
+                history.insert().execute(colvalues)
                 break
-        
-        if updated:
-            instance.version = colvalues['version'] = instance.version + 1
-            instance.timestamp = colvalues['timestamp'] = datetime.now()
-            history.insert().execute(colvalues)
+
         return EXT_PASS
         
     def before_delete(self, mapper, connection, instance):
