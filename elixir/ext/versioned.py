@@ -1,11 +1,11 @@
 '''
 A versioning plugin for Elixir.
 
-Entities that are marked as versioned will automatically have a history table
-created and a timestamp and version column added to their tables. In addition,
-versioned entities are provided with four new methods: revert, revert_to, and
-compare_with, get_as_of, and one new attribute: versions.  Entities with 
-compound primary keys are supported.
+Entities that are marked as versioned with the `acts_as_versioned` statement 
+will automatically have a history table created and a timestamp and version
+column added to their tables. In addition, versioned entities are provided 
+with four new methods: revert, revert_to, compare_with and get_as_of, and one 
+new attribute: versions.  Entities with compound primary keys are supported.
 
 The `versions` attribute will contain a list of previous versions of the
 instance, in increasing version number order.
@@ -33,6 +33,10 @@ format (current_value, version_value). Version instances also have a
 Also included in the module is a `after_revert` decorator that can be used to
 decorate methods on the versioned entity that will be called following that 
 instance being reverted.
+
+The acts_as_versioned statement also accepts an optional `ignore` argument 
+that consists of a list of strings, specifying names of fields.  Changes in 
+those fields will not result in a version increment.
 
 Note that relationships that are stored in mapping tables will not be included
 as part of the versioning process, and will need to be handled manually. Only
@@ -106,8 +110,9 @@ class VersionedMapperExtension(MapperExtension):
         # for a save/update operation. We check here against the last version
         # to ensure we really should save this version and update the version
         # data.
+        ignored = instance.__class__.__ignored_fields__
         for key in instance.c.keys():
-            if key in ['version', 'timestamp']:
+            if key in ignored:
                 continue
             if getattr(instance, key) != values[key]:
                 # the instance was really updated, so we create a new version
@@ -134,7 +139,7 @@ versioned_mapper_extension = VersionedMapperExtension()
 
 class ActsAsVersioned(object):
         
-    def __init__(self, entity):
+    def __init__(self, entity, ignore=[]):
         entity._descriptor.add_mapper_extension(versioned_mapper_extension)
         
         # add a version field to the entity, along with a timestamp
@@ -143,6 +148,10 @@ class ActsAsVersioned(object):
         entity._descriptor.add_field(versionField)
         entity._descriptor.add_field(timestampField)
         self.entity = entity
+        
+        # Changes in these fields 
+        entity.__ignored_fields__ = ignore
+        entity.__ignored_fields__.extend(['version', 'timestamp'])
     
     def after_table(self):
         entity = self.entity

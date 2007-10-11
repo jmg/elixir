@@ -96,17 +96,9 @@ discussed before doing anything.
   * the (unlikely?) case where a parent who is not inheriting from XFBase (or 
     Entity) defines a property will probably fail because of line 16.
 
-- Make the session context extension/assign_mapper optional
-
 - I'm not sure it would be worth it but we might want to put a section
   "contributing" on the website. In that case it might be a good idea to point
   to this file so that people know what can be done.
-
-- get rid of the assign_mapper stuff. This means we have to add all methods on
-  the entity base class.
-
-- integrate the association proxy plugin
-  see ML thread about this
 
 - add __revision__ (+ svn property) to all elixir files?
 
@@ -149,6 +141,10 @@ discussed before doing anything.
   
 - elixir on arbitrary selects. Shouldn't be hard...
     cfr http://www.sqlalchemy.org/trac/ticket/502
+
+- better support from strange relation, or even other properties (like
+  column_property, and so on)
+  see http://www.sqlalchemy.org/trac/ticket/198
 
 - somehow support things like described at:
   http://spyced.blogspot.com/2007/01/why-sqlalchemy-impresses-me.html

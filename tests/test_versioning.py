@@ -19,10 +19,11 @@ def setup():
         has_field('title', Unicode(60), primary_key=True)
         has_field('description', Unicode(512))
         has_field('releasedate', DateTime)
+        has_field('ignoreme', Integer, default=0)
         belongs_to('director', of_kind='Director', inverse='movies')
         has_and_belongs_to_many('actors', of_kind='Actor', inverse='movies', tablename='movie_casting')
         using_options(tablename='movies')
-        acts_as_versioned()
+        acts_as_versioned(ignore=['ignoreme'])
 
 
     class Actor(Entity):
@@ -70,6 +71,11 @@ class TestVersioning(object):
         movie.description = 'description three'
         objectstore.flush(); objectstore.clear()
     
+        # Edit the ignored field, this shouldn't change the version
+        monkeys = Movie.get_by(title='12 Monkeys')
+        monkeys.ignoreme = 1
+        objectstore.flush(); objectstore.clear()
+    
         time.sleep(1)
         after_update_two = datetime.now()
         time.sleep(1)
@@ -83,12 +89,14 @@ class TestVersioning(object):
     
         assert oldest_version.version == 1
         assert oldest_version.description == 'draft description'
+        assert oldest_version.ignoreme == 0
     
         assert middle_version.version == 2
         assert middle_version.description == 'description two'
     
         assert latest_version.version == 3
         assert latest_version.description == 'description three'
+        assert latest_version.ignoreme == 1
     
         differences = latest_version.compare_with(oldest_version)
         assert differences['description'] == ('description three', 'draft description')
