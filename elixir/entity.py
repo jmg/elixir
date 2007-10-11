@@ -66,6 +66,10 @@ def _do_mapping(session, cls, *args, **kwargs):
             cls.query = query()
 
         return mapper(cls, extension=extension, *args, **kwargs)
+    else:
+        raise Exception("Failed to map entity '%s' with its table or "
+                        "selectable" % cls.__name__)
+
 
 class EntityDescriptor(object):
     '''
