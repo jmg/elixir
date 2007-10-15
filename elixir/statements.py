@@ -19,7 +19,7 @@ class Statement(object):
         self.target = target
     
     def __call__(self, *args, **kwargs):
-        # jam this statement into one of the class's statement lists
+        # jam this statement into the class's statement list
         class_locals = sys._getframe(1).f_locals
         statements = class_locals.setdefault(STATEMENTS, [])
         statements.append((self, args, kwargs))
