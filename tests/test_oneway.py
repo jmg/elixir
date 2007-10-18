@@ -9,7 +9,7 @@ def setup():
 
 class TestOneWay(object):
     def teardown(self):
-        cleanup_all()
+        cleanup_all(True)
     
     def test_belongs_to(self):
         class Person(Entity):

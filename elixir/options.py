@@ -39,7 +39,12 @@ The list of supported arguments are as follows:
 |                     | Defaults to ``False``. Note that polymorphic concrete |
 |                     | inheritance is currently not implemented.             |
 +---------------------+-------------------------------------------------------+
-| ``metadata``        | Specify a custom MetaData.                            |
+| ``metadata``        | Specify a custom MetaData for this entity.            |
+|                     | By default, entities uses the global                  |
+|                     | ``elixir.metadata``.                                  |
+|                     | This option can also be set for all entitie of a      |
+|                     | module by setting the ``__metadata__`` attribute of   |
+|                     | that module.                                          |
 +---------------------+-------------------------------------------------------+
 | ``autoload``        | Automatically load column definitions from the        |
 |                     | existing database table.                              |
@@ -74,11 +79,28 @@ The list of supported arguments are as follows:
 +---------------------+-------------------------------------------------------+
 | ``order_by``        | How to order select results. Either a string or a     |
 |                     | list of strings, composed of the field name,          |
-|                     | optionally lead by a minus (descending order).        |
+|                     | optionally lead by a minus (for descending order).    |
 +---------------------+-------------------------------------------------------+
-| ``session``         | Objectstore or SessionContext or ScopedSession     |
-|                     |           |
-|                     |         |
+| ``session``         | Specify a custom contextual session for this entity.  |
+|                     | By default, entities uses the global                  |
+|                     | ``elixir.session``.                                   |
+|                     | This option accepts Objectstore                       |
+|                     | (found in Elixir and ActiveMapper), SessionContext    |
+|                     | (found in SQLAlchemy 0.3) or ScopedSession (found in  |
+|                     | SQLAlchemy 0.4) objects. It also supports ``None``,   |
+|                     | in which case your entity will be mapped using a      |
+|                     | non-contextual mapper. This option can also be set    |
+|                     | for all entities of a module via by setting the       |
+|                     | ``__session__`` attribute of that module.             |
++---------------------+-------------------------------------------------------+
+| ``autosetup``       | Specify whether that entity will contain automatic    |
+|                     | setup triggers. That is if this entity will be        |
+|                     | automatically setup (along with all other entities    |
+|                     | which were already declared) if any of the following  |
+|                     | condition happen: some of its attributes are accessed |
+|                     | ('c', 'table', 'mapper' or 'query'), instanciated     |
+|                     | (called) or the create_all method of this entity's    |
+|                     | metadata is called. Defaults to ``True``.             |
 +---------------------+-------------------------------------------------------+
 
 
@@ -114,60 +136,47 @@ function's documentation <http://www.sqlalchemy.org/docs/adv_datamapping.myt
 #advdatamapping_mapperoptions>`_.
 '''
 
-from elixir.statements import Statement
+from elixir.statements import ClassMutator
 
-__pudge_all__ = ['options_defaults']
 
 options_defaults = dict(
+    autosetup=True,
     inheritance='single',
     polymorphic=False,
     autoload=False,
-    shortnames=False,
     tablename=None,
+    shortnames=False,
     auto_primarykey=True,
     version_id_col=False,
     mapper_options=dict(),
     table_options=dict(),
 )
 
-class UsingOptions(object):    
-    valid_options = (
-        'inheritance',
-        'polymorphic',
-        'autoload',
-        'tablename',
-        'shortnames',
-        'auto_primarykey',
-        'version_id_col',
-        'metadata',
-        'order_by',
-        'session',
-    )
-    
-    def __init__(self, entity, *args, **kwargs):
-        desc = entity._descriptor
-        
-        for kwarg in kwargs:
-            if kwarg in UsingOptions.valid_options:
-                setattr(desc, kwarg, kwargs[kwarg])
-            else:
-                raise Exception("'%s' is not a valid option for Elixir "
-                                "entities." % kwarg)
+valid_options = options_defaults.keys() + [
+    'metadata',
+    'session',
+    'collection',
+    'order_by',
+]
+
+def using_options_handler(entity, *args, **kwargs):
+    for kwarg in kwargs:
+        if kwarg in valid_options:
+            setattr(entity._descriptor, kwarg, kwargs[kwarg])
+        else:
+            raise Exception("'%s' is not a valid option for Elixir entities." 
+                            % kwarg)
 
 
-class UsingTableOptions(object):
-
-    def __init__(self, entity, *args, **kwargs):
-        entity._descriptor.table_args = list(args)
-        entity._descriptor.table_options.update(kwargs)
+def using_table_options_handler(entity, *args, **kwargs):
+    entity._descriptor.table_args = list(args)
+    entity._descriptor.table_options.update(kwargs)
 
 
-class UsingMapperOptions(object):
-
-    def __init__(self, entity, *args, **kwargs):
-        entity._descriptor.mapper_options.update(kwargs)
+def using_mapper_options_handler(entity, *args, **kwargs):
+    entity._descriptor.mapper_options.update(kwargs)
 
 
-using_options = Statement(UsingOptions)
-using_table_options = Statement(UsingTableOptions)
-using_mapper_options = Statement(UsingMapperOptions)
+using_options = ClassMutator(using_options_handler)
+using_table_options = ClassMutator(using_table_options_handler)
+using_mapper_options = ClassMutator(using_mapper_options_handler)

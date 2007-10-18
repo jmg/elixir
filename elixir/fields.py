@@ -98,14 +98,19 @@ Here is a quick example of how to use ``with_fields``.
             name = Field(String(50))
         )
 '''
+import sys
 
-from sqlalchemy             import Column
-from elixir.statements      import Statement
+from sqlalchemy import Column
+from sqlalchemy.orm import deferred
 from sqlalchemy.ext.associationproxy import association_proxy
+
+from elixir.statements import ClassMutator
+from elixir.properties import Property
 
 __pudge_all__ = ['Field']
 
-class Field(object):
+
+class Field(Property):
     '''
     Represents the definition of a 'field' on an entity.
     
@@ -116,64 +121,70 @@ class Field(object):
     '''
     
     def __init__(self, type, *args, **kwargs):
+        super(Field, self).__init__()
+        
         self.colname = kwargs.pop('colname', None)
         self.deferred = kwargs.pop('deferred', False)
         if 'required' in kwargs:
             kwargs['nullable'] = not kwargs.pop('required')
         self.type = type
         self.primary_key = kwargs.get('primary_key', False)
+
+        self.column = None
+        self.property = None
         
         self.args = args
         self.kwargs = kwargs
 
-    def copy(self):
-        '''
-        Returns a copy of the field.
-        '''
+    def attach(self, entity, name):
+        # If no colname was defined (through the 'colname' kwarg), set
+        # it to the name of the attr.
+        if self.colname is None:
+            self.colname = name
+        super(Field, self).attach(entity, name)
 
-        kwargs = self.kwargs
-        kwargs.update({'colname': self.colname, 'deferred': self.deferred})
-        if 'nullable' in self.kwargs:
-            kwargs['required'] = not self.kwargs['nullable']
-        return Field(self.type, *self.args, **kwargs)
-            
-    def column(self):
-        '''
-        Returns the corresponding sqlalchemy-column
-        '''
-    
-        if not hasattr(self, '_column'):
-            self._column = Column(self.colname, self.type,
-                                  *self.args, **self.kwargs)
-        return self._column
-    column = property(column)
+    def create_pk_cols(self):
+        if self.primary_key:
+            self.create_col()
 
+    def create_non_pk_cols(self):
+        if not self.primary_key:
+            self.create_col()
 
-class HasField(object):
+    def create_col(self):
+        self.column = Column(self.colname, self.type,
+                             *self.args, **self.kwargs)
+        self.entity._descriptor.add_column(self.column)
 
-    def __init__(self, entity, name, *args, **kwargs):
-        if 'through' in kwargs:
-            setattr(entity, name, 
-                    association_proxy(kwargs.pop('through'), 
-                                      kwargs.pop('attribute', name),
-                                      **kwargs))
-            return
+    def create_properties(self):
+        if self.deferred:
+            group = None
+            if isinstance(self.deferred, basestring):
+                group = self.deferred
+            self.property = deferred(self.column, group=group)
+        elif self.name != self.colname:
+            self.property = self.column
 
-        field = Field(*args, **kwargs)
-        field.colname = name
-        entity._descriptor.add_field(field)
+        if self.property:
+            self.entity.mapper.add_property(self.name, self.property)
 
 
-class WithFields(object):
 
-    def __init__(self, entity, *args, **fields):
-        columns = list()
-        desc = entity._descriptor
-        
-        for colname, field in fields.iteritems():
-            if not field.colname:
-                field.colname = colname
-            desc.add_field(field)
+def has_field_handler(entity, name, *args, **kwargs):
+    if 'through' in kwargs:
+        setattr(entity, name, 
+                association_proxy(kwargs.pop('through'), 
+                                  kwargs.pop('attribute', name),
+                                  **kwargs))
+        return
+    field = Field(*args, **kwargs)
+    field.attach(entity, name)
 
-has_field = Statement(HasField)
-with_fields = Statement(WithFields)
+
+def with_fields_handler(entity, *args, **fields):
+    for name, field in fields.iteritems():
+        field.attach(entity, name)
+
+
+has_field = ClassMutator(has_field_handler)
+with_fields = ClassMutator(with_fields_handler)

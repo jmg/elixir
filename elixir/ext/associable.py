@@ -130,6 +130,7 @@ def associable(assoc_entity, plural_name=None, lazy=True):
         def __init__(self, tablename):
             self.type = tablename
    
+    #TODO: inherit from entity builder
     class Associable(object):
         """An associable Elixir Statement object"""
         def __init__(self, entity, name=None, uselist=True, lazy=True):
@@ -143,9 +144,9 @@ def associable(assoc_entity, plural_name=None, lazy=True):
                 self.name = name
 
         def after_table(self):
-            field = el.Field(sa.Integer, sa.ForeignKey('%s.id' % able_name),
-                             colname='%s_assoc_id' % interface_name)
-            self.entity._descriptor.add_field(field)
+            col = sa.Column('%s_assoc_id' % interface_name, sa.Integer, 
+                            sa.ForeignKey('%s.id' % able_name))
+            self.entity._descriptor.add_column(col)
 
             if not hasattr(assoc_entity, '_assoc_table'):
                 association_table = sa.Table("%s" % able_name, assoc_entity._descriptor.metadata,

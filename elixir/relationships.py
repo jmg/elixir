@@ -224,8 +224,9 @@ the following optional (keyword) arguments:
 from sqlalchemy         import ForeignKeyConstraint, Column, \
                                Table, and_
 from sqlalchemy.orm     import relation, backref
-from elixir.statements  import Statement
+from elixir.statements  import ClassMutator
 from elixir.fields      import Field
+from elixir.properties  import Property
 from elixir.entity      import EntityDescriptor, EntityMeta
 from sqlalchemy.ext.associationproxy import association_proxy
 
@@ -233,14 +234,14 @@ import sys
 
 __pudge_all__ = []
 
-class Relationship(object):
+class Relationship(Property):
     '''
     Base class for relationships.
     '''
     
     def __init__(self, of_kind, *args, **kwargs):
-        self.entity = None
-        self.name = None
+        super(Relationship, self).__init__()
+
         self.inverse_name = kwargs.pop('inverse', None)
 
         self.of_kind = of_kind
@@ -255,7 +256,16 @@ class Relationship(object):
         self.args = args
         self.kwargs = kwargs
 
+    def attach(self, entity, name):
+        super(Relationship, self).attach(entity, name)
+        entity._descriptor.relationships.append(self)
     
+    def create_pk_cols(self):
+        self.create_keys(True)
+
+    def create_non_pk_cols(self):
+        self.create_keys(False)
+
     def create_keys(self, pk):
         '''
         Subclasses (ie. concrete relationships) may override this method to 
@@ -295,6 +305,7 @@ class Relationship(object):
 
         kwargs.update(self.get_prop_kwargs())
         self.property = relation(self.target, **kwargs)
+        #TODO: check for duplicate properties
         self.entity.mapper.add_property(self.name, self.property)
     
     def target(self):
@@ -399,7 +410,7 @@ class ManyToOne(Relationship):
         source_desc = self.entity._descriptor
         #TODO: make this work if target is a pure SA-mapped class
         # for that, I need: 
-        # - the list of primary key columns of the target table
+        # - the list of primary key columns of the target table (type and name)
         # - the name of the target table
         target_desc = self.target._descriptor
         #make sure the target has all its pk setup up
@@ -438,15 +449,15 @@ class ManyToOne(Relationship):
                 else:
                     colname = '%s_%s' % (self.name, pk_col.key)
 
-                # we use a Field here instead of using a Column directly 
-                # because add_field can be used before the table is created
-                field = Field(pk_col.type, colname=colname, index=True, 
-                              **self.column_kwargs)
-                source_desc.add_field(field)
+                # we can't add the column to the table directly as the table
+                # might not be created yet.
+                col = Column(colname, pk_col.type, index=True,
+                             **self.column_kwargs)
+                source_desc.add_column(col)
 
                 # build the list of local columns which will be part of
                 # the foreign key
-                self.foreign_key.append(field.column)
+                self.foreign_key.append(col)
 
                 # store the names of those columns
                 fk_colnames.append(colname)
@@ -461,16 +472,15 @@ class ManyToOne(Relationship):
 
                 # build up the primary join. This is needed when you have 
                 # several belongs_to relations between two objects
-                self.primaryjoin_clauses.append(field.column == pk_col)
+                self.primaryjoin_clauses.append(col == pk_col)
             
             # In some databases (at lease MySQL) the constraint name needs to 
             # be unique for the whole database, instead of per table.
             fk_name = "%s_%s_fk" % (source_desc.tablename, 
                                     '_'.join(fk_colnames))
-            source_desc.add_constraint(ForeignKeyConstraint(
-                                            fk_colnames, fk_refcols,
-                                            name=fk_name,
-                                            **self.constraint_kwargs))
+            source_desc.add_constraint(
+                ForeignKeyConstraint(fk_colnames, fk_refcols, name=fk_name,
+                                     **self.constraint_kwargs))
 
     def get_prop_kwargs(self):
         kwargs = {'uselist': False}
@@ -770,26 +780,23 @@ def _get_join_clauses(local_table, local_cols1, local_cols2, target_table):
     return primary_join, secondary_join
 
 
-def rel_statement_handler(target):
-    class Handler(object):
-        def __init__(self, entity, name, *args, **kwargs):
-            if 'through' in kwargs and 'via' in kwargs:
-                setattr(entity, name, 
-                        association_proxy(kwargs.pop('through'), 
-                                          kwargs.pop('via'),
-                                          **kwargs))
-                return
-            elif 'through' in kwargs or 'via' in kwargs:
-                raise Exception("'through' and 'via' relationship keyword "
-                                "arguments should be used in combination.")
-            rel = target(kwargs.pop('of_kind'), *args, **kwargs)
-            rel.name = name
-            rel.entity = entity
-            entity._descriptor.relationships.append(rel)
-    return Handler
+def rel_mutator_handler(target):
+    def handler(entity, name, *args, **kwargs):
+        if 'through' in kwargs and 'via' in kwargs:
+            setattr(entity, name, 
+                    association_proxy(kwargs.pop('through'), 
+                                      kwargs.pop('via'),
+                                      **kwargs))
+            return
+        elif 'through' in kwargs or 'via' in kwargs:
+            raise Exception("'through' and 'via' relationship keyword "
+                            "arguments should be used in combination.")
+        rel = target(kwargs.pop('of_kind'), *args, **kwargs)
+        rel.attach(entity, name)
+    return handler
 
 
-belongs_to = Statement(rel_statement_handler(ManyToOne))
-has_one = Statement(rel_statement_handler(OneToOne))
-has_many = Statement(rel_statement_handler(OneToMany))
-has_and_belongs_to_many = Statement(rel_statement_handler(ManyToMany))
+belongs_to = ClassMutator(rel_mutator_handler(ManyToOne))
+has_one = ClassMutator(rel_mutator_handler(OneToOne))
+has_many = ClassMutator(rel_mutator_handler(OneToMany))
+has_and_belongs_to_many = ClassMutator(rel_mutator_handler(ManyToMany))

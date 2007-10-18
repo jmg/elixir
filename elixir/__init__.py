@@ -22,12 +22,13 @@ from sqlalchemy.types import *
 
 from elixir.options import using_options, using_table_options, \
                            using_mapper_options, options_defaults
-from elixir.entity import Entity, EntityMeta, EntityDescriptor, Objectstore
+from elixir.entity import Entity, EntityMeta, EntityDescriptor, \
+                          setup_entities, cleanup_entities
 from elixir.fields import has_field, with_fields, Field
 from elixir.relationships import belongs_to, has_one, has_many, \
                                  has_and_belongs_to_many
 from elixir.relationships import ManyToOne, OneToOne, OneToMany, ManyToMany
-from elixir.properties import has_property
+from elixir.properties import has_property, GenericProperty, ColumnProperty
 from elixir.statements import Statement
 
 try:
@@ -37,21 +38,39 @@ except NameError:
 
 __version__ = '0.4.0'
 
-__all__ = ['Entity', 'EntityMeta', 'Field', 'has_field', 'with_fields',
-           'has_property', 
+__all__ = ['Entity', 'EntityMeta',
+           'Field', 'has_field', 'with_fields',
+           'has_property', 'GenericProperty', 'ColumnProperty',
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many',
            'ManyToOne', 'OneToOne', 'OneToMany', 'ManyToMany',
            'using_options', 'using_table_options', 'using_mapper_options',
            'options_defaults', 'metadata', 'objectstore', 'session',
            'create_all', 'drop_all',
-           'setup_all', 'cleanup_all'] + sqlalchemy.types.__all__
+           'setup_all', 'cleanup_all', 
+           'setup_entities', 'cleanup_entities'] + \
+           sqlalchemy.types.__all__
 
 __pudge_all__ = ['create_all', 'drop_all',
                  'setup_all', 'cleanup_all',
                  'metadata', 'objectstore']
 
-# default metadata
-metadata = sqlalchemy.MetaData()
+
+class Objectstore(object):
+    """a wrapper for a SQLAlchemy session-making object, such as 
+    SessionContext or ScopedSession.
+    
+    Uses the ``registry`` attribute present on both objects
+    (versions 0.3 and 0.4) in order to return the current
+    contextual session.
+    """
+    
+    def __init__(self, ctx):
+        self.context = ctx
+
+    def __getattr__(self, name):
+        return getattr(self.context.registry(), name)
+    
+    session = property(lambda s:s.context.registry())
 
 # default session
 try: 
@@ -65,87 +84,55 @@ except ImportError:
 # backward-compatible name
 objectstore = session
 
+# default metadata
+metadata = sqlalchemy.MetaData()
 
 metadatas = set()
 
-def create_all(engine=None):
-    'Create all necessary tables for all declared entities'
+# default entity collection
+entities = list()
+
+def create_all(*args, **kwargs):
+    '''Create the necessary tables for all declared entities'''
     for md in metadatas:
-        md.create_all(bind=engine)
+        md.create_all(*args, **kwargs)
 
-
-def drop_all(engine=None):
-    'Drop all tables for all declared entities'
+def drop_all(*args, **kwargs):
+    '''Drop tables for all declared entities'''
     for md in metadatas:
-        md.drop_all(bind=engine)
+        md.drop_all(*args, **kwargs)
 
-_delayed_entities = list()
 
-def setup_entities(entities):
-    '''Setup all entities passed in entities'''
+def setup_all(create_tables=False, *args, **kwargs):
+    '''Setup the table and mapper of all entities in the default entity
+    collection.
 
-    for entity in entities:
-        desc = entity._descriptor
-        entity._ready = False
-        del sqlalchemy.orm.mapper_registry[entity._class_key]
-
-        md = desc.metadata
-
-        # the fake table could have already been removed (namely in a 
-        # single table inheritance scenario)
-        md.tables.pop(entity._table_key, None)
-
-        # restore original table iterator if not done already
-        if hasattr(md.table_iterator, '_non_elixir_patched_iterator'):
-            md.table_iterator = \
-                md.table_iterator._non_elixir_patched_iterator
-
-    for method_name in (
-            'setup_autoload_table', 'create_pk_cols', 'setup_relkeys',
-            'before_table', 'setup_table', 'setup_reltables', 'after_table',
-            'setup_events',
-            'before_mapper', 'setup_mapper', 'after_mapper',
-            'setup_properties',
-            'finalize'):
-        for entity in entities:
-            method = getattr(entity._descriptor, method_name)
-            method()
-
-def setup_all(create_tables=False):
-    '''Setup the table and mapper for all entities which have been delayed.
-
-    This is called automatically when any of your entities is first accessed,
+    This is called automatically if any entity of the collection is configured
+    with the `autosetup` option (this is the default) and it is first accessed,
     instanciated (called) or the create_all method of a metadata containing
-    entities is called.
+    tables from any of those entities is called.
     '''
-    if not _delayed_entities:
-        return
-
-    try:
-        setup_entities(_delayed_entities)
-    finally:
-        # make sure that even if we fail to initialize, we don't leave junk for
-        # others
-        del _delayed_entities[:]
+    setup_entities(entities)
 
     # issue the "CREATE" SQL statements
     if create_tables:
-        create_all()
+        create_all(*args, **kwargs)
 
-
-def cleanup_all(drop_tables=False):
+def cleanup_all(drop_tables=False, *args, **kwargs):
     '''Clear all mappers, clear the session, and clear all metadatas. 
     Optionally drops the tables.
     '''
     if drop_tables:
-        drop_all()
-        
+        drop_all(*args, **kwargs)
+
+    cleanup_entities(entities)
+
     for md in metadatas:
         md.clear()
     metadatas.clear()
 
-    objectstore.clear()
+    session.clear()
+
     sqlalchemy.orm.clear_mappers()
-
-
+    del entities[:]
 

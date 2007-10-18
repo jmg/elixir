@@ -45,7 +45,6 @@ values within the entity's main table will be versioned into the history table.
 
 from elixir                import Integer, DateTime
 from elixir.statements     import Statement
-from elixir.fields         import Field
 from sqlalchemy            import Table, Column, and_, desc
 from sqlalchemy.orm        import mapper, MapperExtension, EXT_PASS, \
                                   object_session
@@ -137,22 +136,23 @@ versioned_mapper_extension = VersionedMapperExtension()
 # the acts_as_versioned statement
 #
 
-class ActsAsVersioned(object):
+class VersionedEntityBuilder(object):
         
     def __init__(self, entity, ignore=[]):
         entity._descriptor.add_mapper_extension(versioned_mapper_extension)
-        
-        # add a version field to the entity, along with a timestamp
-        versionField = Field(Integer, colname='version')
-        timestampField = Field(DateTime, colname='timestamp')
-        entity._descriptor.add_field(versionField)
-        entity._descriptor.add_field(timestampField)
         self.entity = entity
-        
-        # Changes in these fields 
+        # Changes in these fields will be ignored
         entity.__ignored_fields__ = ignore
         entity.__ignored_fields__.extend(['version', 'timestamp'])
-    
+        
+    def create_non_pk_cols(self):
+        # add a version column to the entity, along with a timestamp
+        version_col = Column('version', Integer)
+        timestamp_col = Column('timestamp', DateTime)
+        self.entity._descriptor.add_column(version_col)
+        self.entity._descriptor.add_column(timestamp_col)
+   
+    # we copy columns from the main entity table, so we need it to exist first
     def after_table(self):
         entity = self.entity
 
@@ -163,7 +163,9 @@ class ActsAsVersioned(object):
                 after_revert_events.append(func)
         
         # create a history table for the entity
-        columns = [ column.copy() for column in entity.table.c if column.name != 'version' ]
+        #TODO: fail more noticeably in case there is a version col
+        columns = [column.copy() for column in entity.table.c 
+                                 if column.name != 'version']
         columns.append(Column('version', Integer, primary_key=True))
         table = Table(entity.table.name + '_history', entity.table.metadata, 
             *columns
@@ -235,8 +237,12 @@ class ActsAsVersioned(object):
         entity.compare_with  = compare_with
         Version.compare_with = compare_with
 
+#def acts_as_versioned_handler(entity, ignore=[]):
+#    builder = VersionedEntityBuilder(entity, ignore)
+#    entity._descriptor.builders.append(builder)
 
-acts_as_versioned = Statement(ActsAsVersioned)
+#acts_as_versioned = ClassMutator(acts_as_versioned_handler)
+acts_as_versioned = Statement(VersionedEntityBuilder)
 
 
 #

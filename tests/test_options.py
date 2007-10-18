@@ -132,6 +132,15 @@ class TestSessionOptions(object):
 
     def test_activemapper_objectstore(self):
         try:
+            from sqlalchemy.orm import scoped_session, sessionmaker
+            #TODO: this test, as-is has no sense on SA 0.4 since activemapper 
+            # objectstore uses scoped_session, but we need to provide a new 
+            # test for that.
+            return
+        except ImportError:
+            pass
+
+        try:
             from sqlalchemy.ext import activemapper
         except ImportError:
             return
@@ -187,11 +196,12 @@ class TestSessionOptions(object):
             print "Not on version 0.4 of sqlalchemy"
             return
 
-        global session
+        global __session__
         
         engine = create_engine('sqlite:///')
         
         session = scoped_session(sessionmaker(bind=engine))
+        __session__ = session
         
         class Person(Entity):
             has_field('firstname', Unicode(30))
@@ -206,7 +216,7 @@ class TestSessionOptions(object):
         assert Person.query.session is session()
         assert Person.query.filter_by(firstname='Homer').one() is homer
 
-        del session
+        del __session__
         
 class TestTableOptions(object):
     def setup(self):

@@ -2,43 +2,55 @@ import sys
 
 __pudge_all__ = []
 
-STATEMENTS = '__elixir_statements__'
+MUTATORS = '__elixir_mutators__'
 
-class Statement(object):    
+class ClassMutator(object):    
     '''
     DSL-style syntax
     
-    A ``Statement`` object represents a DSL term.
+    A ``ClassMutator`` object represents a DSL term.
     '''
     
-    def __init__(self, target):
+    def __init__(self, handler):
         '''
-        target is the class which will handle this statement. For example, the
-        BelongsTo class handles the belongs_to statement.
+        Create a new ClassMutator, using the `handler` callable to process it
+        when the time will come.
         '''
-        self.target = target
+        self.handler = handler
     
+    # called when a mutator (eg. "has_field(...)") is parsed
     def __call__(self, *args, **kwargs):
-        # jam this statement into the class's statement list
+        # self in this case is the "generic" mutator (eg "has_field")
+
+        # jam this mutator into the class's mutator list
         class_locals = sys._getframe(1).f_locals
-        statements = class_locals.setdefault(STATEMENTS, [])
-        statements.append((self, args, kwargs))
-    
-    @classmethod
-    def process(cls, entity, when=None):
+        mutators = class_locals.setdefault(MUTATORS, [])
+        mutators.append((self, args, kwargs))
+
+    def process(self, entity, *args, **kwargs):
         '''
-        Apply all statements to the given entity.
+        Process one mutator. This version simply calls the handler callable, 
+        but another mutator (sub)class could do more processing.
         '''
-        # loop over all statements in the class's statement list
-        # and apply them, i.e. instanciate the corresponding classes
-        statements = getattr(entity, STATEMENTS, [])
-        for num, statement in enumerate(statements):
-            # replace the statement "definition tuple" by its instance
-            if isinstance(statement, tuple):
-                statement, args, kwargs = statement
-                statements[num] = statement.target(entity, *args, **kwargs)
-            else:
-                # otherwise, call the corresponding method
-                if when and hasattr(statement, when):
-                    getattr(statement, when)()
+        self.handler(entity, *args, **kwargs)
+
+#TODO: move this to the super class (to be created here) of EntityMeta
+def process_mutators(entity):
+    '''
+    Apply all mutators of the given entity. That is, loop over all mutators 
+    in the class's mutator list and process them.
+    '''
+    mutators = getattr(entity, MUTATORS, [])
+    for mutator, args, kwargs in mutators:
+        mutator.process(entity, *args, **kwargs)
+
+class Statement(ClassMutator):
+    def process(self, entity, *args, **kwargs):
+        builder = self.handler(entity, *args, **kwargs)
+        entity._descriptor.builders.append(builder)
+
+class PropertyStatement(ClassMutator):
+    def process(self, entity, name, *args, **kwargs):
+        prop = self.handler(*args, **kwargs)
+        prop.attach(entity, name)
 

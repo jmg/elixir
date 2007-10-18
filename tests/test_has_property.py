@@ -21,6 +21,10 @@ class TestHasProperty(object):
                          lambda c: column_property(
                              (c.score1 * c.score2).label('query_score')))
 
+            query_score2 = GenericProperty( 
+                         lambda c: column_property(
+                             (c.score1 * c.score2 + 1).label('query_score2')))
+            query_score3 = ColumnProperty(lambda c: c.score1 * c.score2 + 2)
             belongs_to('user', of_kind='User')
 
             @property
@@ -46,5 +50,7 @@ class TestHasProperty(object):
         for user in User.query.all():
             for tag in user.tags:
                 assert tag.query_score == tag.prop_score
+                assert tag.query_score2 == tag.prop_score + 1
+                assert tag.query_score3 == tag.prop_score + 2
 
 
