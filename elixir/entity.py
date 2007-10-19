@@ -539,7 +539,7 @@ class TriggerProxy(object):
         self.attrname = attrname
 
     def __getattr__(self, name):
-        _auto_setup_all()
+        elixir.setup_all()
         proxied_attr = getattr(self.class_, self.attrname)
         return getattr(proxied_attr, name)
 
@@ -552,7 +552,7 @@ class TriggerAttribute(object):
         self.attrname = attrname
 
     def __get__(self, instance, owner):
-        _auto_setup_all()
+        elixir.setup_all()
         return getattr(owner, self.attrname)
 
 
@@ -613,7 +613,7 @@ class EntityMeta(type):
 
     def __call__(cls, *args, **kwargs):
         if cls._descriptor.autosetup:
-            _auto_setup_all()
+            elixir.setup_all()
         return type.__call__(cls, *args, **kwargs)
 
 
@@ -646,7 +646,7 @@ def _install_autosetup_triggers(cls, entity_name=None):
     if not hasattr(original_table_iterator, 
                    '_non_elixir_patched_iterator'):
         def table_iterator(*args, **kwargs):
-            _auto_setup_all()
+            elixir.setup_all()
             return original_table_iterator(*args, **kwargs)
         table_iterator.__doc__ = original_table_iterator.__doc__
         table_iterator._non_elixir_patched_iterator = \
@@ -672,9 +672,9 @@ def _cleanup_autosetup_triggers(cls):
     for name in ('c', 'query'):
         delattr(cls, name)
 
-    desc = cls._descriptor
     del sqlalchemy.orm.mapper_registry[cls._class_key]
 
+    desc = cls._descriptor
     md = desc.metadata
 
     # the fake table could have already been removed (namely in a 
@@ -690,6 +690,10 @@ def _cleanup_autosetup_triggers(cls):
 def setup_entities(entities):
     '''Setup all entities in the list passed as argument'''
 
+    for entity in elixir.entities:
+        if entity._descriptor.autosetup:
+            _cleanup_autosetup_triggers(entity)
+
     for method_name in (
             'setup_autoload_table', 'create_pk_cols', 'setup_relkeys',
             'before_table', 'setup_table', 'setup_reltables', 'after_table',
@@ -703,26 +707,30 @@ def setup_entities(entities):
             method = getattr(entity._descriptor, method_name)
             method()
 
-def _auto_setup_all():
-    for entity in elixir.entities:
-        _cleanup_autosetup_triggers(entity)
-    setup_entities(elixir.entities)
-
 def cleanup_entities(entities):
-    # try to revert back to after init but before setup phase
+    """
+    Try to revert back the list of entities passed as argument to the state 
+    they had just before their setup phase. It will not work entirely for 
+    autosetup entities as we need to remove the autosetup triggers.
+
+    This function is *experimental* in that it probably doesn't revert to the
+    exact same state the entities where before setup.
+    """
     for entity in entities:
+        desc = entity._descriptor
+        if desc.autosetup:
+            _cleanup_autosetup_triggers(entity)
+
         if hasattr(entity, '_setup_done'):
             del entity._setup_done
 
         entity.table = None
         entity.mapper = None
         
-        desc = entity._descriptor
         desc._pk_col_done = False
         desc.has_pk = False
         desc._columns = []
         desc.constraints = []
-        desc.metadata.clear()
 
 
 class Entity(object):

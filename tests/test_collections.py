@@ -78,10 +78,8 @@ class TestSetup(object):
         # cleanup manually
         cleanup_entities([A])
 
-if __name__ == '__main__':
-    setup()
-    test = TestSetup()
-    test.test_setup_after_cleanup()
-    test.teardown()
-    teardown()
+        # metadata is not in metadatas anymore (removed by cleanup_all) and not
+        # added back by setup_entities (maybe we should?)
+        metadata.clear()
+
 

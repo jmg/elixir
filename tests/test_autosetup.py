@@ -4,7 +4,7 @@
 
 from sqlalchemy import Table
 from elixir import *
-
+import elixir
 
 def setup():
     metadata.bind = 'sqlite:///'
@@ -16,7 +16,36 @@ class TestSetup(object):
     def teardown(self):
         cleanup_all()
     
-    def test_manual_setup_all(self):
+    def test_autosetup_manual_setup_all(self):
+        class Person(Entity):
+            has_field('name', Unicode(30))
+            using_options(autosetup=True, tablename='person')
+
+        # check that we have a fake table installed
+        assert 'person' in metadata.tables
+        assert isinstance(metadata.tables['person'], 
+                          elixir.entity.TriggerProxy)
+
+        setup_all()
+
+        assert isinstance(metadata.tables['person'], Table)
+
+    # jeeez, this used to lock up hard the program
+    def test_cleanup_before_setup(self):
+        class Person(Entity):
+            has_field('name', Unicode(30))
+            using_options(autosetup=True, tablename='person')
+
+        # check that we have a fake table installed
+        assert 'person' in metadata.tables
+        assert isinstance(metadata.tables['person'], 
+                          elixir.entity.TriggerProxy)
+
+        cleanup_all()
+
+        assert 'person' not in metadata.tables
+
+    def test_no_autosetup(self):
         class Person(Entity):
             has_field('name', Unicode(30))
             using_options(autosetup=False, tablename='person')
@@ -27,7 +56,7 @@ class TestSetup(object):
         # check that accessing the table didn't trigger the setup
         assert 'person' not in metadata.tables
         
-        setup_all(True)
+        setup_all()
 
         assert isinstance(metadata.tables['person'], Table)
 
