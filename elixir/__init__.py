@@ -52,7 +52,7 @@ __all__ = ['Entity', 'EntityMeta',
 
 __pudge_all__ = ['create_all', 'drop_all',
                  'setup_all', 'cleanup_all',
-                 'metadata', 'objectstore']
+                 'metadata', 'session']
 
 
 class Objectstore(object):

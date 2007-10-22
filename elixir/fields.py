@@ -61,7 +61,7 @@ keyword arguments are supported.
 
 Here is a quick example of how to use ``has_field``.
 
-::
+.. sourcecode:: python
 
     class Person(Entity):
         has_field('id', Integer, primary_key=True)
@@ -72,7 +72,7 @@ Object-oriented syntax
 
 Here is a quick example of how to use the object-oriented syntax.
 
-::
+.. sourcecode:: python
 
     class Person(Entity):
         id = Field(Integer, primary_key=True)
@@ -90,7 +90,7 @@ arguments than the `has_field` statement.
 
 Here is a quick example of how to use ``with_fields``.
 
-::
+.. sourcecode:: python
 
     class Person(Entity):
         with_fields(

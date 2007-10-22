@@ -743,7 +743,7 @@ class Entity(object):
     
     Here is an example:
 
-    ::
+    .. sourcecode:: python
     
         class Person(Entity):
             has_field('name', Unicode(128))

@@ -36,7 +36,7 @@ which allow queries to be run for the associated objects.
 
 Example usage:
 
-::
+.. sourcecode:: python
     
     class Tag(Entity):
         has_field('name', Unicode)
@@ -54,7 +54,7 @@ Example usage:
 Or if one of the entities being associated should only have a single member of
 the associated table:
 
-::
+.. sourcecode:: python
     
     class Address(Entity):
         has_field('street', String(130))

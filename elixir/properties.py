@@ -17,7 +17,7 @@ the property can be declared).
 
 Here is a quick example of how to use ``has_property``.
 
-::
+.. sourcecode:: python
 
     class OrderLine(Entity):
         has_field('quantity', Float)

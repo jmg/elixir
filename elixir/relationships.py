@@ -50,7 +50,7 @@ Describes the child's side of a parent-child relationship.  For example,
 a `Pet` object may belong to its owner, who is a `Person`.  This could be
 expressed like so:
 
-::
+.. sourcecode:: python
 
     class Pet(Entity):
         belongs_to('owner', of_kind='Person')
@@ -112,7 +112,7 @@ Describes the parent's side of a parent-child relationship when there is only
 one child.  For example, a `Car` object has one gear stick, which is 
 represented as a `GearStick` object. This could be expressed like so:
 
-::
+.. sourcecode:: python
 
     class Car(Entity):
         has_one('gear_stick', of_kind='GearStick', inverse='car')
@@ -131,7 +131,7 @@ Describes the parent's side of a parent-child relationship when there can be
 several children.  For example, a `Person` object has many children, each of
 them being a `Person`. This could be expressed like so:
 
-::
+.. sourcecode:: python
 
     class Person(Entity):
         belongs_to('parent', of_kind='Person')
@@ -147,7 +147,7 @@ two keyword arguments: `through` and `via` in order to encourage a more
 rich form of many-to-many relationship that is an alternative to the 
 ``has_and_belongs_to_many`` statement.  Here is an example:
 
-::
+.. sourcecode:: python
 
     class Person(Entity):
         has_field('name', Unicode)
@@ -174,7 +174,7 @@ objects of the other kind but the objects of that other kind can be related to
 several objects of the first kind.  For example, an `Article` can have several
 tags, but the same `Tag` can be used on several articles.
 
-::
+.. sourcecode:: python
 
     class Article(Entity):
         has_and_belongs_to_many('tags', of_kind='Tag')

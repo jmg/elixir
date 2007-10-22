@@ -19,7 +19,7 @@ behaviors on your model objects, including table names, ordering, and
 more.  To specify an option, simply supply the option as a keyword 
 argument onto the statement, as follows:
 
-::
+.. sourcecode:: python
 
     class Person(Entity):
         has_field('name', Unicode(64))
