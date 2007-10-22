@@ -7,21 +7,6 @@ class TestAttrSyntax(object):
     def teardown(self):
         cleanup_all(True)
 
-    def test_fields(self):
-        class A(Entity):
-            name = Field(Unicode(60))
-
-        setup_all(True)
-
-        a1 = A(name="a1")
-
-        session.flush()
-        session.clear()
-
-        a = A.query.one()
-
-        assert a.name == "a1"
-
     def test_m2o_and_o2m(self):
         class A(Entity):
             name = Field(Unicode(60))
