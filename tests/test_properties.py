@@ -1,5 +1,5 @@
 """
-    simple test case
+test special properties (eg. column_property, ...)
 """
 
 from sqlalchemy.orm import column_property

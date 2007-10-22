@@ -9,26 +9,26 @@ def setup():
     global Director, Movie, Actor
 
     class Director(Entity):
-        has_field('name', Unicode(60))
-        has_many('movies', of_kind='Movie', inverse='director')
+        name = Field(Unicode(60))
+        movies = OneToMany('Movie', inverse='director')
         using_options(tablename='directors')
 
 
     class Movie(Entity):
-        has_field('id', Integer, primary_key=True)
-        has_field('title', Unicode(60), primary_key=True)
-        has_field('description', Unicode(512))
-        has_field('releasedate', DateTime)
-        has_field('ignoreme', Integer, default=0)
-        belongs_to('director', of_kind='Director', inverse='movies')
-        has_and_belongs_to_many('actors', of_kind='Actor', inverse='movies', tablename='movie_casting')
+        id = Field(Integer, primary_key=True)
+        title = Field(Unicode(60), primary_key=True)
+        description = Field(Unicode(512))
+        releasedate = Field(DateTime)
+        ignoreme = Field(Integer, default=0)
+        director = ManyToOne('Director', inverse='movies')
+        actors = ManyToMany('Actor', inverse='movies', tablename='movie_casting')
         using_options(tablename='movies')
         acts_as_versioned(ignore=['ignoreme'])
 
 
     class Actor(Entity):
-        has_field('name', Unicode(60))
-        has_and_belongs_to_many('movies', of_kind='Movie', inverse='actors', tablename='movie_casting')
+        name = Field(Unicode(60))
+        movies = ManyToMany('Movie', inverse='actors', tablename='movie_casting')
         using_options(tablename='actors')
 
     metadata.bind = 'sqlite:///'

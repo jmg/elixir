@@ -1,5 +1,5 @@
 """
-    simple test case
+test many to one relationships
 """
 
 from elixir import *
@@ -7,11 +7,11 @@ from elixir import *
 def setup():
     metadata.bind = 'sqlite:///'
 
-class TestOneWay(object):
+class TestManyToOne(object):
     def teardown(self):
         cleanup_all(True)
     
-    def test_m2o(self):
+    def test_simple(self):
         class A(Entity):
             name = Field(Unicode(60))
 
@@ -30,7 +30,7 @@ class TestOneWay(object):
 
         assert b.a.name == 'a1'
 
-    def test_m2o_with_key_pk(self):
+    def test_with_key_pk(self):
         class A(Entity):
             test = Field(Integer, primary_key=True, key='testx')
 
@@ -121,7 +121,7 @@ class TestOneWay(object):
         assert A.table.primary_key.columns.has_key('id')
         assert A.table.columns.has_key('c_b_a_id')
 
-    def test_multi_m2o(self):
+    def test_multi(self):
         class A(Entity):
             name = Field(String(32))
             

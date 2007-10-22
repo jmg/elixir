@@ -15,7 +15,7 @@ class TestOldMethods(object):
     
     def test_get(self):
         class A(Entity):
-            has_field('name', Unicode(32))
+            name = Field(Unicode(32))
 
         setup_all(True)
 

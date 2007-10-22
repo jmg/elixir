@@ -19,7 +19,7 @@ class TestSetup(object):
     
     def test_no_collection(self):
         class Person(Entity):
-            has_field('name', Unicode(30))
+            name = Field(Unicode(30))
             using_options(autosetup=False, tablename='person', collection=None)
 
         # global collection should be empty
@@ -35,12 +35,12 @@ class TestSetup(object):
         collection2 = []
 
         class A(Entity):
-            has_field('name', Unicode(30))
+            name = Field(Unicode(30))
             using_options(collection=collection1, autosetup=False, 
                           tablename='a')
 
         class B(Entity):
-            has_field('name', Unicode(30))
+            name = Field(Unicode(30))
             using_options(collection=collection2, autosetup=False,
                           tablename='b')
 
@@ -59,7 +59,7 @@ class TestSetup(object):
 
     def test_setup_after_cleanup(self):
         class A(Entity):
-            has_field('name', Unicode(30))
+            name = Field(Unicode(30))
             using_options(autosetup=False, tablename='a')
 
         setup_all()

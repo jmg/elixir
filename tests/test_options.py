@@ -17,7 +17,7 @@ class TestOptions(object):
     # this test is a rip-off SQLAlchemy's activemapper's update test
     def test_version_id_col(self):
         class Person(Entity):
-            has_field('name', Unicode(30))
+            name = Field(Unicode(30))
  
             using_options(version_id_col=True)
  
@@ -64,10 +64,10 @@ class TestOptions(object):
         setup_all(True)
 
         class MyEntity(Entity):
-            has_field('name', Unicode(30))
+            name = Field(Unicode(30))
 
         class MySuperTestEntity(Entity):
-            has_field('name', Unicode(30))
+            name = Field(Unicode(30))
 
         setup_all(True)
 
@@ -93,8 +93,8 @@ class TestSessionOptions(object):
         
         class Person(Entity):
             using_options(session=ctx)
-            has_field('firstname', Unicode(30))
-            has_field('surname', Unicode(30))
+            firstname = Field(Unicode(30))
+            surname = Field(Unicode(30))
 
         create_all(engine)
 
@@ -110,8 +110,8 @@ class TestSessionOptions(object):
         
         class Person(Entity):
             using_options(session=None)
-            has_field('firstname', Unicode(30))
-            has_field('surname', Unicode(30))
+            firstname = Field(Unicode(30))
+            surname = Field(Unicode(30))
 
         create_all(engine)
 
@@ -151,8 +151,8 @@ class TestSessionOptions(object):
 
         class Person(Entity):
             using_options(session=store)
-            has_field('firstname', Unicode(30))
-            has_field('surname', Unicode(30))
+            firstname = Field(Unicode(30))
+            surname = Field(Unicode(30))
 
         create_all(engine)
 
@@ -177,8 +177,8 @@ class TestSessionOptions(object):
 
         class Person(Entity):
             using_options(session=Session)
-            has_field('firstname', Unicode(30))
-            has_field('surname', Unicode(30))
+            firstname = Field(Unicode(30))
+            surname = Field(Unicode(30))
 
         create_all(engine)
 
@@ -204,8 +204,8 @@ class TestSessionOptions(object):
         __session__ = session
         
         class Person(Entity):
-            has_field('firstname', Unicode(30))
-            has_field('surname', Unicode(30))
+            firstname = Field(Unicode(30))
+            surname = Field(Unicode(30))
 
         create_all(engine)
 
@@ -228,8 +228,8 @@ class TestTableOptions(object):
     def test_unique_constraint(self):
         
         class Person(Entity):
-            has_field('firstname', Unicode(30))
-            has_field('surname', Unicode(30))
+            firstname = Field(Unicode(30))
+            surname = Field(Unicode(30))
 
             using_table_options(UniqueConstraint('firstname', 'surname'))
 
@@ -252,11 +252,11 @@ class TestTableOptions(object):
 
     def test_unique_constraint_belongs_to(self):
         class Author(Entity):
-            has_field("name", Unicode)
+            name = Field(Unicode)
 
         class Book(Entity):
-            has_field("title", Unicode, required=True)
-            belongs_to("author", of_kind="Author")
+            title = Field(Unicode, required=True)
+            author = ManyToOne("Author")
 
             using_table_options(UniqueConstraint("title", "author_id"))
 

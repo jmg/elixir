@@ -16,7 +16,7 @@ def setup():
     global Document
     
     class Document(Entity):
-        has_field('name', Unicode)
+        name = Field(Unicode)
         
         @before_insert
         def pre_insert(self):

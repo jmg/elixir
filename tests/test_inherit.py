@@ -12,23 +12,23 @@ def setup():
 
 def do_tst(inheritance, polymorphic, with_rel, expected_res):
     class A(Entity):
-        has_field('data1', String(20))
+        data1 = Field(String(20))
         using_options(inheritance=inheritance, polymorphic=polymorphic)
 
     class B(A):
-        has_field('data2', String(20))
+        data2 = Field(String(20))
         if with_rel:
-            has_many('many_c', of_kind='C', inverse='some_b')        
+            many_c = OneToMany('C', inverse='some_b')        
         using_options(inheritance=inheritance, polymorphic=polymorphic)
 
     class C(B):
-        has_field('data3', String(20))
+        data3 = Field(String(20))
         if with_rel:
-            belongs_to('some_b', of_kind='B', inverse='many_c')
+            some_b = ManyToOne('B', inverse='many_c')
         using_options(inheritance=inheritance, polymorphic=polymorphic)
 
     class D(A):
-        has_field('data4', String(20))
+        data4 = Field(String(20))
         using_options(inheritance=inheritance, polymorphic=polymorphic)
 
     setup_all(True)

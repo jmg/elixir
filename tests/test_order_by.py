@@ -1,5 +1,5 @@
 """
-    test options
+test ordering options
 """
 
 from elixir import *
@@ -9,10 +9,10 @@ def setup():
     global Record, Artist, Genre
     
     class Record(Entity):
-        has_field('title', Unicode(100))
-        has_field('year', Integer)
-        belongs_to('artist', of_kind='Artist')
-        has_and_belongs_to_many('genres', of_kind='Genre')
+        title = Field(Unicode(100))
+        year = Field(Integer)
+        artist = ManyToOne('Artist')
+        genres = ManyToMany('Genre')
 
         # order titles descending by year, then by title
         using_options(order_by=['-year', 'title'])
@@ -21,13 +21,12 @@ def setup():
             return "%s - %s (%d)" % (self.artist.name, self.title, self.year)
 
     class Artist(Entity):
-        has_field('name', Unicode(30))
-        has_many('records', of_kind='Record', order_by=['year', '-title'])
+        name = Field(Unicode(30))
+        records = OneToMany('Record', order_by=['year', '-title'])
 
     class Genre(Entity):
-        has_field('name', Unicode(30))
-        has_and_belongs_to_many('records', of_kind='Record', 
-                                order_by='-title')
+        name = Field(Unicode(30))
+        records = ManyToMany('Record', order_by='-title')
 
     metadata.bind = 'sqlite:///'
     create_all()
@@ -75,7 +74,7 @@ class TestOrderBy(object):
         assert records[3].year >= records[4].year
         assert records[-1].year == 1989
 
-    def test_has_many_order_by(self):
+    def test_o2m_order_by(self):
         records = Artist.get_by(name="Dream Theater").records
 
         print "+year, -title"
@@ -88,7 +87,7 @@ class TestOrderBy(object):
         assert records[-1].title == 'Octavarium'
         assert records[-1].year == 2005
 
-    def test_has_and_belongs_to_many_order_by(self):
+    def test_m2m_order_by(self):
         records = Genre.get_by(name="Progressive metal").records
 
         print "-title"

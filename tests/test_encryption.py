@@ -6,17 +6,17 @@ def setup():
     global Person, Pet
     
     class Person(Entity):
-        has_field('name', Unicode)
-        has_field('password', Unicode)
-        has_field('ssn', Unicode)
-        has_many('pets', of_kind='Pet')
+        name = Field(Unicode)
+        password = Field(Unicode)
+        ssn = Field(Unicode)
+        pets = OneToMany('Pet')
         acts_as_encrypted(for_fields=['password', 'ssn'], with_secret='secret')
 
     class Pet(Entity):
-        has_field('name', Unicode)
-        has_field('codename', Unicode)
+        name = Field(Unicode)
+        codename = Field(Unicode)
         acts_as_encrypted(for_fields=['codename'], with_secret='secret2')
-        belongs_to('owner', of_kind='Person')
+        owner = ManyToOne('Person')
 
     
     metadata.bind = 'sqlite:///'

@@ -18,7 +18,7 @@ class TestAutoloadMixed(object):
             using_options(tablename='user', autoload=True)
 
         class Item(Entity):
-            belongs_to('owner', of_kind='User')
+            owner = ManyToOne('User')
 
         setup_all(True)
 

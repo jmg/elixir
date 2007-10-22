@@ -33,30 +33,30 @@ class TestOrders(object):
 
     def test_basic(self):
         class Address(Entity):
-            has_field('street', String(130))
-            has_field('city', String)
+            street = Field(String(130))
+            city = Field(String)
             using_options(shortnames=True)
 
         class Comment(Entity):
-            has_field('id', Integer, primary_key=True)
-            has_field('name', Unicode)
-            has_field('text', String)
+            id = Field(Integer, primary_key=True)
+            name = Field(Unicode)
+            text = Field(String)
 
         is_addressable = associable(Address, 'addresses')
         is_commentable = associable(Comment, 'comments')
 
         class Person(Entity):
-            has_field('id', Integer, primary_key=True)
-            has_field('name', Unicode)
-            has_many('orders', of_kind='Order')
+            id = Field(Integer, primary_key=True)
+            name = Field(Unicode)
+            orders = OneToMany('Order')
             using_options(shortnames=True)
             is_addressable()
             is_commentable()
 
         class Order(Entity):
-            has_field('order_num', Integer, primary_key=True)
-            has_field('item_count', Integer)
-            belongs_to('person', of_kind='Person')
+            order_num = Field(Integer, primary_key=True)
+            item_count = Field(Integer)
+            person = ManyToOne('Person')
             using_options(shortnames=True)
             is_addressable('address', uselist=False)
 
@@ -89,19 +89,19 @@ class TestOrders(object):
 
     def test_with_forward_ref(self):
         class Checkout(Entity):
-            belongs_to('by', of_kind='Villian', ondelete='cascade')
-            has_field('stamp', DateTime)
+            by = ManyToOne('Villian', ondelete='cascade')
+            stamp = Field(DateTime)
 
         can_checkout = associable(Checkout, 'checked_out')
 
         class Article(Entity):
-            has_field('title', Unicode)
-            has_field('content', Unicode)
+            title = Field(Unicode)
+            content = Field(Unicode)
             can_checkout('checked_out_by', uselist=False)
             using_options(tablename='article')
 
         class Villian(Entity):
-            has_field('name', Unicode)
+            name = Field(Unicode)
             using_options(tablename='villian')
 
         setup_all(True)

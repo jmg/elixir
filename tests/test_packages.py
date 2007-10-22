@@ -45,8 +45,8 @@ class TestPackages(object):
         from tests.b import B
 
         class C(Entity):
-            has_field('name', String(30))
-            belongs_to('a', of_kind=A)
+            name = Field(String(30))
+            a = ManyToOne(A)
 
         setup_all(True)
 
@@ -61,8 +61,8 @@ class TestPackages(object):
         from tests.b import B
 
         class C(Entity):
-            has_field('name', String(30))
-            belongs_to('a', of_kind='A')
+            name = Field(String(30))
+            a = ManyToOne('A')
 
         setup_all(True)
 

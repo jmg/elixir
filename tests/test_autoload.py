@@ -1,5 +1,5 @@
 """
-    simple test case
+test autoloaded entities
 """
 
 from sqlalchemy import Table, Column, ForeignKey, MetaData
@@ -43,26 +43,26 @@ def setup():
     # till we can define several classes in a method with reference between them
     # without having to make them global.
     class Person(Entity):
-        belongs_to('father', of_kind='Person')
-        has_many('children', of_kind='Person')
-        has_many('pets', of_kind='Animal', inverse='owner')
-        has_many('animals', of_kind='Animal', inverse='feeder')
-        has_and_belongs_to_many('categories', of_kind='Category', 
+        father = ManyToOne('Person')
+        children = OneToMany('Person')
+        pets = OneToMany('Animal', inverse='owner')
+        animals = OneToMany('Animal', inverse='feeder')
+        categories = ManyToMany('Category', 
                                 tablename='person_category')
-        has_and_belongs_to_many('appreciate', of_kind='Person',
+        appreciate = ManyToMany('Person',
                                 tablename='person_person',
                                 local_side='person_id1')
-        has_and_belongs_to_many('isappreciatedby', of_kind='Person',
+        isappreciatedby = ManyToMany('Person',
                                 tablename='person_person',
                                 local_side='person_id2')
 
     class Animal(Entity):
-        belongs_to('owner', of_kind='Person', colname='owner_id')
-        belongs_to('feeder', of_kind='Person', colname='feeder_id')
+        owner = ManyToOne('Person', colname='owner_id')
+        feeder = ManyToOne('Person', colname='feeder_id')
 
 
     class Category(Entity):
-        has_and_belongs_to_many('persons', of_kind='Person', 
+        persons = ManyToMany('Person', 
                                 tablename='person_category')
 
     elixir.options_defaults.update(dict(autoload=False, shortnames=False))
@@ -121,7 +121,7 @@ class TestAutoload(object):
         assert p.father is Person.get_by(name="Abe")
         assert p is Person.get_by(name="Lisa").father
 
-    def test_autoload_has_and_belongs_to_many(self):
+    def test_autoload_m2m(self):
         stupid = Category(name="Stupid")
         simpson = Category(name="Simpson")
         old = Category(name="Old")
@@ -146,7 +146,7 @@ class TestAutoload(object):
         assert len(c.persons) == 4
         assert c in grampa.categories
 
-    def test_autoload_has_and_belongs_to_many_selfref(self):
+    def test_autoload_m2m_selfref(self):
         barney = Person(name="Barney")
         homer = Person(name="Homer", appreciate=[barney])
 
@@ -159,24 +159,3 @@ class TestAutoload(object):
         assert barney in homer.appreciate
         assert homer in barney.isappreciatedby
 
-if __name__ == '__main__':
-    setup()
-
-    test = TestAutoload()
-    test.setup()
-    test.test_autoload()
-    test.teardown()
-
-    test.setup()
-    test.test_autoload_selfref()
-    test.teardown()
-
-    test.setup()
-    test.test_autoload_has_and_belongs_to_many()
-    test.teardown()
-
-    test.setup()
-    test.test_autoload_has_and_belongs_to_many_selfref()
-    test.teardown()
-
-    teardown()
