@@ -232,7 +232,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 
 import sys
 
-__pudge_all__ = []
+__doc_all__ = []
 
 class Relationship(Property):
     '''

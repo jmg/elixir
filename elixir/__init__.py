@@ -50,7 +50,7 @@ __all__ = ['Entity', 'EntityMeta',
            'setup_entities', 'cleanup_entities'] + \
            sqlalchemy.types.__all__
 
-__pudge_all__ = ['create_all', 'drop_all',
+__doc_all__ = ['create_all', 'drop_all',
                  'setup_all', 'cleanup_all',
                  'metadata', 'session']
 

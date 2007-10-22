@@ -107,7 +107,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from elixir.statements import ClassMutator
 from elixir.properties import Property
 
-__pudge_all__ = ['Field']
+__doc_all__ = ['Field']
 
 
 class Field(Property):

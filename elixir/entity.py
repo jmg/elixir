@@ -24,7 +24,7 @@ from elixir.options                 import options_defaults, valid_options
 from elixir.properties              import Property
 
 
-__pudge_all__ = ['Entity', 'EntityMeta']
+__doc_all__ = ['Entity', 'EntityMeta']
 
 DEFAULT_AUTO_PRIMARYKEY_NAME = "id"
 DEFAULT_AUTO_PRIMARYKEY_TYPE = Integer

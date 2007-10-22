@@ -1,6 +1,6 @@
 import sys
 
-__pudge_all__ = []
+__doc_all__ = []
 
 MUTATORS = '__elixir_mutators__'
 
