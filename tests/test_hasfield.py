@@ -21,8 +21,8 @@ class TestHasField(object):
         homer = Person(firstname="Homer", surname="Simpson")
         bart = Person(firstname="Bart", surname="Simpson")
         
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         p = Person.get_by(firstname="Homer")
         

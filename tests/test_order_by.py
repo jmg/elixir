@@ -51,8 +51,8 @@ def setup():
     for title, year in titles:
         Record(title=title, artist=artist, year=year, genres=[genre])
 
-    objectstore.flush()
-    objectstore.clear()
+    session.flush()
+    session.clear()
 
 
 def teardown():
@@ -61,7 +61,7 @@ def teardown():
 
 class TestOrderBy(object):
     def teardown(self):
-        objectstore.clear()
+        session.clear()
     
     def test_mapper_order_by(self):
         records = Record.query.all()

@@ -82,7 +82,7 @@ class TestAutoload(object):
         
     def teardown(self):
         drop_all()
-        objectstore.clear()
+        session.clear()
     
     def test_autoload(self):
         snowball = Animal(name="Snowball II", color="grey")
@@ -90,8 +90,8 @@ class TestAutoload(object):
         homer = Person(name="Homer", animals=[snowball, slh], pets=[slh])
         lisa = Person(name="Lisa", pets=[snowball])
         
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         homer = Person.get_by(name="Homer")
         lisa = Person.get_by(name="Lisa")
@@ -111,8 +111,8 @@ class TestAutoload(object):
         homer.children.append(bart)
         lisa.father = homer
         
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         p = Person.get_by(name="Homer")
         
@@ -133,8 +133,8 @@ class TestAutoload(object):
         
         simpson.persons.extend([bart, lisa])
         
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         c = Category.get_by(name="Simpson")
         grampa = Person.get_by(name="Abe")
@@ -150,8 +150,8 @@ class TestAutoload(object):
         barney = Person(name="Barney")
         homer = Person(name="Homer", appreciate=[barney])
 
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         homer = Person.get_by(name="Homer")
         barney = Person.get_by(name="Barney")

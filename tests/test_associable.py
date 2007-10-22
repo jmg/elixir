@@ -72,8 +72,8 @@ class TestOrders(object):
         neworder.address = home
         user.orders.append(neworder)
 
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
 
         # Queries using the added helpers
         people = Person.select_by_addresses(city='Cupertino')
@@ -108,5 +108,5 @@ class TestOrders(object):
 
         art = Article(title='Hope Soars')
 
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()

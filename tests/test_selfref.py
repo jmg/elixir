@@ -32,8 +32,8 @@ class TestSelfRef(object):
         homer.children.append(bart)
         lisa.father = homer
         
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         p = Person.get_by(name="Homer")
         
@@ -59,8 +59,8 @@ class TestSelfRef(object):
         homer = Person(name="Homer", friends=[barney])
         barney.friends.append(homer)
 
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         homer = Person.get_by(name="Homer")
         barney = Person.get_by(name="Barney")
@@ -106,8 +106,8 @@ class TestMultiSelfRef(object):
         node.children.append(node2)
         node.children.append(TreeNode(name='node3'))
             
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         root = TreeNode.get_by(name='rootnode')
         print root

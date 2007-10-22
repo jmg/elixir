@@ -44,8 +44,8 @@ class TestHasProperty(object):
                                     Tag(score1=50.0, score2=1.0),
                                     Tag(score1=15.0, score2=2.0)])
 
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         for user in User.query.all():
             for tag in user.tags:

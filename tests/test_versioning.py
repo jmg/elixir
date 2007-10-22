@@ -44,13 +44,13 @@ class TestVersioning(object):
     
     def teardown(self):
         drop_all()
-        objectstore.clear()
+        session.clear()
     
     def test_versioning(self):    
         gilliam = Director(name='Terry Gilliam')
         monkeys = Movie(id=1, title='12 Monkeys', description='draft description', director=gilliam)
         bruce = Actor(name='Bruce Willis', movies=[monkeys])
-        objectstore.flush(); objectstore.clear()
+        session.flush(); session.clear()
     
         time.sleep(1)
         after_create = datetime.now()
@@ -61,7 +61,7 @@ class TestVersioning(object):
         assert movie.title == '12 Monkeys'
         assert movie.director.name == 'Terry Gilliam'
         movie.description = 'description two'
-        objectstore.flush(); objectstore.clear()
+        session.flush(); session.clear()
     
         time.sleep(1)
         after_update_one = datetime.now()
@@ -69,12 +69,12 @@ class TestVersioning(object):
     
         movie = Movie.get_by(title='12 Monkeys')
         movie.description = 'description three'
-        objectstore.flush(); objectstore.clear()
+        session.flush(); session.clear()
     
         # Edit the ignored field, this shouldn't change the version
         monkeys = Movie.get_by(title='12 Monkeys')
         monkeys.ignoreme = 1
-        objectstore.flush(); objectstore.clear()
+        session.flush(); session.clear()
     
         time.sleep(1)
         after_update_two = datetime.now()
@@ -106,7 +106,7 @@ class TestVersioning(object):
         assert movie.versions[1] == middle_version
     
         movie.revert_to(1)
-        objectstore.flush(); objectstore.clear()
+        session.flush(); session.clear()
     
         movie = Movie.get_by(title='12 Monkeys')
         assert movie.version == 1

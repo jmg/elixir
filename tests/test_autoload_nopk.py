@@ -29,8 +29,8 @@ class TestAutoload(object):
 
         barney = Person(id=1, name="Barney")
 
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
 
         persons = Person.query.all()
 

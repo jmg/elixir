@@ -60,7 +60,7 @@ class TestMovies(object):
     
     def teardown(self):
         drop_all()
-        objectstore.clear()
+        session.clear()
     
     def test_backref(self):
         swars = Movie(title="Star Wars", year=1977)
@@ -95,8 +95,8 @@ class TestMovies(object):
         alien.actors.append(sweaver)
         brunner.actors.append(hford)
         
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         # directors
         assert Movie.get_by(title="Alien").director is Director.get_by(name="Ridley Scott")

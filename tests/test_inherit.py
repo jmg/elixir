@@ -38,8 +38,8 @@ def do_tst(inheritance, polymorphic, with_rel, expected_res):
     C(data1='c1', data2='c2', data3='c3')
     D(data1='d1', data4='d4')
 
-    objectstore.flush()
-    objectstore.clear()
+    session.flush()
+    session.clear()
 
     res = {}
     for class_ in (A, B, C, D):

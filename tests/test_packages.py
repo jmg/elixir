@@ -30,8 +30,8 @@ class TestPackages(object):
 
         b1 = B(name='b1', as_=[A(name='a1')])
 
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
 
         a = A.query.one()
 

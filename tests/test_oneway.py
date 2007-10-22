@@ -24,8 +24,8 @@ class TestOneWay(object):
         santa = Person(name="Santa Claus")
         rudolph = Animal(name="Rudolph", owner=santa)
         
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         assert "Claus" in Animal.get_by(name="Rudolph").owner.name
 
@@ -40,5 +40,5 @@ class TestOneWay(object):
         
         t1 = T1(testx=1)
         
-        objectstore.flush()
+        session.flush()
 

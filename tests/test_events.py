@@ -67,19 +67,19 @@ class TestEvents(object):
     
     def teardown(self):
         drop_all()
-        objectstore.clear()
+        session.clear()
     
     def test_events(self):
         d = Document(name='My Document')
-        objectstore.flush(); objectstore.clear()
+        session.flush(); session.clear()
         
         d = Document.query.get(1)
         d.name = 'My Document Updated'
-        objectstore.flush(); objectstore.clear()
+        session.flush(); session.clear()
         
         d = Document.query.get(1)
         d.delete()
-        objectstore.flush(); objectstore.clear()
+        session.flush(); session.clear()
         
         assert before_insert_called == 1
         assert before_update_called == 1

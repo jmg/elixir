@@ -33,8 +33,8 @@ class TestMultipleRelationships(object):
         a1 = A(name="a1", brel1=[b1, b2], brel2=[b2])
         a2 = A(name="a2", brel2=[b1])
         
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         a1 = A.get_by(name="a1")
         a2 = A.get_by(name="a2")
@@ -60,8 +60,8 @@ class TestMultipleRelationships(object):
         a1 = A(name='a1', rel1=[B(name='b2'), b1],
                           rel2=[B(name='b3'), B(name='b4'), b1])
 
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         a1 = A.query.one()
         b1 = B.get_by(name='b1')

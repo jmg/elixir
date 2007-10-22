@@ -24,19 +24,19 @@ class TestOptions(object):
         Person.table.create()
  
         p1 = Person(name='Daniel')
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         person = Person.query.first()
         person.name = 'Gaetan'
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         assert person.row_version == 2
  
         person = Person.query.first()
         person.name = 'Jonathan'
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         assert person.row_version == 3
  
         # check that a concurrent modification raises exception
@@ -47,7 +47,7 @@ class TestOptions(object):
         p2.name = "Gaetan"
         s2.flush()
         try:
-            objectstore.flush()
+            session.flush()
             assert False
         except ConcurrentModificationError:
             pass
@@ -130,11 +130,11 @@ class TestSessionOptions(object):
         assert session.query(Person).filter_by(firstname='Homer').one() is homer
         assert session.query(Person).count() == 1
 
-    def test_activemapper_objectstore(self):
+    def test_activemapper_session(self):
         try:
             from sqlalchemy.orm import scoped_session, sessionmaker
             #TODO: this test, as-is has no sense on SA 0.4 since activemapper 
-            # objectstore uses scoped_session, but we need to provide a new 
+            # session uses scoped_session, but we need to provide a new 
             # test for that.
             return
         except ImportError:
@@ -238,13 +238,13 @@ class TestTableOptions(object):
         homer = Person(firstname="Homer", surname='Simpson')
         bart = Person(firstname="Bart", surname='Simpson')
 
-        objectstore.flush()
+        session.flush()
 
         homer2 = Person(firstname="Homer", surname='Simpson')
 
         raised = False
         try:
-            objectstore.flush()
+            session.flush()
         except SQLError:
             raised = True
 
@@ -266,18 +266,18 @@ class TestTableOptions(object):
         lotr = Book(title="The Lord of the Rings", author=tolkien)
         hobbit = Book(title="The Hobbit", author=tolkien)
 
-        objectstore.flush()
+        session.flush()
 
         tolkien2 = Author(name="Tolkien")
         hobbit2 = Book(title="The Hobbit", author=tolkien2)
 
-        objectstore.flush()
+        session.flush()
 
         hobbit3 = Book(title="The Hobbit", author=tolkien)
 
         raised = False
         try:
-            objectstore.flush()
+            session.flush()
         except SQLError:
             raised = True
 

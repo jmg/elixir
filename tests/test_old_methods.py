@@ -21,8 +21,8 @@ class TestOldMethods(object):
 
         a1 = A(name="a1")
         
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
         
         assert A.get(1).name == "a1"
 

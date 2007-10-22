@@ -15,8 +15,8 @@ class TestAttrSyntax(object):
 
         a1 = A(name="a1")
 
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
 
         a = A.query.one()
 
@@ -35,8 +35,8 @@ class TestAttrSyntax(object):
 
         b1 = B(name='b1', a=A(name='a1'))
 
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
 
         b = B.query.one()
         a = b.a
@@ -56,8 +56,8 @@ class TestAttrSyntax(object):
 
         b1 = B(name='b1', a=A(name='a1'))
 
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
 
         b = B.query.one()
         a = b.a
@@ -77,8 +77,8 @@ class TestAttrSyntax(object):
 
         b1 = B(name='b1', as_=[A(name='a1')])
 
-        objectstore.flush()
-        objectstore.clear()
+        session.flush()
+        session.clear()
 
         a = A.query.one()
         b = B.query.one()
