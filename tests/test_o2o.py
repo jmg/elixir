@@ -3,11 +3,11 @@ from elixir import *
 def setup():
     metadata.bind = "sqlite:///"
 
-class TestAttrSyntax(object):
+class TestOneToOne(object):
     def teardown(self):
         cleanup_all(True)
 
-    def test_o2o(self):
+    def test_simple(self):
         class A(Entity):
             name = Field(Unicode(60))
             b = OneToOne('B')
