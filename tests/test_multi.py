@@ -13,46 +13,16 @@ class TestMultipleRelationships(object):
     def teardown(self):
         cleanup_all(True)
     
-    def test_belongs_to_multi_ref(self):
-        class A(Entity):
-            has_field('name', String(32))
-            
-            has_many('brel1', of_kind='B', inverse='arel1')
-            has_many('brel2', of_kind='B', inverse='arel2')
-            
-        class B(Entity):
-            has_field('name', String(15))
-            
-            belongs_to('arel1', of_kind='A')
-            belongs_to('arel2', of_kind='A')
-
-        setup_all(True)
-
-        b1 = B(name="b1")
-        b2 = B(name="b2")
-        a1 = A(name="a1", brel1=[b1, b2], brel2=[b2])
-        a2 = A(name="a2", brel2=[b1])
-        
-        session.flush()
-        session.clear()
-        
-        a1 = A.get_by(name="a1")
-        a2 = A.get_by(name="a2")
-        b1 = B.get_by(name="b1")
-        
-        assert len(a1.brel1) == 2
-        assert a1 == a2.brel2[0].arel1
-        assert a2 == b1.arel2
 
     def test_has_and_belongs_to_many_multi_ref(self):
         class A(Entity):
-            has_field('name', String(100))
+            name = Field(String(100))
 
-            has_and_belongs_to_many('rel1', of_kind='B')
-            has_and_belongs_to_many('rel2', of_kind='B')
+            rel1 = ManyToMany('B')
+            rel2 = ManyToMany('B')
             
         class B(Entity):
-            has_field('name', String(20), primary_key=True)
+            name = Field(String(20), primary_key=True)
 
         setup_all(True)
         

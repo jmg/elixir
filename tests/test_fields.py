@@ -48,7 +48,7 @@ class TestFields(object):
     def test_with_fields(self):
         class Person(Entity):
             with_fields(
-                firstname = Field(Unicode(30))
+                firstname = Field(Unicode(30)),
                 surname = Field(Unicode(30))
             )
             
