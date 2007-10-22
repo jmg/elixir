@@ -43,7 +43,7 @@ class TestThrough(object):
 
         assert user.keywords == keywords
 
-    def test_rel_trough_to_value_list(self):
+    def test_rel_through_to_value_list(self):
         class User(Entity):
             has_field('name', String(64))
             has_and_belongs_to_many('kw', of_kind='Keyword')
@@ -68,7 +68,7 @@ class TestThrough(object):
         assert user.keywords == ['cheese inspector', 'snack ninja']
         assert len(user.kw) == 2
 
-    def test_field_trough(self):
+    def test_field_through(self):
         class User(Entity):
             has_field('name', String(64))
             belongs_to('kw', of_kind='Keyword')
