@@ -15,14 +15,13 @@ Website/doc related
     - default values
     - required fields
     - multiple files (modules) models
-    - inheritance
     - demonstrate common entities options (tablename, order_by, ...)
     - demonstrate common raltionships options (order_by, ...)
-    - demonstrate some of the other methods provided by assign_mapper (we only
-      show select and get_by and we don't really explain what they do).
+    - query methods
     - explain what's the objectstore and how to use it.
-    - autoload
-    - many2many with intermediary object (extra fields in table) -> FAQ?
+
+    ? autoload
+    ? many2many with intermediary object (extra fields in table) -> FAQ?
       -> tags with created_by
 
     ? transactions
@@ -31,28 +30,11 @@ Website/doc related
     ? multi-database
     ? deferred fields
 
-- document SA/Elixir differences
-
 Code related
 ------------
 
-- make it possible to make a relation to an SA-mapped class (add test case)
-  it'll be slightly problematic for the translate_order_by in HasMany and
-  HABTM. We'll need to extract that method as a global function.
-  see relationships.py
-
-- add a test case for a relation from an SA-mapped class to an Elixir Entity
-  (it works but we need a proper test for that).
-
-- make elixir work with migrate (or vice-versa). 
-    cfr mailing list
-
 - test multi-col-primary-keys: we've implemented the functionality in many
   places, but we do not have a single test for that case.
-
-- fix inherit VS no field in parent. You should be able to define a base
-  class, or even a chain of base classes with no fields, by simply inheriting
-  from Entity.
 
 - Besides, the current system also has another case I don't like: if the user 
   specifies an inverse (on one or both sides) but also set a table name on one
@@ -61,9 +43,6 @@ Code related
   not happen. The system should rather throw an exception in that case. But 
   this last part should be easilty fixable, I think (it'a a matter of tweaking
   the is_inverse method of the HasAndBelongsToMany class)...
-
-- elixir on arbitrary selects. Shouldn't be hard...
-    cfr http://www.sqlalchemy.org/trac/ticket/502
 
 
 IDEAS
