@@ -60,6 +60,8 @@ Changes:
 - Added translation (from column name to column object) of the primary_key 
   mapper option so that it can actually be used. This allows to have entities
   without any primary key defined at the table level.
+- Added the possibility to give a custom name for ManyToOne constraints
+  (patch from and closes ticket #16)
 - Dropped support for the old threadlocal SA extension (which doesn't even exist
   anymore in SA 0.4)
 

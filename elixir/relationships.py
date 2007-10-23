@@ -569,15 +569,18 @@ class ManyToOne(Relationship):
                 fk_refcols.append(target_path)
 
                 # build up the primary join. This is needed when you have 
-                # several belongs_to relations between two objects
+                # several belongs_to relationships between two objects
                 self.primaryjoin_clauses.append(col == pk_col)
             
-            # In some databases (at lease MySQL) the constraint name needs to 
-            # be unique for the whole database, instead of per table.
-            fk_name = "%s_%s_fk" % (source_desc.tablename, 
-                                    '_'.join(fk_colnames))
+            if 'name' not in self.constraint_kwargs:
+                # In some databases (at least MySQL) the constraint name needs
+                # to be unique for the whole database, instead of per table.
+                fk_name = "%s_%s_fk" % (source_desc.tablename, 
+                                        '_'.join(fk_colnames))
+                self.constraint_kwargs['name'] = fk_name
+                
             source_desc.add_constraint(
-                ForeignKeyConstraint(fk_colnames, fk_refcols, name=fk_name,
+                ForeignKeyConstraint(fk_colnames, fk_refcols,
                                      **self.constraint_kwargs))
 
     def get_prop_kwargs(self):
