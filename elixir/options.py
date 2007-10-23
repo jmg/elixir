@@ -1,16 +1,11 @@
 '''
-Option statements for Elixir entities
-
-=======
-Options
-=======
-
-This module provides DSL statements for defining options on your Elixir
+This module provides support for defining several options on your Elixir
 entities.  There are three different kinds of options that can be set 
 up, and for this there are three different statements: using_options_,
-using_table_options_ and using_mapper_options_. 
-Alternatively, options can be set on all Elixir entities by modifying the 
-`options_defaults` dictionary before defining any entity.
+using_table_options_ and using_mapper_options_.
+
+Alternatively, these options can be set on all Elixir entities by modifying 
+the `options_defaults` dictionary before defining any entity.
 
 `using_options`
 ---------------
@@ -22,7 +17,7 @@ argument onto the statement, as follows:
 .. sourcecode:: python
 
     class Person(Entity):
-        has_field('name', Unicode(64))
+        name = Field(Unicode(64))
 
         using_options(shortnames=True, order_by='name')
 
@@ -32,17 +27,17 @@ The list of supported arguments are as follows:
 | Option Name         | Description                                           |
 +=====================+=======================================================+
 | ``inheritance``     | Specify the type of inheritance this entity must use. |
-|                     | It can be one of ``single``, ``concrete`` or          |
-|                     | ``multi``. Defaults to ``single``.                    |
+|                     | It can be one of ``single`` or ``multi``. Defaults to |
+|                     | ``single``. Concrete inheritance is currently not in  |
+|                     | a usable state.                                       |
 +---------------------+-------------------------------------------------------+
 | ``polymorphic``     | Whether the inheritance should be polymorphic or not. |
-|                     | Defaults to ``False``. Note that polymorphic concrete |
-|                     | inheritance is currently not implemented.             |
+|                     | Defaults to ``False``.                                |
 +---------------------+-------------------------------------------------------+
 | ``metadata``        | Specify a custom MetaData for this entity.            |
 |                     | By default, entities uses the global                  |
 |                     | ``elixir.metadata``.                                  |
-|                     | This option can also be set for all entitie of a      |
+|                     | This option can also be set for all entities of a     |
 |                     | module by setting the ``__metadata__`` attribute of   |
 |                     | that module.                                          |
 +---------------------+-------------------------------------------------------+
@@ -116,11 +111,11 @@ directly to the underlying SQLAlchemy Table object (both non-keyword arguments
 and keyword arguments) without any processing.
 
 For further information, please refer to the `SQLAlchemy table's documentation
-<http://www.sqlalchemy.org/docs/docstrings.myt
+<http://www.sqlalchemy.org/docs/04/sqlalchemy_schema.html
 #docstrings_sqlalchemy.schema_Table>`_.
 
 You might also be interested in the section about `constraints 
-<http://www.sqlalchemy.org/docs/metadata.myt#metadata_constraints>`_.
+<http://www.sqlalchemy.org/docs/04/metadata.html#metadata_constraints>`_.
 
 `using_mapper_options`
 ----------------------
@@ -132,12 +127,14 @@ directly to the underlying SQLAlchemy mapper (as keyword arguments)
 without any processing.
 
 For further information, please refer to the `SQLAlchemy mapper 
-function's documentation <http://www.sqlalchemy.org/docs/adv_datamapping.myt
-#advdatamapping_mapperoptions>`_.
+function's documentation 
+<http://www.sqlalchemy.org/docs/04/sqlalchemy_orm.html
+#docstrings_sqlalchemy.orm_modfunc_mapper>`_.
 '''
 
 from elixir.statements import ClassMutator
 
+__doc_all__ = ['options_defaults']
 
 options_defaults = dict(
     autosetup=True,

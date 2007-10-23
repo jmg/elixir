@@ -39,16 +39,16 @@ Example usage:
 .. sourcecode:: python
     
     class Tag(Entity):
-        has_field('name', Unicode)
+        name = Field(Unicode)
     
     acts_as_taggable = associable(Tag)
     
     class Entry(Entity):
-        has_field('title', Unicode)
+        title = Field(Unicode)
         acts_as_taggable('tags')
     
     class Article(Entity):
-        has_field('title', Unicode)
+        title = Field(Unicode)
         acts_as_taggable('tags')
 
 Or if one of the entities being associated should only have a single member of
@@ -57,20 +57,20 @@ the associated table:
 .. sourcecode:: python
     
     class Address(Entity):
-        has_field('street', String(130))
-        has_field('city', String)
+        street = Field(String(130))
+        city = Field(String)
     
     is_addressable = associable(Address, 'addresses')
     
     class Person(Entity):
-        has_field('name', Unicode)
-        has_many('orders', of_kind='Order')
+        name = Field(Unicode)
+        orders = OneToMany('Order')
         is_addressable()
     
     class Order(Entity):
-        has_field('order_num', primary_key=True)
-        has_field('item_count', Integer)
-        belongs_to('person', of_kind='Person')
+        order_num = Field(primary_key=True)
+        item_count = Field(Integer)
+        person = ManyToOne('Person')
         is_addressable('address', uselist=False)
     
     home = Address(street='123 Elm St.', city='Spooksville')

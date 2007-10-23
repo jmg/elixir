@@ -746,8 +746,8 @@ class Entity(object):
     .. sourcecode:: python
     
         class Person(Entity):
-            has_field('name', Unicode(128))
-            has_field('birthdate', DateTime, default=datetime.now)
+            name = Field(Unicode(128))
+            birthdate = Field(DateTime, default=datetime.now)
     
     Please note, that if you don't specify any primary keys, Elixir will
     automatically create one called ``id``.

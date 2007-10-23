@@ -1,32 +1,48 @@
 '''
-Field statements for Elixir entities
+This module provides support for defining the fields (columns) of your 
+entities. Elixir currently supports two syntaxes to do so: the default
+`Attribute-based syntax`_ as well as the has_field_ DSL statement.
 
-======
-Fields
-======
+Note that the old with_fields_ statement is currently deprecated in favor of 
+the `Attribute-based syntax`_.
 
-This module contains DSL statements which allow you to declare which 
-fields (columns) your Elixir entities have.  There are currently two
-different ways to declare your entities fields: through the has_field_
-statement, and by using the `Object-oriented syntax`_. Note that the 
-with_fields_ statement is currently deprecated in favor of the 
-`Object-oriented syntax`_.
+Attribute-based syntax
+----------------------
+
+Here is a quick example of how to use the object-oriented syntax.
+
+.. sourcecode:: python
+
+    class Person(Entity):
+        id = Field(Integer, primary_key=True)
+        name = Field(String(50))
 
 
-has_field
----------
-The `has_field` statement allows you to define fields one at a time.
+The Field class takes one mandatory argument, which is its type. Please refer 
+to SQLAlchemy documentation for a list of `types supported by SQLAlchemy 
+<http://www.sqlalchemy.org/docs/04/types.html>`_.
 
-The first argument is the name of the field, the second is its type. Following
-these, any number of keyword arguments can be specified for additional 
-behavior. The following arguments are supported:
+Following that first mandatory argument, fields can take any number of 
+optional keyword arguments. Please note that all the **arguments** that are 
+**not specifically processed by Elixir**, as mentioned in the documentation 
+below **are passed on to the SQLAlchemy ``Column`` object**. Please refer to 
+the `SQLAlchemy Column object's documentation 
+<http://www.sqlalchemy.org/docs/04/sqlalchemy_schema.html
+#docstrings_sqlalchemy.schema_Column>`_ for more details about other 
+supported keyword arguments.
+
+The following Elixir-specific arguments are supported:
 
 +-------------------+---------------------------------------------------------+
 | Argument Name     | Description                                             |
 +===================+=========================================================+
 | ``required``      | Specify whether or not this field can be set to None    |
-|                   | (left without a value). Defaults to ``False``, unless   | 
+|                   | (left without a value). Defaults to ``False``, unless   |
 |                   | the field is a primary key.                             |
++-------------------+---------------------------------------------------------+
+| ``colname``       | Specify a custom name for the column of this field. By  |
+|                   | default the column will have the same name as the       |
+|                   | attribute.                                              |
 +-------------------+---------------------------------------------------------+
 | ``deferred``      | Specify whether this particular column should be        |
 |                   | fetched by default (along with the other columns) when  |
@@ -39,6 +55,19 @@ behavior. The following arguments are supported:
 |                   | or placed into groups that lazy-load together (by using |
 |                   | ``deferred`` = `"group_name"`).                         |
 +-------------------+---------------------------------------------------------+
+
+has_field
+---------
+
+The `has_field` statement allows you to define fields one at a time.
+
+The first argument is the name of the field, the second is its type. Following
+these, any number of keyword arguments can be specified for additional 
+behavior. The following arguments are supported:
+
++-------------------+---------------------------------------------------------+
+| Argument Name     | Description                                             |
++===================+=========================================================+
 | ``through``       | Specify a relation name to go through. This field will  |
 |                   | not exist as a column on the database but will be a     |
 |                   | property which automatically proxy values to the        |
@@ -53,11 +82,6 @@ behavior. The following arguments are supported:
 |                   | argument.                                               |
 +-------------------+---------------------------------------------------------+
 
-Any other keyword argument is passed on to the SQLAlchemy
-``Column`` object. Please refer to the `SQLAlchemy Column object's
-documentation <http://www.sqlalchemy.org/docs/docstrings.myt
-#docstrings_sqlalchemy.schema_Column>`_ for further detail about which 
-keyword arguments are supported.
 
 Here is a quick example of how to use ``has_field``.
 
@@ -67,21 +91,13 @@ Here is a quick example of how to use ``has_field``.
         has_field('id', Integer, primary_key=True)
         has_field('name', String(50))
 
-Object-oriented syntax
-----------------------
-
-Here is a quick example of how to use the object-oriented syntax.
-
-.. sourcecode:: python
-
-    class Person(Entity):
-        id = Field(Integer, primary_key=True)
-        name = Field(String(50))
 
 with_fields
 -----------
-The `with_fields` statement is **deprecated** in favor of the `Object-oriented
-syntax`_. It allows you to define all fields of an entity at once. 
+The `with_fields` statement is **deprecated** in favor of the `attribute-based
+syntax`_. 
+
+It allows you to define all fields of an entity at once. 
 Each keyword argument to this statement represents one field, which should
 be a `Field` object. The first argument to a Field object is its type. 
 Following it, any number of keyword arguments can be specified for
