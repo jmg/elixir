@@ -1,5 +1,6 @@
 '''
-Entity baseclass, metaclass and descriptor
+This module provides the ``Entity`` base class, as well as its metaclass
+``EntityMeta``.
 '''
 
 try:

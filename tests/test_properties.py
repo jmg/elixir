@@ -53,4 +53,38 @@ class TestHasProperty(object):
                 assert tag.query_score2 == tag.prop_score + 1
                 assert tag.query_score3 == tag.prop_score + 2
 
+    def test_synonym(self):
+        class Person(Entity):
+            name = Field(String(50), required=True)
+            _email = Field(String(20), colname='email', synonym='email')
+
+            def _set_email(self, email):
+                Person.email_values.append(email)
+                self._email = email
+
+            def _get_email(self):
+                Person.email_gets += 1
+                return self._email
+
+            email = property(_get_email, _set_email)
+            email_values = []
+            email_gets = 0
+
+        setup_all(True)
+
+        mrx = Person(name='Mr. X', email='x@y.com')
+
+        assert mrx.email == 'x@y.com'
+        assert Person.email_gets == 1
+
+        mrx.email = "x@z.com"
+
+        assert Person.email_values == ['x@y.com', 'x@z.com']
+
+        session.flush()
+        session.clear()
+       
+        p = Person.get_by(email='x@z.com')
+        
+        assert p.name == 'Mr. X'
 

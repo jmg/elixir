@@ -3,25 +3,29 @@ New features:
 - Implemented a new syntax to declare fields and relationships, much closer to
   what is found in other Python ORM's. The with_fields syntax is now
   deprecated in favor of a that new syntax. The old statement based (has_field 
-  et al.) syntax stays the default for now. This was done with help from a 
-  patch by Adam Gomaa.
+  et al.) syntax is still available though (and will remain so for quite some
+  time). This was done with help from a patch by Adam Gomaa.
 - Implemented polymorphic single-table inheritance as well as polymorphic and
   non-polymorphic multi-table (aka joined table) inheritance.
 - Added a .query attribute on all entities. The old .query() syntax is still
   available.
-- Added support for "manual session management" (ie you can now define an 
-  entity with "using_options(session=None)" and it won't use any
-  SessionContext extension, nor receive the "query" attribute.
 - Added ext sub-package for additional Elixir statements.
 - Added ext.associable for generating polymorphic associations with Elixir
   statements.
 - versioning, encrypt ext [TODO]
+- Added support for synonym properties.
+- Added shortcut syntax to define column_properties.
 - Added has_property statement to add properties on the entity mapper which
   rely on columns (an thus need them to be defined before the property can be
   declared). See tests/test_has_property.py for an example.
+- Added support for "manual session management" (ie you can now define an 
+  entity with "using_options(session=None)" and it won't use any
+  SessionContext extension, nor receive the "query" attribute.
 - Made the statement system more powerfull.
 
 Changes:
+- Autodelay and init order changed => order_by + belongs_to, belongs_to + pk, 
+  ... [TODO]
 - Made Elixir work with both SQLAlchemy 0.4 and 0.3.10 (with help from a patch
   by Ants Aasma).
 - Moved away from assign_mapper, now all assign_mapper-provided methods are on
@@ -34,8 +38,6 @@ Changes:
 - Relationships to other classes can now also be defined using the classes
   themselves in addition to the class namees. Obviously, this doesn't work for
   forward references.
-- Autodelay and init order changed => order_by + belongs_to, belongs_to + pk, 
-  ... [TODO]
 - Classes defined inside a function can now have relationships to each other.
 - Added default __init__ method on entities so that subclasses can override it
   and still have the "set attribute by keyword" behavior by calling super()

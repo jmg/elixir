@@ -15,7 +15,16 @@ Here is a quick example of how to use the object-oriented syntax.
 
     class Person(Entity):
         id = Field(Integer, primary_key=True)
-        name = Field(String(50))
+        name = Field(String(50), required=True)
+        biography = Field(String)
+        photo = Field(Binary, deferred=True)
+        _email = Field(String(20), colname='email', synonym='email')
+
+        def _set_email(self, email):
+           self._email = email
+        def _get_email(self):
+           return self._email
+        email = property(_get_email, _set_email)
 
 
 The Field class takes one mandatory argument, which is its type. Please refer 
@@ -54,6 +63,10 @@ The following Elixir-specific arguments are supported:
 |                   | loaded by themselves (by using ``deferred=True``)       |
 |                   | or placed into groups that lazy-load together (by using |
 |                   | ``deferred`` = `"group_name"`).                         |
++-------------------+---------------------------------------------------------+
+| ``synonym``       | Specify a synonym name for this field. The field will   |
+|                   | also be usable under that name in keyword-based Query   |
+|                   | functions such as filter_by.                            |
 +-------------------+---------------------------------------------------------+
 
 has_field
@@ -117,7 +130,7 @@ Here is a quick example of how to use ``with_fields``.
 import sys
 
 from sqlalchemy import Column
-from sqlalchemy.orm import deferred
+from sqlalchemy.orm import deferred, synonym
 from sqlalchemy.ext.associationproxy import association_proxy
 
 from elixir.statements import ClassMutator
@@ -140,6 +153,7 @@ class Field(Property):
         super(Field, self).__init__()
         
         self.colname = kwargs.pop('colname', None)
+        self.synonym = kwargs.pop('synonym', None)
         self.deferred = kwargs.pop('deferred', False)
         if 'required' in kwargs:
             kwargs['nullable'] = not kwargs.pop('required')
@@ -184,6 +198,8 @@ class Field(Property):
         if self.property:
             self.entity.mapper.add_property(self.name, self.property)
 
+        if self.synonym:
+            self.entity.mapper.add_property(self.synonym, synonym(self.name))
 
 
 def has_field_handler(entity, name, *args, **kwargs):

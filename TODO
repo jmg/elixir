@@ -15,34 +15,26 @@ Website/doc related
     - default values
     - required fields
     - multiple files (modules) models
+    - inheritance
     - demonstrate common entities options (tablename, order_by, ...)
     - demonstrate common raltionships options (order_by, ...)
     - demonstrate some of the other methods provided by assign_mapper (we only
       show select and get_by and we don't really explain what they do).
     - explain what's the objectstore and how to use it.
-    ? many2many with intermediary object (extra fields in table) -> FAQ?
+    - autoload
+    - many2many with intermediary object (extra fields in table) -> FAQ?
+      -> tags with created_by
+
     ? transactions
     ? table constraints
-    ? autoload
     ? multi-thread
     ? multi-database
     ? deferred fields
-
-- complete the FAQ
-
-- document basic Types (at least link to the SQLAlchemy page listing available
-  types)
 
 - document SA/Elixir differences
 
 Code related
 ------------
-
-- change setup order so that you can order_by a column created by a belongs_to
-  relationship.
-
-- check that relations/fields setup with through kwargs endup with correct type
-  and cardinality (using a finalize method in HasField and Relationship)
 
 - make it possible to make a relation to an SA-mapped class (add test case)
   it'll be slightly problematic for the translate_order_by in HasMany and
@@ -52,22 +44,11 @@ Code related
 - add a test case for a relation from an SA-mapped class to an Elixir Entity
   (it works but we need a proper test for that).
 
-- support Overriding Column Names and wrapping column in python properties
-  http://www.sqlalchemy.org/docs/adv_datamapping.html#advdatamapping_properties_overriding
-  (ie support synonym).
-
-- implement other types of inheritance. Some of the work should be done on
-  SQLAlchemy's side.
-    cfr mailing list.
-
 - make elixir work with migrate (or vice-versa). 
     cfr mailing list
 
 - test multi-col-primary-keys: we've implemented the functionality in many
   places, but we do not have a single test for that case.
-
-- Pop relations' keyword arguments (and raise an exception) which would
-  conflict with those we generate
 
 - fix inherit VS no field in parent. You should be able to define a base
   class, or even a chain of base classes with no fields, by simply inheriting
@@ -81,6 +62,9 @@ Code related
   this last part should be easilty fixable, I think (it'a a matter of tweaking
   the is_inverse method of the HasAndBelongsToMany class)...
 
+- elixir on arbitrary selects. Shouldn't be hard...
+    cfr http://www.sqlalchemy.org/trac/ticket/502
+
 
 IDEAS
 =====
@@ -88,28 +72,19 @@ IDEAS
 The following items might or might not get implemented and probably need to be
 discussed before doing anything.
 
-- provide optional __init__ kwargs validation (cfr. assignmapper)
+- check that relations/fields setup with through kwargs endup with correct type
+  and cardinality (using a finalize method in HasField and Relationship)
 
-- provide optional "runtime setattr" validation
+- provide optional __init__ kwargs validation (cfr. assignmapper) (as a
+  recipe)
+
+- provide optional "runtime setattr" validation (as a recipe?)
   http://www.sqlalchemy.org/trac/attachment/ticket/547
   * the provided "_find_class_descriptor" seem overly complex though
   * the (unlikely?) case where a parent who is not inheriting from XFBase (or 
     Entity) defines a property will probably fail because of line 16.
 
-- I'm not sure it would be worth it but we might want to put a section
-  "contributing" on the website. In that case it might be a good idea to point
-  to this file so that people know what can be done.
-
 - add __revision__ (+ svn property) to all elixir files?
-
-- implement something like:
-
-    class A(Entity):
-        has_many('b', of_kind='B')
-        has_many('b_filtered', of_kind='B', filter="extra < 10")
-    class B(Entity):
-        has_field('extra', Integer)
-        belongs_to('a', of_kind='A')
 
 - support all mapper arguments which take column arguments in a generic way
 
@@ -139,14 +114,17 @@ discussed before doing anything.
 - investigate whether it would be possible to do a generic acts_as(xxx) 
   instead of the acts_as_taggable Jonathan demonstrated
   
-- elixir on arbitrary selects. Shouldn't be hard...
-    cfr http://www.sqlalchemy.org/trac/ticket/502
+- implement something like:
 
-- better support from strange relation, or even other properties (like
-  column_property, and so on)
-  see http://www.sqlalchemy.org/trac/ticket/198
+    class A(Entity):
+        has_many('b', of_kind='B')
+        has_many('b_filtered', of_kind='B', filter=lambda c: c.extra < 10)
+    class B(Entity):
+        has_field('extra', Integer)
+        belongs_to('a', of_kind='A')
 
-- somehow support things like described at:
+  this is the more or less the same as what is described at:
+
   http://spyced.blogspot.com/2007/01/why-sqlalchemy-impresses-me.html
   ie relations using any "selectable" instead of the normal object table.
 
