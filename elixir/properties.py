@@ -46,11 +46,34 @@ class EntityBuilder(object):
     in the correct order (for example, that the table is fully created before
     the mapper that use it is defined).
     '''
-    
-    #TODO: add stub methods (create_cols, etc...)
     #XXX: add helper methods: add_property, etc... here?
     # either in addition to in EntityDescriptor or instead of there.
-    pass
+    def create_pk_cols(self):
+        pass
+
+    def create_non_pk_cols(self):
+        pass
+
+    def before_table(self):
+        pass
+
+    def create_tables(self):
+        pass
+
+    def after_table(self):
+        pass
+
+    def before_mapper(self):
+        pass    
+
+    def after_mapper(self):
+        pass    
+
+    def create_properties(self):
+        pass    
+
+    def finalize(self):
+        pass    
 
 
 class CounterMeta(type):
