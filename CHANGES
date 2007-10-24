@@ -1,4 +1,8 @@
 0.4.0
+
+Please see http://elixir.ematia.de/trac/wiki/Migrate03to04 for detailed 
+upgrade notes.
+
 New features:
 - Implemented a new syntax to declare fields and relationships, much closer to
   what is found in other Python ORM's. The with_fields syntax is now
@@ -7,25 +11,34 @@ New features:
   time). This was done with help from a patch by Adam Gomaa.
 - Implemented polymorphic single-table inheritance as well as polymorphic and
   non-polymorphic multi-table (aka joined table) inheritance.
-- Added a .query attribute on all entities. The old .query() syntax is still
-  available.
 - Added ext sub-package for additional Elixir statements.
-- Added ext.associable for generating polymorphic associations with Elixir
-  statements.
-- versioning, encrypt ext [TODO]
+- Added associable extension for generating polymorphic associations with 
+  Elixir statements.
+- Added versioning extension to keep track to all changes to your entities by
+  storing them in a secondary table.
+- Added encryption extenstion to encrypt/decrypt some fields data on the fly
+  when writing to/reading from the database.
 - Added support for synonym properties.
 - Added shortcut syntax to define column_properties.
-- Added has_property statement to add properties on the entity mapper which
-  rely on columns (an thus need them to be defined before the property can be
-  declared). See tests/test_has_property.py for an example.
+- Added a .query attribute on all entities. The old .query() syntax is still
+  available.
+- Added support to add any SQLAlchemy property on your mapper, through the
+  GenericProperty class (as well as the has_property statement). These can
+  work even if they rely on the entity columns (an thus need them to be 
+  defined before the property can be declared). See tests/test_properties.py
+  for examples.
 - Added support for "manual session management" (ie you can now define an 
   entity with "using_options(session=None)" and it won't use any
   SessionContext extension, nor receive the "query" attribute.
 - Made the statement system more powerfull.
 
 Changes:
-- Autodelay and init order changed => order_by + belongs_to, belongs_to + pk, 
-  ... [TODO]
+- The setup time was changed. That is the table and mapper are not created as
+  soon as the class is defined, but rather when first used, or when explicitly
+  calling the setup function (recommended). This also allowed us to reorder
+  the setup process and allows, among others to use a ManyToOne-generated
+  column as a primary key, to use unique constraints on those columns, to
+  order by those columns and so on...
 - Made Elixir work with both SQLAlchemy 0.4 and 0.3.10 (with help from a patch
   by Ants Aasma).
 - Moved away from assign_mapper, now all assign_mapper-provided methods are on
