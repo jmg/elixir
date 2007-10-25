@@ -196,10 +196,10 @@ class Field(Property):
             self.property = self.column
 
         if self.property:
-            self.entity.mapper.add_property(self.name, self.property)
+            self.entity._descriptor.add_property(self.name, self.property)
 
         if self.synonym:
-            self.entity.mapper.add_property(self.synonym, synonym(self.name))
+            self.entity._descriptor.add_property(self.synonym, synonym(self.name))
 
 
 def has_field_handler(entity, name, *args, **kwargs):

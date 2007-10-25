@@ -404,7 +404,7 @@ class Relationship(Property):
         kwargs.update(self.get_prop_kwargs())
         self.property = relation(self.target, **kwargs)
         #TODO: check for duplicate properties
-        self.entity.mapper.add_property(self.name, self.property)
+        self.entity._descriptor.add_property(self.name, self.property)
     
     def target(self):
         if not self._target:

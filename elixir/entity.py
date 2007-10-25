@@ -101,8 +101,11 @@ class EntityDescriptor(object):
 
         # columns waiting for a table to exist
         self._columns = list()
-        self.relationships = list()
+        self.properties = dict()
         self.constraints = list()
+
+        #
+        self.relationships = list()
 
         # set default value for options
         self.order_by = None
@@ -408,7 +411,8 @@ class EntityDescriptor(object):
         else:
             args = [self.entity.table]
 
-        self.entity.mapper = _do_mapping(self.session, self.entity, 
+        self.entity.mapper = _do_mapping(self.session, self.entity,
+                                         properties=self.properties,
                                          *args, **kwargs)
 
     def after_mapper(self):
@@ -456,6 +460,15 @@ class EntityDescriptor(object):
         table = self.entity.table
         if table:
             table.append_constraint(constraint)
+
+    def add_property(self, name, property, check_duplicate=True):
+        if check_duplicate and name in self.properties:
+            raise Exception("property '%s' already exist in '%s' ! " % 
+                            (name, self.entity.__name__))
+        self.properties[name] = property
+        mapper = self.entity.mapper
+        if mapper:
+            mapper.add_property(name, property)
         
     def add_mapper_extension(self, extension):
         extensions = self.mapper_options.get('extension', [])
@@ -699,8 +712,8 @@ def setup_entities(entities):
             'setup_autoload_table', 'create_pk_cols', 'setup_relkeys',
             'before_table', 'setup_table', 'setup_reltables', 'after_table',
             'setup_events',
-            'before_mapper', 'setup_mapper', 'after_mapper',
             'setup_properties',
+            'before_mapper', 'setup_mapper', 'after_mapper',
             'finalize'):
         for entity in entities:
             if hasattr(entity, '_setup_done'):

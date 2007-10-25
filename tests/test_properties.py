@@ -53,6 +53,16 @@ class TestHasProperty(object):
                 assert tag.query_score2 == tag.prop_score + 1
                 assert tag.query_score3 == tag.prop_score + 2
 
+    def test_deferred(self):
+        class A(Entity):
+            name = Field(Unicode(20))
+            stuff = Field(Unicode, deferred=True)
+
+        setup_all(True)
+
+        A(name='foo')
+        session.flush()
+
     def test_synonym(self):
         class Person(Entity):
             name = Field(String(50), required=True)

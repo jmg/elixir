@@ -63,13 +63,13 @@ class EntityBuilder(object):
     def after_table(self):
         pass
 
+    def create_properties(self):
+        pass    
+
     def before_mapper(self):
         pass    
 
     def after_mapper(self):
-        pass    
-
-    def create_properties(self):
         pass    
 
     def finalize(self):
@@ -131,7 +131,7 @@ class GenericProperty(Property):
         else:
             prop_value = self.prop
         prop_value = self.evaluate_property(prop_value)
-        self.entity.mapper.add_property(self.name, prop_value)
+        self.entity._descriptor.add_property(self.name, prop_value)
 
     def evaluate_property(self, prop):
         return prop
