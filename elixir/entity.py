@@ -522,7 +522,10 @@ class EntityDescriptor(object):
             return None
 
     def columns(self):
-        if self.entity.table:
+        #FIXME: this would be more correct but it breaks inheritance, so I'll use the
+        # old test for now.
+#        if self.entity.table:
+        if self.autoload: 
             return self.entity.table.columns
         else:
             return self._columns
