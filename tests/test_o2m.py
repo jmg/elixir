@@ -88,7 +88,7 @@ class TestOneToMany(object):
                 s += ''.join([n._getstring(level+1) for n in self.children])
                 return s
 
-        create_all()
+        setup_all(True)
 
         node2 = TreeNode(name='node2')
         node2.children.append(TreeNode(name='subnode1'))

@@ -17,8 +17,8 @@ class TestPackages(object):
         # either on the tests directory or in the "trunk" directory, it imports
         # all modules, including a and b. Then when any other test calls
         # setup_all(), A and B are also setup, but then the other test also
-        # calls cleanup_all(), so when we get here, A and B are already dead and
-        # reimporting their modules does nothing because they were already
+        # calls cleanup_all(), so when we get here, A and B are already dead 
+        # and reimporting their modules does nothing because they were already
         # imported.
         sys.modules.pop('tests.a', None)
         sys.modules.pop('tests.b', None)

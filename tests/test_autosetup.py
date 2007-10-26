@@ -63,7 +63,7 @@ class TestSetup(object):
     def test_call(self):
         class Person(Entity):
             name = Field(Unicode(30))
-            using_options(tablename='person')
+            using_options(autosetup=True, tablename='person')
 
         assert 'person' in metadata.tables
         homer = Person(name="Homer Simpson")
@@ -72,7 +72,7 @@ class TestSetup(object):
     def test_getattr(self):
         class Person(Entity):
             name = Field(Unicode(30))
-            using_options(tablename='person')
+            using_options(autosetup=True, tablename='person')
 
         tablename = Person.table.name
         assert tablename == 'person' 
@@ -81,7 +81,7 @@ class TestSetup(object):
     def test_createall(self):
         class Person(Entity):
             name = Field(Unicode(30))
-            using_options(tablename='person')
+            using_options(autosetup=True, tablename='person')
 
         create_all()
         assert isinstance(metadata.tables['person'], Table)
@@ -89,7 +89,7 @@ class TestSetup(object):
     def test_setupall(self):
         class Person(Entity):
             name = Field(Unicode(30))
-            using_options(tablename='person')
+            using_options(autosetup=True, tablename='person')
 
         setup_all()
         assert isinstance(metadata.tables['person'], Table)
@@ -97,7 +97,7 @@ class TestSetup(object):
     def test_query(self):
         class Person(Entity):
             name = Field(Unicode(30))
-            using_options(tablename='person')
+            using_options(autosetup=True, tablename='person')
 
         q = Person.query
         assert isinstance(metadata.tables['person'], Table)

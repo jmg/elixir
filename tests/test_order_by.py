@@ -29,7 +29,7 @@ def setup():
         records = ManyToMany('Record', order_by='-title')
 
     metadata.bind = 'sqlite:///'
-    create_all()
+    setup_all(True)
 
     # insert some data
     artist = Artist(name="Dream Theater")

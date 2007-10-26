@@ -27,6 +27,8 @@ class TestAutoload(object):
             using_options(tablename='person', autoload=True)
             using_mapper_options(primary_key=['id'])
 
+        setup_all()
+
         barney = Person(id=1, name="Barney")
 
         session.flush()

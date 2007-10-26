@@ -68,7 +68,7 @@ class TestManyToMany(object):
             
             friends = ManyToMany('Person')
 
-        create_all()
+        setup_all(True)
 
         barney = Person(name="Barney")
         homer = Person(name="Homer", friends=[barney])

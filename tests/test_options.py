@@ -21,6 +21,7 @@ class TestOptions(object):
  
             using_options(version_id_col=True)
  
+        setup_all()
         Person.table.create()
  
         p1 = Person(name='Daniel')
@@ -61,8 +62,6 @@ class TestOptions(object):
 
         options_defaults['tablename'] = camel_to_underscore
 
-        setup_all(True)
-
         class MyEntity(Entity):
             name = Field(Unicode(30))
 
@@ -96,6 +95,7 @@ class TestSessionOptions(object):
             firstname = Field(Unicode(30))
             surname = Field(Unicode(30))
 
+        setup_all()
         create_all(engine)
 
         homer = Person(firstname="Homer", surname='Simpson')
@@ -113,6 +113,7 @@ class TestSessionOptions(object):
             firstname = Field(Unicode(30))
             surname = Field(Unicode(30))
 
+        setup_all()
         create_all(engine)
 
         session = create_session(bind=engine)
@@ -154,6 +155,7 @@ class TestSessionOptions(object):
             firstname = Field(Unicode(30))
             surname = Field(Unicode(30))
 
+        setup_all()
         create_all(engine)
 
         homer = Person(firstname="Homer", surname='Simpson')
@@ -180,6 +182,7 @@ class TestSessionOptions(object):
             firstname = Field(Unicode(30))
             surname = Field(Unicode(30))
 
+        setup_all()
         create_all(engine)
 
         homer = Person(firstname="Homer", surname='Simpson')
@@ -207,6 +210,7 @@ class TestSessionOptions(object):
             firstname = Field(Unicode(30))
             surname = Field(Unicode(30))
 
+        setup_all()
         create_all(engine)
 
         homer = Person(firstname="Homer", surname='Simpson')
@@ -233,7 +237,7 @@ class TestTableOptions(object):
 
             using_table_options(UniqueConstraint('firstname', 'surname'))
 
-        create_all()
+        setup_all(True)
 
         homer = Person(firstname="Homer", surname='Simpson')
         bart = Person(firstname="Bart", surname='Simpson')

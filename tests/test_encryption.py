@@ -28,7 +28,7 @@ def teardown():
 
 class TestEncryption(object):
     def setup(self):
-        create_all()
+        setup_all(True)
     
     def teardown(self):
         drop_all()
@@ -53,6 +53,7 @@ class TestEncryption(object):
         session.flush(); session.clear()
 
         p = Person.get_by(name='Jonathan LaCour')
+        print p.password
         assert p.password == 's3cr3tw0RD'
         assert p.ssn == '123-45-6789'
         assert p.pets[0].name == 'Winston'

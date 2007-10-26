@@ -9,7 +9,7 @@ def setup():
     metadata.bind = 'sqlite:///'
 
 
-class TestHasProperty(object):
+class TestSpecialProperties(object):
     def teardown(self):
         cleanup_all()
     
@@ -35,7 +35,7 @@ class TestHasProperty(object):
             has_field('name', String(16))
             has_many('tags', of_kind='Tag', lazy=False) 
 
-        create_all()
+        setup_all(True)
 
         u1 = User(name='joe', tags=[Tag(score1=5.0, score2=3.0), 
                                     Tag(score1=55.0, score2=1.0)])

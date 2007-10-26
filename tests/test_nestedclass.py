@@ -1,4 +1,4 @@
-from elixir import Entity, Field, String
+from elixir import *
 
 def setup():
     global Thing
@@ -12,9 +12,12 @@ def setup():
             pong = Field(String(32))
         
         other = Field(String(40))
+        
+    setup_all()        
     
 class TestNestedClass(object):
     def test_nestedclass(self):
+
         print "GLOBALS", globals().keys()
         assert 'name' in Thing.table.columns.keys()
         assert 'type' in Thing.table.columns.keys()

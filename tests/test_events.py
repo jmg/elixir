@@ -56,6 +56,8 @@ def setup():
             before_any_called += 1
     metadata.bind = 'sqlite:///'
 
+    setup_all()
+
 
 def teardown():
     cleanup_all()

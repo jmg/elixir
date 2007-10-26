@@ -31,6 +31,7 @@ def setup():
         movies = ManyToMany('Movie', inverse='actors', tablename='movie_casting')
         using_options(tablename='actors')
 
+    setup_all()
     metadata.bind = 'sqlite:///'
 
 
