@@ -44,6 +44,21 @@ class TestSetup(object):
         cleanup_all()
 
         assert 'person' not in metadata.tables
+    
+    def test_drop_create_drop(self):
+        class User(Entity):
+            using_options(tablename='users')
+            some_field = Field(Boolean, default=False)
+
+        metadata.bind = 'sqlite:///'
+
+        drop_all()
+        create_all()
+
+        class MockUser(User):
+            pass
+
+        drop_all()
 
     def test_no_autosetup(self):
         class Person(Entity):
