@@ -403,7 +403,6 @@ class Relationship(Property):
 
         kwargs.update(self.get_prop_kwargs())
         self.property = relation(self.target, **kwargs)
-        #TODO: check for duplicate properties
         self.entity._descriptor.add_property(self.name, self.property)
     
     def target(self):
@@ -488,6 +487,7 @@ class ManyToOne(Relationship):
         
         self.foreign_key = list()
         self.primaryjoin_clauses = list()
+
         super(ManyToOne, self).__init__(*args, **kwargs)
     
     def match_type_of(self, other):
@@ -663,11 +663,13 @@ class ManyToMany(Relationship):
         self.remote_side = kwargs.pop('remote_side', [])
         if self.remote_side and not isinstance(self.remote_side, list):
             self.remote_side = [self.remote_side]
+        self.ondelete = kwargs.pop('ondelete', None)
+        self.onupdate = kwargs.pop('onupdate', None)
+
         self.secondary_table = None
         self.primaryjoin_clauses = list()
         self.secondaryjoin_clauses = list()
-        self.ondelete = kwargs.pop('ondelete', None)
-        self.onupdate = kwargs.pop('onupdate', None)
+
         super(ManyToMany, self).__init__(*args, **kwargs)
 
     def match_type_of(self, other):

@@ -99,10 +99,11 @@ class EntityDescriptor(object):
                     self.parent = base
                     self.parent._descriptor.children.append(entity)
 
-        # columns waiting for a table to exist
+        # columns and constraints waiting for a table to exist
         self._columns = list()
-        self.properties = dict()
         self.constraints = list()
+        # properties waiting for a mapper to exist
+        self.properties = dict()
 
         #
         self.relationships = list()
@@ -521,7 +522,7 @@ class EntityDescriptor(object):
             return None
 
     def columns(self):
-        if self.autoload:
+        if self.entity.table:
             return self.entity.table.columns
         else:
             return self._columns
@@ -540,20 +541,20 @@ class EntityDescriptor(object):
 
 class TriggerProxy(object):
     """A class that serves as a "trigger" ; accessing its attributes runs
-    the function that is set at initialization.
+    the setup_all function.
 
-    Primarily used for setup_all().
-
-    Note that the `setupfunc` parameter is called on each access of
-    the attribute.
-
+    Note that the `setup_all` is called on each access of the attribute.
     """
+
     def __init__(self, class_, attrname):
         self.class_ = class_
         self.attrname = attrname
 
     def __getattr__(self, name):
         elixir.setup_all()
+        #FIXME: it's possible to get an infinite loop here if setup_all doesn't
+        #remove the triggers for this entity. This can happen if the entity is
+        #not in the `entities` list for some reason.
         proxied_attr = getattr(self.class_, self.attrname)
         return getattr(proxied_attr, name)
 
@@ -566,6 +567,9 @@ class TriggerAttribute(object):
         self.attrname = attrname
 
     def __get__(self, instance, owner):
+        #FIXME: it's possible to get an infinite loop here if setup_all doesn't
+        #remove the triggers for this entity. This can happen if the entity is
+        #not in the `entities` list for some reason.
         elixir.setup_all()
         return getattr(owner, self.attrname)
 
@@ -626,7 +630,7 @@ class EntityMeta(type):
             _install_autosetup_triggers(cls)
 
     def __call__(cls, *args, **kwargs):
-        if cls._descriptor.autosetup:
+        if cls._descriptor.autosetup and not hasattr(cls, '_setup_done'):
             elixir.setup_all()
         return type.__call__(cls, *args, **kwargs)
 
@@ -674,10 +678,11 @@ def _install_autosetup_triggers(cls, entity_name=None):
     for name in ('c', 'table', 'mapper', 'query'):
         setattr(cls, name, TriggerAttribute(name))
 
-    cls._ready = True
+    cls._has_triggers = True
+
 
 def _cleanup_autosetup_triggers(cls):
-    if hasattr(cls, '_setup_done'):
+    if not hasattr(cls, '_has_triggers'):
         return
 
     for name in ('table', 'mapper'):
@@ -699,6 +704,8 @@ def _cleanup_autosetup_triggers(cls):
     if hasattr(md.table_iterator, '_non_elixir_patched_iterator'):
         md.table_iterator = \
             md.table_iterator._non_elixir_patched_iterator
+
+    del cls._has_triggers
 
     
 def setup_entities(entities):
@@ -727,8 +734,13 @@ def cleanup_entities(entities):
     they had just before their setup phase. It will not work entirely for 
     autosetup entities as we need to remove the autosetup triggers.
 
-    This function is *experimental* in that it probably doesn't revert to the
-    exact same state the entities where before setup.
+    As of now, this function is *not* functional in that it doesn't revert to 
+    the exact same state the entities were before setup. For example, the 
+    properties do not work yet as those would need to be regenerated (since the
+    columns they are based on are regenerated too -- and as such the 
+    corresponding joins are not correct) but this doesn't happen because of 
+    the way relationship setup is designed to be called only once (especially 
+    the backref stuff in create_properties).
     """
     for entity in entities:
         desc = entity._descriptor
@@ -745,6 +757,7 @@ def cleanup_entities(entities):
         desc.has_pk = False
         desc._columns = []
         desc.constraints = []
+        desc.properties = {}
 
 
 class Entity(object):
