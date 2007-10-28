@@ -4,8 +4,8 @@ Elixir package
 A declarative layer on top of SQLAlchemy, which is intended to replace the
 ActiveMapper SQLAlchemy extension, and the TurboEntity project.  Elixir is a
 fairly thin wrapper around SQLAlchemy, which provides the ability to define
-model objects following the Active Record design pattern, and using a DSL
-syntax similar to that of the Ruby on Rails ActiveRecord system.
+model objects following the Active Record design pattern, and using a
+syntax familiar to users of other Object Relational Mappers, like SQLObject.
 
 Elixir does not intend to replace SQLAlchemy's core features, but instead
 focuses on providing a simpler syntax for defining model objects when you do

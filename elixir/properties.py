@@ -3,7 +3,8 @@ This module provides support for defining properties on your entities. It both
 provides, the `Property` class which acts as a building block for common 
 properties such as fields and relationships (for those, please consult the 
 corresponding modules), but also provides some more specialized properties, 
-such as `ColumnProperty`. It also provides the GenericProperty class which allows you to wrap any SQLAlchemy property, and its DSL-syntax equivalent: 
+such as `ColumnProperty`. It also provides the GenericProperty class which 
+allows you to wrap any SQLAlchemy property, and its DSL-syntax equivalent: 
 has_property_.
 
 `has_property`
