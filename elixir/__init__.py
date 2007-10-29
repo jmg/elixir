@@ -1,19 +1,18 @@
 '''
 Elixir package
 
-A declarative layer on top of SQLAlchemy, which is intended to replace the
-ActiveMapper SQLAlchemy extension, and the TurboEntity project.  Elixir is a
-fairly thin wrapper around SQLAlchemy, which provides the ability to define
-model objects following the Active Record design pattern, and using a
-syntax familiar to users of other Object Relational Mappers, like SQLObject.
+A declarative layer on top of the `SQLAlchemy library
+<http://www.sqlalchemy.org/>`_. It is a fairly thin wrapper, which provides 
+the ability to create simple Python classes that map directly to relational 
+database tables (this pattern is often referred to as the Active Record design
+pattern), providing many of the benefits of traditional databases 
+without losing the convenience of Python objects. 
 
-Elixir does not intend to replace SQLAlchemy's core features, but instead
-focuses on providing a simpler syntax for defining model objects when you do
-not need the full expressiveness of SQLAlchemy's manual mapper definitions.
-
-For an example of how to use Elixir, please refer to the examples directory
-and the unit tests. The examples directory includes a TurboGears application
-with full identity support called 'videostore'.
+Elixir is intended to replace the ActiveMapper SQLAlchemy extension, and the 
+TurboEntity project but does not intend to replace SQLAlchemy's core features,
+and instead focuses on providing a simpler syntax for defining model objects 
+when you do not need the full expressiveness of SQLAlchemy's manual mapper 
+definitions.
 '''
 
 import sqlalchemy
