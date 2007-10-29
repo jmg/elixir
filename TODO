@@ -6,19 +6,11 @@ TODO
 Website/doc related
 -------------------
 
-- make a page with "extras" (like the bindings for vim and textmate that were
-  posted on the "group" page). Nobody will find them on the google page unless 
-  they saw the initial announcement on the list.
-
 - extend the tutorial !!! (but we shouldn't duplicate the FAQ though)
-    - Many2Many
     - default values
     - required fields
     - multiple files (modules) models
-    - demonstrate common entities options (tablename, order_by, ...)
     - demonstrate common raltionships options (order_by, ...)
-    - query methods
-    - explain what's the objectstore and how to use it.
 
     ? autoload
     ? many2many with intermediary object (extra fields in table) -> FAQ?
