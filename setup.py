@@ -7,17 +7,17 @@ setup(name="Elixir",
 Elixir
 ======
 
-A declarative layer on top of SQLAlchemy. It is a fairly thin wrapper, which 
-provides the ability to define model objects following the Active Record 
-design pattern, and using a DSL syntax similar to that of the Ruby on Rails 
-ActiveRecord system.
-
-Elixir does not intend to replace SQLAlchemy's core features, but instead 
-focuses on providing a simpler syntax for defining model objects when you do
-not need the full expressiveness of SQLAlchemy's manual mapper definitions.
+A declarative layer on top of SQLAlchemy. It is a fairly thin wrapper, which
+provides the ability to create simple Python classes that map directly to
+relational database tables (this pattern is often referred to as the Active
+Record design pattern), providing many of the benefits of traditional
+databases without losing the convenience of Python objects.
 
 Elixir is intended to replace the ActiveMapper SQLAlchemy extension, and the 
-TurboEntity project.  
+TurboEntity project but does not intend to replace SQLAlchemy's core features,
+and instead focuses on providing a simpler syntax for defining model objects 
+when you do not need the full expressiveness of SQLAlchemy's manual mapper 
+definitions.
 """,
       author="Gaetan de Menten, Daniel Haus and Jonathan LaCour",
       author_email="sqlelixir@googlegroups.com",
@@ -36,9 +36,4 @@ TurboEntity project.
           "Topic :: Database :: Front-Ends",
           "Topic :: Software Development :: Libraries :: Python Modules"
       ],
-      extras_require = {
-        'pudge': ["docutils>=0.4", "elementtree>=1.2.6", "kid>=0.9", 
-                  "Pygments==dev,>=0.7dev-r2661", "pudge==dev,>=0.1.3dev-r134", 
-                  "buildutils==dev,>=0.1.2dev-r109",],
-      },
       test_suite = 'nose.collector')
