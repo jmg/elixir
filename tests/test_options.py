@@ -1,8 +1,8 @@
 """
-    test options
+test options
 """
 
-from sqlalchemy import UniqueConstraint, create_engine
+from sqlalchemy import UniqueConstraint, create_engine, Column
 from sqlalchemy.orm import create_session
 from sqlalchemy.exceptions import SQLError, ConcurrentModificationError 
 from elixir import *
@@ -53,6 +53,35 @@ class TestOptions(object):
         except ConcurrentModificationError:
             pass
         s2.close()
+
+    def test_allowcoloverride_false(self):
+        class MyEntity(Entity):
+            name = Field(Unicode(30))
+
+        setup_all(True)
+
+        raised = False
+        try:
+            MyEntity._descriptor.add_column(Column('name', String(30)))
+        except Exception:
+            raised = True
+
+        assert raised
+
+    def test_allowcoloverride_true(self):
+        class MyEntity(Entity):
+            name = Field(Unicode(30))
+            using_options(allowcoloverride=True)
+
+        setup_all()
+
+        # Note that this test is bogus as you cannot just change a column this
+        # way since the mapper is already constructed at this point and will 
+        # use the old column!!! This test is only meant as a way to check no
+        # exception is raised.
+        #TODO: provide a proper test (using autoloaded tables)
+        MyEntity._descriptor.add_column(Column('name', Unicode(30),
+                                               default='test'))
 
     def test_tablename_func(self):
         import re

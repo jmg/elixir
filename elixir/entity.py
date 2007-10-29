@@ -121,7 +121,8 @@ class EntityDescriptor(object):
 
         for option in ('autosetup', 'inheritance', 'polymorphic',
                        'autoload', 'tablename', 'shortnames', 
-                       'auto_primarykey', 'version_id_col'):
+                       'auto_primarykey', 'version_id_col', 
+                       'allowcoloverride'):
             setattr(self, option, options_defaults[option])
 
         for option_dict in ('mapper_options', 'table_options'):
@@ -434,7 +435,13 @@ class EntityDescriptor(object):
             if hasattr(builder, what):
                 getattr(builder, what)()
 
-    def add_column(self, col, check_duplicate=True):
+    def add_column(self, col, check_duplicate=None):
+        '''when check_duplicate is None, the value of the allowcoloverride
+        option of the entity is used.
+        '''
+        if check_duplicate is None:
+            check_duplicate = not self.allowcoloverride
+        
         if check_duplicate and self.get_column(col.key) is not None:
             raise Exception("Column '%s' already exist in '%s' ! " % 
                             (col.key, self.entity.__name__))
@@ -478,11 +485,11 @@ class EntityDescriptor(object):
         extensions.append(extension)
         self.mapper_options['extension'] = extensions
 
-    def get_column(self, colname):
+    def get_column(self, key):
         "need to support both the case where the table is already setup or not"
         #TODO: support SA table/autoloaded entity
         for col in self.columns:
-            if col.key == colname:
+            if col.key == key:
                 return col
         return None
 

@@ -97,6 +97,13 @@ The list of supported arguments are as follows:
 |                     | (called) or the create_all method of this entity's    |
 |                     | metadata is called. Defaults to ``True``.             |
 +---------------------+-------------------------------------------------------+
+| ``allowcoloverride``| Specify whether it is allowed to override columns.    |
+|                     | By default, Elixir forbids you to add a column to an  |
+|                     | entity's table which already exist in that table. If  |
+|                     | you set this option to ``True`` it will skip that     |
+|                     | check. Use with care as it is easy to shoot oneself   |
+|                     | in the foot when overriding columns.                  |
++---------------------+-------------------------------------------------------+
 
 
 For examples, please refer to the examples and unit tests.
@@ -145,6 +152,7 @@ options_defaults = dict(
     shortnames=False,
     auto_primarykey=True,
     version_id_col=False,
+    allowcoloverride=False,
     mapper_options=dict(),
     table_options=dict(),
 )
