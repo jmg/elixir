@@ -26,7 +26,7 @@ definitions.
       install_requires = [
           "SQLAlchemy >= 0.3.9"
       ],
-      packages=find_packages(exclude=['ez_setup']),
+      packages=find_packages(exclude=['ez_setup', 'tests', 'examples']),
       classifiers=[
           "Development Status :: 4 - Beta",
           "Intended Audience :: Developers",
