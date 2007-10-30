@@ -10,7 +10,6 @@ except NameError:
 
 import sys
 import warnings
-import inspect
 
 import sqlalchemy
 from sqlalchemy                     import Table, Column, Integer, String, \
@@ -314,12 +313,11 @@ class EntityDescriptor(object):
 
         # create a list of callbacks for each event
         methods = {}
-        for name, func in inspect.getmembers(self.entity, inspect.ismethod):
-            if hasattr(func, '_elixir_events'):
-                for event in func._elixir_events:
+        for name, item in self.entity.__dict__.items():
+            if hasattr(item, '_elixir_events'):
+                for event in item._elixir_events:
                     event_methods = methods.setdefault(event, [])
-                    event_methods.append(func)
-        
+                    event_methods.append(item)
         if not methods:
             return
         
