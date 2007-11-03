@@ -724,7 +724,7 @@ class ManyToMany(Relationship):
             # pointing to the source (local) entity's table and to the 
             # target's table
 
-            # In some databases (at lease MySQL) the constraint names need 
+            # In some databases (at least MySQL) the constraint names need 
             # to be unique for the whole database, instead of per table.
             source_fk_name = "%s_fk" % source_part
             if self.inverse:

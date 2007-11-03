@@ -16,7 +16,8 @@ Example usage:
         name = Field(Unicode)
         password = Field(Unicode)
         ssn = Field(Unicode)
-        acts_as_encrypted(for_columns=['password', 'ssn'], with_secret='secret')
+        acts_as_encrypted(for_columns=['password', 'ssn'], 
+                          with_secret='secret')
 
 The above Person entity will automatically encrypt and decrypt the password and
 ssn columns on save, update, and load.  Different secrets can be specified on
@@ -27,16 +28,20 @@ from Crypto.Cipher          import Blowfish
 from elixir.statements      import Statement
 from sqlalchemy.orm         import MapperExtension, EXT_PASS
 
+__all__ = ['acts_as_encrypted']
+__doc_all__ = []
 
 #
 # encryption and decryption functions
 #
 
 def encrypt_value(value, secret):
-    return Blowfish.new(secret, Blowfish.MODE_CFB).encrypt(value).encode('string_escape')
+    return Blowfish.new(secret, Blowfish.MODE_CFB) \
+                   .encrypt(value).encode('string_escape')
 
 def decrypt_value(value, secret):
-    return Blowfish.new(secret, Blowfish.MODE_CFB).decrypt(value.decode('string_escape'))
+    return Blowfish.new(secret, Blowfish.MODE_CFB) \
+                   .decrypt(value.decode('string_escape'))
 
 
 #
@@ -69,8 +74,10 @@ class ActsAsEncrypted(object):
                 perform_encryption(instance)
                 return EXT_PASS
             
-            def populate_instance(self, mapper, selectcontext, row, instance, *args, **kwargs):
-                mapper.populate_instance(selectcontext, instance, row, *args, **kwargs)
+            def populate_instance(self, mapper, selectcontext, row, instance, 
+                                  *args, **kwargs):
+                mapper.populate_instance(selectcontext, instance, row, 
+                                         *args, **kwargs)
                 perform_decryption(instance)
                 return True
         
@@ -80,7 +87,3 @@ class ActsAsEncrypted(object):
 
 acts_as_encrypted = Statement(ActsAsEncrypted)
 
-
-__all__ = [
-    'acts_as_encrypted'
-]

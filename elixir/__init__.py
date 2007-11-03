@@ -15,8 +15,12 @@ when you do not need the full expressiveness of SQLAlchemy's manual mapper
 definitions.
 '''
 
-import sqlalchemy
+try:
+    set
+except NameError:
+    from sets import Set as set
 
+import sqlalchemy
 from sqlalchemy.types import *
 
 from elixir.options import using_options, using_table_options, \
@@ -25,17 +29,13 @@ from elixir.entity import Entity, EntityMeta, EntityDescriptor, \
                           setup_entities, cleanup_entities
 from elixir.fields import has_field, with_fields, Field
 from elixir.relationships import belongs_to, has_one, has_many, \
-                                 has_and_belongs_to_many
-from elixir.relationships import ManyToOne, OneToOne, OneToMany, ManyToMany
+                                 has_and_belongs_to_many, \
+                                 ManyToOne, OneToOne, OneToMany, ManyToMany
 from elixir.properties import has_property, GenericProperty, ColumnProperty
 from elixir.statements import Statement
 
-try:
-    set
-except NameError:
-    from sets import Set as set
 
-__version__ = '0.4.0'
+__version__ = '0.4.1'
 
 __all__ = ['Entity', 'EntityMeta',
            'Field', 'has_field', 'with_fields',
@@ -50,8 +50,8 @@ __all__ = ['Entity', 'EntityMeta',
            sqlalchemy.types.__all__
 
 __doc_all__ = ['create_all', 'drop_all',
-                 'setup_all', 'cleanup_all',
-                 'metadata', 'session']
+               'setup_all', 'cleanup_all',
+               'metadata', 'session']
 
 
 class Objectstore(object):

@@ -11,6 +11,7 @@ Website/doc related
     - required fields
     - multiple files (modules) models
     - demonstrate common raltionships options (order_by, ...)
+    - inverse relationships matching (with a link to BehindTheScene)
 
     ? autoload
     ? many2many with intermediary object (extra fields in table) -> FAQ?

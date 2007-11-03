@@ -43,15 +43,18 @@ as part of the versioning process, and will need to be handled manually. Only
 values within the entity's main table will be versioned into the history table.
 '''
 
-from elixir                import Integer, DateTime
-from elixir.statements     import Statement
+from datetime              import datetime
+import inspect
+
 from sqlalchemy            import Table, Column, and_, desc
 from sqlalchemy.orm        import mapper, MapperExtension, EXT_PASS, \
                                   object_session
-from datetime              import datetime
 
-import inspect
+from elixir                import Integer, DateTime
+from elixir.statements     import Statement
 
+__all__ = ['acts_as_versioned', 'after_revert']
+__doc_all__ = []
 
 #
 # utility functions
@@ -67,9 +70,10 @@ def get_entity_where(instance):
 
 def get_history_where(instance):
     clauses = []
+    history_columns = instance.__history_table__.primary_key.columns
     for column in instance.table.primary_key.columns:
         instance_value = getattr(instance, column.name)
-        history_column = getattr(instance.__history_table__.primary_key.columns, column.name)
+        history_column = getattr(history_columns, column.name)
         clauses.append(history_column==instance_value)
     return and_(*clauses)
 
@@ -183,7 +187,9 @@ class VersionedEntityBuilder(object):
                         
         # attach utility methods and properties to the entity
         def get_versions(self):
-            return object_session(self).query(Version).filter(get_history_where(self)).all()
+            return object_session(self).query(Version) \
+                                       .filter(get_history_where(self)) \
+                                       .all()
         
         def get_as_of(self, dt):
             # if the passed in timestamp is older than our current version's
@@ -237,21 +243,14 @@ class VersionedEntityBuilder(object):
         entity.compare_with  = compare_with
         Version.compare_with = compare_with
 
-#def acts_as_versioned_handler(entity, ignore=[]):
-#    builder = VersionedEntityBuilder(entity, ignore)
-#    entity._descriptor.builders.append(builder)
-
-#acts_as_versioned = ClassMutator(acts_as_versioned_handler)
 acts_as_versioned = Statement(VersionedEntityBuilder)
 
 
-#
-# decorator for watching for revert events
-#
-
 def after_revert(func):
+    """
+    Decorator for watching for revert events.
+    """
     func._elixir_after_revert = True
     return func
 
 
-__all__ = ['acts_as_versioned', 'after_revert']

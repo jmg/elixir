@@ -113,6 +113,8 @@ from elixir.statements import Statement
 import elixir as el
 import sqlalchemy as sa
 
+__doc_all__ = ['associable']
+
 def associable(assoc_entity, plural_name=None, lazy=True):
     '''
     Generate an associable Elixir Statement
