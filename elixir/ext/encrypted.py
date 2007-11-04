@@ -9,6 +9,8 @@ the plugin at class declaration time.
 
 Example usage:
 
+.. sourcecode:: python
+
     from elixir import *
     from elixir.ext.encrypted import acts_as_encrypted
     
