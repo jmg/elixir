@@ -1,3 +1,7 @@
+0.4.1
+- moved some format strings to constants in options
+- added set method on base Entity (set attributes using kwargs)
+
 0.4.0 - 2007-10-29
 
 Please see http://elixir.ematia.de/trac/wiki/Migrate03to04 for detailed 

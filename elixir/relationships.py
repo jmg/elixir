@@ -329,6 +329,7 @@ from elixir.entity      import EntityDescriptor, EntityMeta
 from sqlalchemy.ext.associationproxy import association_proxy
 
 import sys
+import options
 
 __doc_all__ = []
 
@@ -545,7 +546,9 @@ class ManyToOne(Relationship):
                 if self.colname:
                     colname = self.colname[key_num]
                 else:
-                    colname = '%s_%s' % (self.name, pk_col.key)
+                    colname = options.FKCOL_NAMEFORMAT % \
+                              {'relname': self.name, 
+                               'key': pk_col.key}
 
                 # we can't add the column to the table directly as the table
                 # might not be created yet.
@@ -575,8 +578,9 @@ class ManyToOne(Relationship):
             if 'name' not in self.constraint_kwargs:
                 # In some databases (at least MySQL) the constraint name needs
                 # to be unique for the whole database, instead of per table.
-                fk_name = "%s_%s_fk" % (source_desc.tablename, 
-                                        '_'.join(fk_colnames))
+                fk_name = options.CONSTRAINT_NAMEFORMAT % \
+                          {'tablename': source_desc.tablename, 
+                           'colnames': '_'.join(fk_colnames)}
                 self.constraint_kwargs['name'] = fk_name
                 
             source_desc.add_constraint(
@@ -736,13 +740,16 @@ class ManyToMany(Relationship):
             constraints = list()
 
             joins = (self.primaryjoin_clauses, self.secondaryjoin_clauses)
-            for num, desc, fk_name, m2m in ((0, e1_desc, source_fk_name, self), 
-                                            (1, e2_desc, target_fk_name, self.inverse)):
+            for num, desc, fk_name, m2m in (
+                    (0, e1_desc, source_fk_name, self), 
+                    (1, e2_desc, target_fk_name, self.inverse)):
                 fk_colnames = list()
                 fk_refcols = list()
             
                 for pk_col in desc.primary_keys:
-                    colname = '%s_%s' % (desc.tablename, pk_col.key)
+                    colname = options.M2MCOL_NAMEFORMAT % \
+                              {'tablename': desc.tablename,
+                               'key': pk_col.key}
 
                     # In case we have a many-to-many self-reference, we 
                     # need to tweak the names of the columns so that we 

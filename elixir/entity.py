@@ -12,26 +12,20 @@ import sys
 import warnings
 
 import sqlalchemy
-from sqlalchemy                     import Table, Column, Integer, String, \
-                                           desc, ForeignKey, and_
-from sqlalchemy.orm                 import Query, MapperExtension,\
-                                           mapper, object_session, EXT_PASS
-from sqlalchemy.ext.sessioncontext  import SessionContext
+from sqlalchemy                    import Table, Column, Integer, \
+                                          desc, ForeignKey, and_
+from sqlalchemy.orm                import Query, MapperExtension,\
+                                          mapper, object_session, EXT_PASS
+from sqlalchemy.ext.sessioncontext import SessionContext
 
 import elixir
-from elixir.statements              import process_mutators
-from elixir.options                 import options_defaults, valid_options
-from elixir.properties              import Property
+from elixir.statements import process_mutators
+from elixir import options
+from elixir.properties import Property
 
 
 __doc_all__ = ['Entity', 'EntityMeta']
 
-DEFAULT_AUTO_PRIMARYKEY_NAME = "id"
-DEFAULT_AUTO_PRIMARYKEY_TYPE = Integer
-DEFAULT_VERSION_ID_COL = "row_version"
-DEFAULT_POLYMORPHIC_COL_NAME = "row_type"
-DEFAULT_POLYMORPHIC_COL_SIZE = 40
-DEFAULT_POLYMORPHIC_COL_TYPE = String(DEFAULT_POLYMORPHIC_COL_SIZE)
 
 try: 
     from sqlalchemy.orm import ScopedSession
@@ -122,10 +116,11 @@ class EntityDescriptor(object):
                        'autoload', 'tablename', 'shortnames', 
                        'auto_primarykey', 'version_id_col', 
                        'allowcoloverride'):
-            setattr(self, option, options_defaults[option])
+            setattr(self, option, options.options_defaults[option])
 
         for option_dict in ('mapper_options', 'table_options'):
-            setattr(self, option_dict, options_defaults[option_dict].copy())
+            setattr(self, option_dict, 
+                    options.options_defaults[option_dict].copy())
 
     def setup_options(self):
         '''
@@ -218,10 +213,11 @@ class EntityDescriptor(object):
             if isinstance(self.auto_primarykey, basestring):
                 colname = self.auto_primarykey
             else:
-                colname = DEFAULT_AUTO_PRIMARYKEY_NAME
+                colname = options.DEFAULT_AUTO_PRIMARYKEY_NAME
             
-            self.add_column(Column(colname, DEFAULT_AUTO_PRIMARYKEY_TYPE, 
-                                   primary_key=True))
+            self.add_column(
+                Column(colname, options.DEFAULT_AUTO_PRIMARYKEY_TYPE, 
+                       primary_key=True))
         self._pk_col_done = True
 
     def setup_relkeys(self):
@@ -264,14 +260,14 @@ class EntityDescriptor(object):
         if self.polymorphic and self.inheritance in ('single', 'multi') and \
            self.children and not self.parent:
             if not isinstance(self.polymorphic, basestring):
-                self.polymorphic = DEFAULT_POLYMORPHIC_COL_NAME
+                self.polymorphic = options.DEFAULT_POLYMORPHIC_COL_NAME
                 
             self.add_column(Column(self.polymorphic, 
-                                   DEFAULT_POLYMORPHIC_COL_TYPE))
+                                   options.POLYMORPHIC_COL_TYPE))
 
         if self.version_id_col:
             if not isinstance(self.version_id_col, basestring):
-                self.version_id_col = DEFAULT_VERSION_ID_COL
+                self.version_id_col = options.DEFAULT_VERSION_ID_COL_NAME
             self.add_column(Column(self.version_id_col, Integer))
 
         # create list of columns and constraints
@@ -793,6 +789,10 @@ class Entity(object):
     __metaclass__ = EntityMeta
 
     def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def set(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
 

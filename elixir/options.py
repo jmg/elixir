@@ -140,9 +140,24 @@ function's documentation
 '''
 
 from elixir.statements import ClassMutator
+from sqlalchemy import Integer, String
 
 __doc_all__ = ['options_defaults']
 
+# format constants
+FKCOL_NAMEFORMAT = "%(relname)s_%(key)s"
+M2MCOL_NAMEFORMAT = "%(tablename)s_%(key)s"
+CONSTRAINT_NAMEFORMAT = "%(tablename)s_%(colnames)s_fk"
+
+# other global constants
+DEFAULT_AUTO_PRIMARYKEY_NAME = "id"
+DEFAULT_AUTO_PRIMARYKEY_TYPE = Integer
+DEFAULT_VERSION_ID_COL_NAME = "row_version"
+DEFAULT_POLYMORPHIC_COL_NAME = "row_type"
+POLYMORPHIC_COL_SIZE = 40
+POLYMORPHIC_COL_TYPE = String(POLYMORPHIC_COL_SIZE)
+
+# 
 options_defaults = dict(
     autosetup=True,
     inheritance='single',
@@ -156,6 +171,7 @@ options_defaults = dict(
     mapper_options=dict(),
     table_options=dict(),
 )
+
 
 valid_options = options_defaults.keys() + [
     'metadata',
