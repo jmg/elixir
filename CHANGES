@@ -1,6 +1,7 @@
 0.4.1
 - moved some format strings to constants in options
 - added set method on base Entity (set attributes using kwargs)
+- fixed an incompatibility with zope.interfaces
 
 0.4.0 - 2007-10-29
 
