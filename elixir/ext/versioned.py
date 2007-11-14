@@ -89,12 +89,14 @@ class VersionedMapperExtension(MapperExtension):
         return EXT_PASS
         
     def after_insert(self, mapper, connection, instance):
-        colvalues = dict([(key, getattr(instance, key)) for key in instance.c.keys()])
+        colvalues = dict([(key, getattr(instance, key)) 
+                          for key in instance.c.keys()])
         instance.__class__.__history_table__.insert().execute(colvalues)
         return EXT_PASS
     
     def before_update(self, mapper, connection, instance):
-        colvalues = dict([(key, getattr(instance, key)) for key in instance.c.keys()])
+        colvalues = dict([(key, getattr(instance, key)) 
+                          for key in instance.c.keys()])
         history = instance.__class__.__history_table__
         
         values = history.select(get_history_where(instance), 
@@ -236,11 +238,11 @@ class VersionedEntityBuilder(object):
                     differences[column.name] = (this, that)
             return differences
         
-        entity.versions      = property(get_versions)
-        entity.get_as_of     = get_as_of
-        entity.revert_to     = revert_to
-        entity.revert        = revert
-        entity.compare_with  = compare_with
+        entity.versions = property(get_versions)
+        entity.get_as_of = get_as_of
+        entity.revert_to = revert_to
+        entity.revert = revert
+        entity.compare_with = compare_with
         Version.compare_with = compare_with
 
 acts_as_versioned = Statement(VersionedEntityBuilder)

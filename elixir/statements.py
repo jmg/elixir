@@ -34,6 +34,7 @@ class ClassMutator(object):
         '''
         self.handler(entity, *args, **kwargs)
 
+
 #TODO: move this to the super class (to be created here) of EntityMeta
 def process_mutators(entity):
     '''
@@ -45,11 +46,13 @@ def process_mutators(entity):
         mutator.process(entity, *args, **kwargs)
 
 class Statement(ClassMutator):
+
     def process(self, entity, *args, **kwargs):
         builder = self.handler(entity, *args, **kwargs)
         entity._descriptor.builders.append(builder)
 
 class PropertyStatement(ClassMutator):
+
     def process(self, entity, name, *args, **kwargs):
         prop = self.handler(*args, **kwargs)
         prop.attach(entity, name)

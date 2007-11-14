@@ -113,6 +113,11 @@ class Property(EntityBuilder):
         # register this property as a builder
         entity._descriptor.builders.append(self)
 
+        # delete the original attribute so that it doesn't interfere with
+        # SQLAlchemy.
+        if hasattr(entity, name):
+            delattr(entity, name)
+
     def __repr__(self):
         return "Property(%s, %s)" % (self.name, self.entity)
 

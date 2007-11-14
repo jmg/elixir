@@ -64,6 +64,25 @@ class TestInheritance(object):
             'D': ('D', 'D', 'D', 'D'),
         })
 
+    # this is related to SA ticket 866 
+    # http://www.sqlalchemy.org/trac/ticket/866
+    # the problam was caused by the fact that the attribute-based syntax left
+    # the class-attributes in place after initialization (in Elixir 0.4).
+    def test_missing_value(self):
+        class A(Entity):
+            pass
+
+        class B(A): 
+            name = Field(Unicode(30))
+            other = Field(Unicode)
+
+        setup_all()
+        create_all()
+
+        b1 = B(name="b1") # no value for other
+
+        session.flush()
+
     def test_polymorphic_singletable_inheritance(self):
         do_tst('single', True, True, {
             'A': ('A', 'B', 'C', 'D'),
@@ -97,3 +116,4 @@ class TestInheritance(object):
             'D': ('D',),
         })
 
+        

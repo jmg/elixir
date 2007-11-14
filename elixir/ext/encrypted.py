@@ -33,6 +33,7 @@ from sqlalchemy.orm         import MapperExtension, EXT_PASS
 __all__ = ['acts_as_encrypted']
 __doc_all__ = []
 
+
 #
 # encryption and decryption functions
 #
@@ -51,6 +52,7 @@ def decrypt_value(value, secret):
 #
 
 class ActsAsEncrypted(object):    
+
     def __init__(self, entity, for_fields=[], with_secret='abcdef'):
         
         def perform_encryption(instance, decrypt=False):

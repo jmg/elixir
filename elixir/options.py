@@ -180,6 +180,7 @@ valid_options = options_defaults.keys() + [
     'order_by',
 ]
 
+
 def using_options_handler(entity, *args, **kwargs):
     for kwarg in kwargs:
         if kwarg in valid_options:

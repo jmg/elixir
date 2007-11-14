@@ -777,7 +777,8 @@ class ManyToMany(Relationship):
                 
                 constraints.append(
                     ForeignKeyConstraint(fk_colnames, fk_refcols,
-                                         name=fk_name, onupdate=onupdate, ondelete=ondelete))
+                                         name=fk_name, onupdate=onupdate, 
+                                         ondelete=ondelete))
 
             args = columns + constraints
             

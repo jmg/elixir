@@ -13,11 +13,11 @@ many-to-many table. Quite often multiple tables will refer to a single one
 creating quite a few many-to-many intermediate tables.
 
 Polymorphic associations lower the amount of many-to-many tables by setting up
-a table that allows relations to any other table in the database, and relates it
-to the associable table. In some implementations, this layout does not enforce
-referential integrity with database foreign key constraints, this implementation
-uses an additional many-to-many table with foreign key constraints to avoid
-this problem.
+a table that allows relations to any other table in the database, and relates 
+it to the associable table. In some implementations, this layout does not 
+enforce referential integrity with database foreign key constraints, this 
+implementation uses an additional many-to-many table with foreign key 
+constraints to avoid this problem.
 
 .. note:
     SQLite does not support foreign key constraints, so referential integrity
@@ -115,6 +115,7 @@ import sqlalchemy as sa
 
 __doc_all__ = ['associable']
 
+
 def associable(assoc_entity, plural_name=None, lazy=True):
     '''
     Generate an associable Elixir Statement
@@ -129,12 +130,14 @@ def associable(assoc_entity, plural_name=None, lazy=True):
         attr_name = "%s_rel" % interface_name
 
     class GenericAssoc(object):
+    
         def __init__(self, tablename):
             self.type = tablename
    
     #TODO: inherit from entity builder
     class Associable(object):
         """An associable Elixir Statement object"""
+        
         def __init__(self, entity, name=None, uselist=True, lazy=True):
             self.entity = entity
             self.lazy = lazy
@@ -151,15 +154,22 @@ def associable(assoc_entity, plural_name=None, lazy=True):
             self.entity._descriptor.add_column(col)
 
             if not hasattr(assoc_entity, '_assoc_table'):
-                association_table = sa.Table("%s" % able_name, assoc_entity._descriptor.metadata,
+                metadata = assoc_entity._descriptor.metadata
+                association_table = sa.Table("%s" % able_name, metadata,
                     sa.Column('id', sa.Integer, primary_key=True),
                     sa.Column('type', sa.String(40), nullable=False),
                 )
-                
-                association_to_table = sa.Table("%s_to_%s" % (able_name, interface_name), assoc_entity._descriptor.metadata,
-                    sa.Column('assoc_id', sa.Integer, sa.ForeignKey(association_table.c.id, ondelete="CASCADE"), primary_key=True),
+                tablename =  "%s_to_%s" % (able_name, interface_name)
+                association_to_table = sa.Table(tablename, metadata,
+                    sa.Column('assoc_id', sa.Integer, 
+                              sa.ForeignKey(association_table.c.id, 
+                                            ondelete="CASCADE"), 
+                              primary_key=True),
                     #FIXME: this assumes a single id col
-                    sa.Column('%s_id' % interface_name, sa.Integer, sa.ForeignKey(assoc_entity.table.c.id, ondelete="RESTRICT"), primary_key=True),
+                    sa.Column('%s_id' % interface_name, sa.Integer, 
+                              sa.ForeignKey(assoc_entity.table.c.id, 
+                                            ondelete="RESTRICT"), 
+                              primary_key=True),
                 )
 
                 assoc_entity._assoc_table = association_table
@@ -211,11 +221,13 @@ def associable(assoc_entity, plural_name=None, lazy=True):
 
             # add helper methods
             def select_by(cls, **kwargs):
-                return cls.query.join([attr_name, 'targets']).filter_by(**kwargs).all()
+                return cls.query.join([attr_name, 'targets']) \
+                                .filter_by(**kwargs).all()
             setattr(entity, 'select_by_%s' % self.name, classmethod(select_by))
             
             def select(cls, *args, **kwargs):
-                return cls.query.join([attr_name, 'targets']).filter(*args, **kwargs).all()
+                return cls.query.join([attr_name, 'targets']) \
+                                .filter(*args, **kwargs).all()
             setattr(entity, 'select_%s' % self.name, classmethod(select))
 
     return Statement(Associable)

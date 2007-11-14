@@ -7,6 +7,7 @@ __all__ = [
     'after_delete'
 ]
 
+
 def create_decorator(event_name):
     def decorator(func):
         if not hasattr(func, '_elixir_events'):

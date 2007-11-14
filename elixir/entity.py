@@ -32,7 +32,8 @@ try:
 except ImportError: 
     # Not on sqlalchemy version 0.4
     ScopedSession = type(None)
-    
+
+
 def _do_mapping(session, cls, *args, **kwargs):
     if session is None:
         return mapper(cls, *args, **kwargs)
@@ -50,6 +51,7 @@ def _do_mapping(session, cls, *args, **kwargs):
         class query(object):
             def __getattr__(s, key):
                 return getattr(session.registry().query(cls), key)
+
             def __call__(s):
                 return session.registry().query(cls)
 
@@ -251,11 +253,11 @@ class EntityDescriptor(object):
                     self.parent._descriptor.add_constraint(constraint)
                 return
             elif self.inheritance == 'concrete':
-               # copy all columns from parent table
-               for col in self.parent._descriptor.columns:
+                # copy all columns from parent table
+                for col in self.parent._descriptor.columns:
                     self.add_column(col.copy())
-               #FIXME: copy constraints. But those are not as simple to copy
-               #since the source column must be changed
+                #FIXME: copy constraints. But those are not as simple to copy
+                #since the source column must be changed
 
         if self.polymorphic and self.inheritance in ('single', 'multi') and \
            self.children and not self.parent:
@@ -523,8 +525,8 @@ class EntityDescriptor(object):
             return None
 
     def columns(self):
-        #FIXME: this would be more correct but it breaks inheritance, so I'll use the
-        # old test for now.
+        #FIXME: this would be more correct but it breaks inheritance, so I'll 
+        # use the old test for now.
 #        if self.entity.table:
         if self.autoload: 
             return self.entity.table.columns
@@ -566,7 +568,9 @@ class TriggerProxy(object):
         proxied_attr = getattr(self.class_, self.attrname)
         return "<TriggerProxy (%s)>" % (self.class_.__name__)
 
+
 class TriggerAttribute(object):
+
     def __init__(self, attrname):
         self.attrname = attrname
 
@@ -580,6 +584,7 @@ class TriggerAttribute(object):
 
 def _is_entity(class_):
     return isinstance(class_, EntityMeta)
+
 
 class EntityMeta(type):
     """
@@ -731,6 +736,7 @@ def setup_entities(entities):
                 continue
             method = getattr(entity._descriptor, method_name)
             method()
+
 
 def cleanup_entities(entities):
     """
