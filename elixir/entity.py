@@ -178,48 +178,47 @@ class EntityDescriptor(object):
 
     def create_pk_cols(self):
         """
-        Create primary_key columns. That is, add columns from belongs_to
-        relationships marked as being a primary_key and then add a primary 
-        key to the table if it hasn't already got one and needs one. 
+        Create primary_key columns. That is, call the 'create_pk_cols' 
+        builders then add a primary key to the table if it hasn't already got 
+        one and needs one. 
         
-        This method is "semi-recursive" in that it calls the create_keys 
-        method on BelongsTo relationships and those in turn call create_pk_cols
-        on their target. It shouldn't be possible to have an infinite loop 
-        since a loop of primary_keys is not a valid situation.
+        This method is "semi-recursive" in some cases: it calls the 
+        create_keys method on ManyToOne relationships and those in turn call
+        create_pk_cols on their target. It shouldn't be possible to have an 
+        infinite loop since a loop of primary_keys is not a valid situation.
         """
         if self._pk_col_done:
             return
 
-        if self.autoload:
-            return
-
         self.call_builders('create_pk_cols')
 
-        if self.parent:
-            if self.inheritance == 'multi':
-                # add columns with foreign keys to the parent's primary key 
-                # columns 
-                parent_desc = self.parent._descriptor
-                for pk_col in parent_desc.primary_keys:
-                    colname = "%s_%s" % (self.parent.__name__.lower(),
-                                         pk_col.key)
+        if not self.autoload:
+            if self.parent:
+                if self.inheritance == 'multi':
+                    # add columns with foreign keys to the parent's primary 
+                    # key columns 
+                    parent_desc = self.parent._descriptor
+                    for pk_col in parent_desc.primary_keys:
+                        colname = "%s_%s" % (self.parent.__name__.lower(),
+                                             pk_col.key)
 
-                    # it seems like SA ForeignKey is not happy being given a 
-                    # real column object when said column is not yet attached 
-                    # to a table
-                    pk_col_name = "%s.%s" % (parent_desc.tablename, pk_col.key)
-                    col = Column(colname, pk_col.type, 
-                                 ForeignKey(pk_col_name), primary_key=True)
-                    self.add_column(col)
-        elif not self.has_pk and self.auto_primarykey:
-            if isinstance(self.auto_primarykey, basestring):
-                colname = self.auto_primarykey
-            else:
-                colname = options.DEFAULT_AUTO_PRIMARYKEY_NAME
-            
-            self.add_column(
-                Column(colname, options.DEFAULT_AUTO_PRIMARYKEY_TYPE, 
-                       primary_key=True))
+                        # it seems like SA ForeignKey is not happy being given
+                        # a real column object when said column is not yet 
+                        # attached to a table
+                        pk_col_name = "%s.%s" % (parent_desc.tablename, 
+                                                 pk_col.key)
+                        col = Column(colname, pk_col.type, 
+                                     ForeignKey(pk_col_name), primary_key=True)
+                        self.add_column(col)
+            elif not self.has_pk and self.auto_primarykey:
+                if isinstance(self.auto_primarykey, basestring):
+                    colname = self.auto_primarykey
+                else:
+                    colname = options.DEFAULT_AUTO_PRIMARYKEY_NAME
+                
+                self.add_column(
+                    Column(colname, options.DEFAULT_AUTO_PRIMARYKEY_TYPE, 
+                           primary_key=True))
         self._pk_col_done = True
 
     def setup_relkeys(self):

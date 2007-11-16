@@ -18,7 +18,6 @@ def setup():
     animal_table = Table('animal', meta,
         Column('id', Integer, primary_key=True),
         Column('name', String(30)),
-        Column('color', String(15)),
         Column('owner_id', Integer, ForeignKey('person.id')),
         Column('feeder_id', Integer, ForeignKey('person.id')))
 
@@ -65,14 +64,13 @@ def setup():
         persons = ManyToMany('Person', 
                                 tablename='person_category')
 
-    elixir.options_defaults.update(dict(autoload=False, shortnames=False))
-
     metadata.bind = meta.bind
     setup_all()
 
 
 def teardown():
     cleanup_all()
+    elixir.options_defaults.update(dict(autoload=False, shortnames=False))
 
 #-----------
 
@@ -85,7 +83,7 @@ class TestAutoload(object):
         session.clear()
     
     def test_autoload(self):
-        snowball = Animal(name="Snowball II", color="grey")
+        snowball = Animal(name="Snowball II")
         slh = Animal(name="Santa's Little Helper")
         homer = Person(name="Homer", animals=[snowball, slh], pets=[slh])
         lisa = Person(name="Lisa", pets=[snowball])
@@ -158,4 +156,50 @@ class TestAutoload(object):
 
         assert barney in homer.appreciate
         assert homer in barney.isappreciatedby
+
+
+def setup_entity_raise(cls):
+    try:
+        setup_entities([cls])
+    except Exception, e:
+        pass
+    else:
+        assert False, "Exception did not occur setting up %s" % cls.__name__
+
+class TestAutoloadOverrideColumn(object):
+    def setup(self):
+        create_all()
+
+    def teardown(self):
+        drop_all()
+
+    def test_override_pk_fails(self):
+        class Person(Entity):
+            id = Field(Integer, primary_key=True)
+
+        setup_entity_raise(Person)
+
+    def test_override_non_pk_fails(self):
+        class Animal(Entity):
+            name = Field(Unicode(30))
+
+        setup_entity_raise(Animal)
+
+    def test_override_pk(self):
+        class Person(Entity):
+            using_options(allowcoloverride=True)
+
+            id = Field(Integer, primary_key=True)
+
+        setup_entities([Person])
+
+    def test_override_non_pk(self):
+        class Animal(Entity):
+            using_options(allowcoloverride=True)
+
+            name = Field(Unicode(30))
+
+        setup_entities([Animal])
+        assert isinstance(Animal.table.columns['name'].type, Unicode)
+
 
