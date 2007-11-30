@@ -476,6 +476,8 @@ class ManyToOne(Relationship):
             self.column_kwargs['nullable'] = not kwargs.pop('required')
         if 'primary_key' in kwargs:
             self.column_kwargs['primary_key'] = kwargs.pop('primary_key')
+        # by default, columns created will have an index.
+        self.column_kwargs.setdefault('index', True)
 
         self.constraint_kwargs = kwargs.pop('constraint_kwargs', {})
         if 'use_alter' in kwargs:
@@ -552,8 +554,7 @@ class ManyToOne(Relationship):
 
                 # we can't add the column to the table directly as the table
                 # might not be created yet.
-                col = Column(colname, pk_col.type, index=True,
-                             **self.column_kwargs)
+                col = Column(colname, pk_col.type, **self.column_kwargs)
                 source_desc.add_column(col)
 
                 # build the list of local columns which will be part of

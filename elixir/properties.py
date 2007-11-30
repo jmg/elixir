@@ -125,6 +125,14 @@ class Property(EntityBuilder):
 class GenericProperty(Property):
     '''
     Generic catch-all class to wrap an SQLAlchemy property.
+
+    .. sourcecode:: python
+
+        class OrderLine(Entity):
+            quantity = Field(Float)
+            unit_price = Field(Numeric)
+            price = GenericProperty(lambda c: column_property(
+                             (c.quantity * c.unit_price).label('price')))
     '''
     
     def __init__(self, prop):
