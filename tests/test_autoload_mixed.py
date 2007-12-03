@@ -22,5 +22,5 @@ class TestAutoloadMixed(object):
 
         setup_all(True)
 
-        assert Item.table.c['owner_user_id'].foreign_key.column.name == 'user_id'
+        assert Item.table.c['owner_user_id'].foreign_keys[0].column.name == 'user_id'
 
