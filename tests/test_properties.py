@@ -55,8 +55,8 @@ class TestSpecialProperties(object):
 
     def test_deferred(self):
         class A(Entity):
-            name = Field(Unicode(20))
-            stuff = Field(Unicode, deferred=True)
+            name = Field(String(20))
+            stuff = Field(String, deferred=True)
 
         setup_all(True)
 

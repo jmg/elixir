@@ -15,16 +15,40 @@ class TestManyToMany(object):
     
     def test_simple(self):
         class A(Entity):
-            name = Field(Unicode(60))
+            name = Field(String(60))
             bs_ = ManyToMany('B')
 
         class B(Entity):
-            name = Field(Unicode(60))
+            name = Field(String(60))
             as_ = ManyToMany('A')
 
         setup_all(True)
 
         b1 = B(name='b1', as_=[A(name='a1')])
+
+        session.flush()
+        session.clear()
+
+        a = A.query.one()
+        b = B.query.one()
+
+        assert a in b.as_
+        assert b in a.bs_
+
+    def test_multi_pk_in_target(self):
+        class A(Entity):
+            key1 = Field(Integer, primary_key=True, autoincrement=False)
+            key2 = Field(String(40), primary_key=True)
+
+            bs_ = ManyToMany('B')
+
+        class B(Entity):
+            name = Field(String(60))
+            as_ = ManyToMany('A')
+
+        setup_all(True)
+
+        b1 = B(name='b1', as_=[A(key1=10, key2='a1')])
 
         session.flush()
         session.clear()
@@ -64,7 +88,7 @@ class TestManyToMany(object):
 
     def test_selfref(self):
         class Person(Entity):
-            name = Field(Unicode(30))
+            name = Field(String(30))
             
             friends = ManyToMany('Person')
 

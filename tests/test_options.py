@@ -17,7 +17,7 @@ class TestOptions(object):
     # this test is a rip-off SQLAlchemy's activemapper's update test
     def test_version_id_col(self):
         class Person(Entity):
-            name = Field(Unicode(30))
+            name = Field(String(30))
  
             using_options(version_id_col=True)
  
@@ -56,7 +56,7 @@ class TestOptions(object):
 
     def test_allowcoloverride_false(self):
         class MyEntity(Entity):
-            name = Field(Unicode(30))
+            name = Field(String(30))
 
         setup_all(True)
 
@@ -70,7 +70,7 @@ class TestOptions(object):
 
     def test_allowcoloverride_true(self):
         class MyEntity(Entity):
-            name = Field(Unicode(30))
+            name = Field(String(30))
             using_options(allowcoloverride=True)
 
         setup_all()
@@ -80,7 +80,7 @@ class TestOptions(object):
         # use the old column!!! This test is only meant as a way to check no
         # exception is raised.
         #TODO: provide a proper test (using autoloaded tables)
-        MyEntity._descriptor.add_column(Column('name', Unicode(30),
+        MyEntity._descriptor.add_column(Column('name', String(30),
                                                default='test'))
 
     def test_tablename_func(self):
@@ -92,10 +92,10 @@ class TestOptions(object):
         options_defaults['tablename'] = camel_to_underscore
 
         class MyEntity(Entity):
-            name = Field(Unicode(30))
+            name = Field(String(30))
 
         class MySuperTestEntity(Entity):
-            name = Field(Unicode(30))
+            name = Field(String(30))
 
         setup_all(True)
 
@@ -121,8 +121,8 @@ class TestSessionOptions(object):
         
         class Person(Entity):
             using_options(session=ctx)
-            firstname = Field(Unicode(30))
-            surname = Field(Unicode(30))
+            firstname = Field(String(30))
+            surname = Field(String(30))
 
         setup_all()
         create_all(engine)
@@ -139,8 +139,8 @@ class TestSessionOptions(object):
         
         class Person(Entity):
             using_options(session=None)
-            firstname = Field(Unicode(30))
-            surname = Field(Unicode(30))
+            firstname = Field(String(30))
+            surname = Field(String(30))
 
         setup_all()
         create_all(engine)
@@ -181,8 +181,8 @@ class TestSessionOptions(object):
 
         class Person(Entity):
             using_options(session=store)
-            firstname = Field(Unicode(30))
-            surname = Field(Unicode(30))
+            firstname = Field(String(30))
+            surname = Field(String(30))
 
         setup_all()
         create_all(engine)
@@ -208,8 +208,8 @@ class TestSessionOptions(object):
 
         class Person(Entity):
             using_options(session=Session)
-            firstname = Field(Unicode(30))
-            surname = Field(Unicode(30))
+            firstname = Field(String(30))
+            surname = Field(String(30))
 
         setup_all()
         create_all(engine)
@@ -236,8 +236,8 @@ class TestSessionOptions(object):
         __session__ = session
         
         class Person(Entity):
-            firstname = Field(Unicode(30))
-            surname = Field(Unicode(30))
+            firstname = Field(String(30))
+            surname = Field(String(30))
 
         setup_all()
         create_all(engine)
@@ -261,8 +261,8 @@ class TestTableOptions(object):
     def test_unique_constraint(self):
         
         class Person(Entity):
-            firstname = Field(Unicode(30))
-            surname = Field(Unicode(30))
+            firstname = Field(String(30))
+            surname = Field(String(30))
 
             using_table_options(UniqueConstraint('firstname', 'surname'))
 
@@ -285,10 +285,10 @@ class TestTableOptions(object):
 
     def test_unique_constraint_belongs_to(self):
         class Author(Entity):
-            name = Field(Unicode)
+            name = Field(String)
 
         class Book(Entity):
-            title = Field(Unicode, required=True)
+            title = Field(String, required=True)
             author = ManyToOne("Author")
 
             using_table_options(UniqueConstraint("title", "author_id"))

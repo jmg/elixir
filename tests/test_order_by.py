@@ -9,7 +9,7 @@ def setup():
     global Record, Artist, Genre
     
     class Record(Entity):
-        title = Field(Unicode(100))
+        title = Field(String(100))
         year = Field(Integer)
         artist = ManyToOne('Artist')
         genres = ManyToMany('Genre')
@@ -21,11 +21,11 @@ def setup():
             return "%s - %s (%d)" % (self.artist.name, self.title, self.year)
 
     class Artist(Entity):
-        name = Field(Unicode(30))
+        name = Field(String(30))
         records = OneToMany('Record', order_by=['year', '-title'])
 
     class Genre(Entity):
-        name = Field(Unicode(30))
+        name = Field(String(30))
         records = ManyToMany('Record', order_by='-title')
 
     metadata.bind = 'sqlite:///'

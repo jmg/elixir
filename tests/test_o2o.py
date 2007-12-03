@@ -9,11 +9,11 @@ class TestOneToOne(object):
 
     def test_simple(self):
         class A(Entity):
-            name = Field(Unicode(60))
+            name = Field(String(60))
             b = OneToOne('B')
 
         class B(Entity):
-            name = Field(Unicode(60))
+            name = Field(String(60))
             a = ManyToOne('A')
 
         setup_all(True)

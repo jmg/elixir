@@ -13,7 +13,7 @@ def setup():
     person_table = Table('person', meta,
         Column('id', Integer, primary_key=True),
         Column('father_id', Integer, ForeignKey('person.id')),
-        Column('name', Unicode(32)))
+        Column('name', String(32)))
 
     animal_table = Table('animal', meta,
         Column('id', Integer, primary_key=True),
@@ -181,7 +181,7 @@ class TestAutoloadOverrideColumn(object):
 
     def test_override_non_pk_fails(self):
         class Animal(Entity):
-            name = Field(Unicode(30))
+            name = Field(String(30))
 
         setup_entity_raise(Animal)
 
@@ -197,9 +197,9 @@ class TestAutoloadOverrideColumn(object):
         class Animal(Entity):
             using_options(allowcoloverride=True)
 
-            name = Field(Unicode(30))
+            name = Field(String(30))
 
         setup_entities([Animal])
-        assert isinstance(Animal.table.columns['name'].type, Unicode)
+        assert isinstance(Animal.table.columns['name'].type, String)
 
 

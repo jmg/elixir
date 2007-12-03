@@ -73,8 +73,8 @@ class TestInheritance(object):
             pass
 
         class B(A): 
-            name = Field(Unicode(30))
-            other = Field(Unicode)
+            name = Field(String(30))
+            other = Field(String)
 
         setup_all()
         create_all()

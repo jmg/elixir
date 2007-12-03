@@ -26,9 +26,6 @@ Website/doc related
 Code related
 ------------
 
-- test multi-col-primary-keys: we've implemented the functionality in many
-  places, but we do not have a single test for that case.
-
 - Besides, the current system also has another case I don't like: if the user 
   specifies an inverse (on one or both sides) but also set a table name on one
   side (or two different table names), it will consider the relation as being 

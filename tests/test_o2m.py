@@ -13,11 +13,11 @@ class TestOneToMany(object):
     
     def test_simple(self):
         class A(Entity):
-            name = Field(Unicode(60))
+            name = Field(String(60))
             bs = OneToMany('B')
 
         class B(Entity):
-            name = Field(Unicode(60))
+            name = Field(String(60))
             a = ManyToOne('A')
 
         setup_all(True)
@@ -38,7 +38,7 @@ class TestOneToMany(object):
 
     def test_selfref(self):
         class Person(Entity):
-            name = Field(Unicode(30))
+            name = Field(String(30))
             
             father = ManyToOne('Person', inverse='children')
             children = OneToMany('Person', inverse='father')
@@ -106,11 +106,11 @@ class TestOneToMany(object):
 
     def test_has_many_syntax(self):
         class Person(Entity):
-            has_field('name', Unicode(30))
+            has_field('name', String(30))
             has_many('pets', of_kind='Animal')
 
         class Animal(Entity):
-            has_field('name', Unicode(30))
+            has_field('name', String(30))
             belongs_to('owner', of_kind='Person')
 
         setup_all(True)

@@ -9,15 +9,15 @@ def setup():
     global Director, Movie, Actor
 
     class Director(Entity):
-        name = Field(Unicode(60))
+        name = Field(String(60))
         movies = OneToMany('Movie', inverse='director')
         using_options(tablename='directors')
 
 
     class Movie(Entity):
         id = Field(Integer, primary_key=True)
-        title = Field(Unicode(60), primary_key=True)
-        description = Field(Unicode(512))
+        title = Field(String(60), primary_key=True)
+        description = Field(String(512))
         releasedate = Field(DateTime)
         ignoreme = Field(Integer, default=0)
         director = ManyToOne('Director', inverse='movies')
@@ -27,7 +27,7 @@ def setup():
 
 
     class Actor(Entity):
-        name = Field(Unicode(60))
+        name = Field(String(60))
         movies = ManyToMany('Movie', inverse='actors', tablename='movie_casting')
         using_options(tablename='actors')
 

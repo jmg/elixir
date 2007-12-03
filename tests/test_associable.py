@@ -39,7 +39,7 @@ class TestOrders(object):
 
         class Comment(Entity):
             id = Field(Integer, primary_key=True)
-            name = Field(Unicode)
+            name = Field(String)
             text = Field(String)
 
         is_addressable = associable(Address, 'addresses')
@@ -47,7 +47,7 @@ class TestOrders(object):
 
         class Person(Entity):
             id = Field(Integer, primary_key=True)
-            name = Field(Unicode)
+            name = Field(String)
             orders = OneToMany('Order')
             using_options(shortnames=True)
             is_addressable()
@@ -95,13 +95,13 @@ class TestOrders(object):
         can_checkout = associable(Checkout, 'checked_out')
 
         class Article(Entity):
-            title = Field(Unicode)
-            content = Field(Unicode)
+            title = Field(String)
+            content = Field(String)
             can_checkout('checked_out_by', uselist=False)
             using_options(tablename='article')
 
         class Villian(Entity):
-            name = Field(Unicode)
+            name = Field(String)
             using_options(tablename='villian')
 
         setup_all(True)

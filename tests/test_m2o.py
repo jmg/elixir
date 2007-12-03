@@ -13,10 +13,10 @@ class TestManyToOne(object):
     
     def test_simple(self):
         class A(Entity):
-            name = Field(Unicode(60))
+            name = Field(String(60))
 
         class B(Entity):
-            name = Field(Unicode(60))
+            name = Field(String(60))
             a = ManyToOne('A')
 
         setup_all(True)
@@ -50,7 +50,7 @@ class TestManyToOne(object):
 
     def test_one_pk(self):
         class A(Entity):
-            name = Field(Unicode(40), primary_key=True)
+            name = Field(String(40), primary_key=True)
          
         class B(Entity):
             a = ManyToOne('A', primary_key=True)
@@ -80,7 +80,7 @@ class TestManyToOne(object):
     def test_multi_pk_in_target(self):
         class A(Entity):
             key1 = Field(Integer, primary_key=True)
-            key2 = Field(Unicode(40), primary_key=True)
+            key2 = Field(String(40), primary_key=True)
          
         class B(Entity):
             num = Field(Integer, primary_key=True)
@@ -151,10 +151,10 @@ class TestManyToOne(object):
 
     def test_belongs_to_syntax(self):
         class Person(Entity):
-            has_field('name', Unicode(30))
+            has_field('name', String(30))
 
         class Animal(Entity):
-            has_field('name', Unicode(30))
+            has_field('name', String(30))
             belongs_to('owner', of_kind='Person')
 
         setup_all(True)

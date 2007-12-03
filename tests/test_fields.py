@@ -13,8 +13,8 @@ class TestFields(object):
     
     def test_attr_syntax(self):
         class Person(Entity):
-            firstname = Field(Unicode(30))
-            surname = Field(Unicode(30))
+            firstname = Field(String(30))
+            surname = Field(String(30))
 
         setup_all(True)
         
@@ -30,8 +30,8 @@ class TestFields(object):
 
     def test_has_field(self):
         class Person(Entity):
-            has_field('firstname', Unicode(30))
-            has_field('surname', Unicode(30))
+            has_field('firstname', String(30))
+            has_field('surname', String(30))
 
         setup_all(True)
         
@@ -48,8 +48,8 @@ class TestFields(object):
     def test_with_fields(self):
         class Person(Entity):
             with_fields(
-                firstname = Field(Unicode(30)),
-                surname = Field(Unicode(30))
+                firstname = Field(String(30)),
+                surname = Field(String(30))
             )
             
         setup_all(True)

@@ -6,15 +6,15 @@ def setup():
     global Person, Pet
     
     class Person(Entity):
-        name = Field(Unicode)
-        password = Field(Unicode)
-        ssn = Field(Unicode)
+        name = Field(String)
+        password = Field(String)
+        ssn = Field(String)
         pets = OneToMany('Pet')
         acts_as_encrypted(for_fields=['password', 'ssn'], with_secret='secret')
 
     class Pet(Entity):
-        name = Field(Unicode)
-        codename = Field(Unicode)
+        name = Field(String)
+        codename = Field(String)
         acts_as_encrypted(for_fields=['codename'], with_secret='secret2')
         owner = ManyToOne('Person')
 

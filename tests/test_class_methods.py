@@ -15,7 +15,7 @@ class TestOldMethods(object):
     
     def test_get(self):
         class A(Entity):
-            name = Field(Unicode(32))
+            name = Field(String(32))
 
         setup_all(True)
 

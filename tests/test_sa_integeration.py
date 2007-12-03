@@ -15,7 +15,7 @@ class TestSAIntegration(object):
     
     def test_sa_to_elixir(self):
         class A(Entity):
-            name = Field(Unicode(60))
+            name = Field(String(60))
 
         # Remember the entity need to be setup before you can refer to it from
         # SQLAlchemy.
@@ -23,7 +23,7 @@ class TestSAIntegration(object):
 
         b_table = Table('b', metadata, 
             Column('id', Integer, primary_key=True),
-            Column('name', Unicode(60)),
+            Column('name', String(60)),
             Column('a_id', Integer, ForeignKey(A.c.id))
         )
         b_table.create()
@@ -50,7 +50,7 @@ class TestSAIntegration(object):
 #    def test_elxir_to_sa(self):
 #        a_table = Table('a', metadata, 
 #            Column('id', Integer, primary_key=True),
-#            Column('name', Unicode(60)),
+#            Column('name', String(60)),
 #        )
 #        a_table.create()
 #
@@ -60,7 +60,7 @@ class TestSAIntegration(object):
 #        mapper(A, a_table)
 #
 #        class B(Entity):
-#            name = Field(Unicode(60))
+#            name = Field(String(60))
 #            a = ManyToOne('A')
 #    
 #        setup_all(True)

@@ -19,7 +19,7 @@ class TestAutoload(object):
 
         person_table = Table('person', local_meta,
             Column('id', Integer),
-            Column('name', Unicode(32)))
+            Column('name', String(32)))
         
         local_meta.create_all()
 
