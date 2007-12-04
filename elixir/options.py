@@ -32,7 +32,7 @@ The list of supported arguments are as follows:
 |                     | a usable state.                                       |
 +---------------------+-------------------------------------------------------+
 | ``polymorphic``     | Whether the inheritance should be polymorphic or not. |
-|                     | Defaults to ``False``.                                |
+|                     | Defaults to ``True``.                                 |
 +---------------------+-------------------------------------------------------+
 | ``metadata``        | Specify a custom MetaData for this entity.            |
 |                     | By default, entities uses the global                  |
@@ -95,7 +95,7 @@ The list of supported arguments are as follows:
 |                     | condition happen: some of its attributes are accessed |
 |                     | ('c', 'table', 'mapper' or 'query'), instanciated     |
 |                     | (called) or the create_all method of this entity's    |
-|                     | metadata is called. Defaults to ``True``.             |
+|                     | metadata is called. Defaults to ``False``.            |
 +---------------------+-------------------------------------------------------+
 | ``allowcoloverride``| Specify whether it is allowed to override columns.    |
 |                     | By default, Elixir forbids you to add a column to an  |
@@ -159,9 +159,9 @@ POLYMORPHIC_COL_TYPE = String(POLYMORPHIC_COL_SIZE)
 
 # 
 options_defaults = dict(
-    autosetup=True,
+    autosetup=False,
     inheritance='single',
-    polymorphic=False,
+    polymorphic=True,
     autoload=False,
     tablename=None,
     shortnames=False,

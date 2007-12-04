@@ -646,16 +646,12 @@ class EntityMeta(type):
 def _install_autosetup_triggers(cls, entity_name=None):
     #TODO: move as much as possible of those "_private" values to the
     # descriptor, so that we don't mess the initial class.
-    cls._class_key = sqlalchemy.orm.mapperlib.ClassKey(cls, entity_name)
-
     tablename = cls._descriptor.tablename
     schema = cls._descriptor.table_options.get('schema', None)
     cls._table_key = sqlalchemy.schema._get_table_key(tablename, schema)
 
-    mapper_proxy = TriggerProxy(cls, 'mapper')
     table_proxy = TriggerProxy(cls, 'table')
 
-    sqlalchemy.orm.mapper_registry[cls._class_key] = mapper_proxy
     md = cls._descriptor.metadata
     md.tables[cls._table_key] = table_proxy
 
@@ -699,8 +695,6 @@ def _cleanup_autosetup_triggers(cls):
     for name in ('c', 'query'):
         delattr(cls, name)
 
-    del sqlalchemy.orm.mapper_registry[cls._class_key]
-
     desc = cls._descriptor
     md = desc.metadata
 
@@ -727,8 +721,8 @@ def setup_entities(entities):
             'setup_autoload_table', 'create_pk_cols', 'setup_relkeys',
             'before_table', 'setup_table', 'setup_reltables', 'after_table',
             'setup_events',
-            'setup_properties',
             'before_mapper', 'setup_mapper', 'after_mapper',
+            'setup_properties',
             'finalize'):
         for entity in entities:
             if hasattr(entity, '_setup_done'):

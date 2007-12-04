@@ -1,8 +1,9 @@
 """
-    simple test case
+Autosetup tests. Test that all setup triggers actually work.
 """
 
 from sqlalchemy import Table
+from sqlalchemy.orm import create_session
 from elixir import *
 import elixir
 
@@ -116,4 +117,19 @@ class TestSetup(object):
 
         q = Person.query
         assert isinstance(metadata.tables['person'], Table)
+
+    # This test doesn't work with Elixir 0.4.1 and further (because of changes
+    # in SA 0.4.2).
+#    def test_mapper(self):
+        # we want to hit the mapper directly (without hitting any of the
+        # other triggers first). We do so by getting a query object using a 
+        # manual session.
+#        class Person(Entity):
+#            name = Field(String(30))
+#            using_options(autosetup=True, tablename='person')
+#        sess = create_session()
+#        persons = sess.query(Person).all()
+#        assert isinstance(metadata.tables['person'], Table)
+
+
 
