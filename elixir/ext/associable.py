@@ -187,18 +187,16 @@ def associable(assoc_entity, plural_name=None, lazy=True):
                 })
         
             entity = self.entity
+            print "adding property", attr_name
             entity.mapper.add_property(
                 attr_name, 
                 sa.orm.relation(GenericAssoc, lazy=self.lazy,
                                 backref='_backref_%s' % entity.table.name)
             )
 
-            # this is strange! self.name is both set via mapper synonym and 
-            # the python property
-            entity.mapper.add_property(self.name, sa.orm.synonym(attr_name))
-
             if self.uselist:
                 def get(self):
+                    print "prop_get"
                     if getattr(self, attr_name) is None:
                         setattr(self, attr_name, 
                                 GenericAssoc(entity.table.name))
@@ -218,6 +216,12 @@ def associable(assoc_entity, plural_name=None, lazy=True):
                                 GenericAssoc(entity.table.name))
                     getattr(self, attr_name).targets = [value]
                 setattr(entity, self.name, property(get, set))
+
+            # self.name is both set via mapper synonym and the python 
+            # property, but that's how synonym properties work.
+            # adding synonym property after "real" property otherwise it 
+            # breaks when using SQLAlchemy > 0.4.1
+            entity.mapper.add_property(self.name, sa.orm.synonym(attr_name))
 
             # add helper methods
             def select_by(cls, **kwargs):
