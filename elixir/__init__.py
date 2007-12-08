@@ -109,7 +109,7 @@ def setup_all(create_tables=False, *args, **kwargs):
     collection.
 
     This is called automatically if any entity of the collection is configured
-    with the `autosetup` option (this is the default) and it is first accessed,
+    with the `autosetup` option and it is first accessed,
     instanciated (called) or the create_all method of a metadata containing
     tables from any of those entities is called.
     '''
