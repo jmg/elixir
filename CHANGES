@@ -1,7 +1,40 @@
-0.4.1
-- moved some format strings to constants in options
-- added set method on base Entity (set attributes using kwargs)
-- fixed an incompatibility with zope.interfaces
+0.5.0 - 2007-12-08
+
+Please see http://elixir.ematia.de/trac/wiki/Migrate04to05 for detailed 
+upgrade notes.
+
+New features:
+- Added set method on base Entity (set attributes using kwargs)
+
+Changes:
+- Autosetup defaults to False ! (please look at those upgrade notes!)
+- Polymorphic defaults to True (inheritance is polymorphic by default).
+- Removed one of the autosetup triggers altogether: there is no "fake" mapper
+  registered in SQLAlchemy's mapper_registry anymore, so if you try to
+  access the class mapper directly (not through the 'mapper' attribute on
+  the class), before the setup phase happens, it won't work. This was done
+  because of a change in SQLAlchemy trunk (future SA 0.4.2) which broke that
+  piece of code (and prevented to use autosetup at all). Since that code 
+  was a hack in the first place, instead of doing some even uglier hackery, 
+  I got rid of it altogether.
+- Moved some format strings to constants in options, so that one can change
+  them if he wants to.
+- Allow overriding primary_key columns on autoloaded entities (closes tickets
+  #20 and #22)
+- Columns created by ManyToOne relationships can now optionally (through 
+  column_kwargs) *not* create an index (ie it's not harcoded anymore).
+  Suggestion by Jason R. Coombs.
+
+Bug fixes:
+- Fixed a nasty bug which prevented inheritance to work correctly when using 
+  the attribute syntax in many cases.
+- Fixed associable extension to work with SQLAlchemy trunk (future 0.4.2).
+- Fixed an incompatibility with zope.interfaces.
+- Tweaked the initialization sequence again (in fact revert an older change)
+  which prevented to reuse class properties of one class in other (subsequent)
+  classes.
+- Fixed our tests to work with SA trunk (future 0.4.2) (unicode data + use of 
+  deprecated attributes)
 
 0.4.0 - 2007-10-29
 
