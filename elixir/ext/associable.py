@@ -187,7 +187,6 @@ def associable(assoc_entity, plural_name=None, lazy=True):
                 })
         
             entity = self.entity
-            print "adding property", attr_name
             entity.mapper.add_property(
                 attr_name, 
                 sa.orm.relation(GenericAssoc, lazy=self.lazy,
@@ -196,7 +195,6 @@ def associable(assoc_entity, plural_name=None, lazy=True):
 
             if self.uselist:
                 def get(self):
-                    print "prop_get"
                     if getattr(self, attr_name) is None:
                         setattr(self, attr_name, 
                                 GenericAssoc(entity.table.name))

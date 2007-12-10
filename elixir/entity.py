@@ -85,7 +85,7 @@ class EntityDescriptor(object):
         self.children = []
 
         for base in entity.__bases__:
-            if issubclass(base, Entity) and base is not Entity:
+            if isinstance(base, EntityMeta) and not base.__bases__[0] is object:
                 if self.parent:
                     raise Exception('%s entity inherits from several entities,'
                                     ' and this is not supported.' 
@@ -581,10 +581,6 @@ class TriggerAttribute(object):
         return getattr(owner, self.attrname)
 
 
-def _is_entity(class_):
-    return isinstance(class_, EntityMeta)
-
-
 class EntityMeta(type):
     """
     Entity meta class. 
@@ -609,7 +605,7 @@ class EntityMeta(type):
         # will find more entities only if some of them where imported from 
         # another module.
         for entity in [e for e in caller_frame.f_locals.values() 
-                         if _is_entity(e)]:
+                         if isinstance(e, EntityMeta)]:
             caller_entities[entity.__name__] = entity
 
         # create the entity descriptor
