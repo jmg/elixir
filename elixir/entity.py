@@ -81,11 +81,12 @@ class EntityDescriptor(object):
 
         self.builders = []
 
+        self.is_base = is_base(entity)
         self.parent = None
         self.children = []
 
         for base in entity.__bases__:
-            if isinstance(base, EntityMeta) and not base.__bases__[0] is object:
+            if isinstance(base, EntityMeta) and not is_base(base):
                 if self.parent:
                     raise Exception('%s entity inherits from several entities,'
                                     ' and this is not supported.' 
@@ -251,7 +252,10 @@ class EntityDescriptor(object):
                 for constraint in self.constraints:
                     self.parent._descriptor.add_constraint(constraint)
                 return
-            elif self.inheritance == 'concrete':
+            elif self.inheritance == 'concrete': 
+                #TODO: we should also copy columns from the parent table if the
+                # parent is a base entity (whatever the inheritance type -> elif
+                # will need to be changed)
                 # copy all columns from parent table
                 for col in self.parent._descriptor.columns:
                     self.add_column(col.copy())
@@ -437,7 +441,7 @@ class EntityDescriptor(object):
         if check_duplicate is None:
             check_duplicate = not self.allowcoloverride
         
-        if check_duplicate and self.get_column(col.key) is not None:
+        if check_duplicate and self.get_column(col.key, False) is not None:
             raise Exception("Column '%s' already exist in '%s' ! " % 
                             (col.key, self.entity.__name__))
         self._columns.append(col)
@@ -480,12 +484,15 @@ class EntityDescriptor(object):
         extensions.append(extension)
         self.mapper_options['extension'] = extensions
 
-    def get_column(self, key):
+    def get_column(self, key, check_missing=True):
         "need to support both the case where the table is already setup or not"
         #TODO: support SA table/autoloaded entity
         for col in self.columns:
             if col.key == key:
                 return col
+        if check_missing:
+            raise Exception("No column named '%s' found in the table of the "
+                            "'%s' entity!" % (key, self.entity.__name__))
         return None
 
     def get_inverse_relation(self, rel, reverse=False):
@@ -530,6 +537,9 @@ class EntityDescriptor(object):
         if self.autoload: 
             return self.entity.table.columns
         else:
+            #FIXME: depending on the type of inheritance, we should also 
+            # return the parent entity's columns (for example for order_by 
+            # using a column defined in the parent.
             return self._columns
     columns = property(columns)
 
@@ -580,18 +590,31 @@ class TriggerAttribute(object):
         elixir.setup_all()
         return getattr(owner, self.attrname)
 
+def is_base(cls):
+    """
+    Scan bases classes to see if any is an instance of EntityMeta. If we
+    don't find any, it means the current entity is a base class (like 
+    the 'Entity' class).
+    """
+    for base in cls.__bases__:
+        if isinstance(base, EntityMeta):
+            return False
+    return True
 
 class EntityMeta(type):
     """
     Entity meta class. 
-    You should only use this if you want to define your own base class for your
-    entities (ie you don't want to use the provided 'Entity' class).
+    You should only use it directly if you want to define your own base class 
+    for your entities (ie you don't want to use the provided 'Entity' class).
     """
     _entities = {}
 
     def __init__(cls, name, bases, dict_):
-        # only process subclasses of Entity, not Entity itself
-        if bases[0] is object:
+        # Only process further subclasses of the base classes (Entity et al.),
+        # not the base classes themselves. We don't want the base entities to 
+        # be registered in an entity collection, nor to have a table name and 
+        # so on. 
+        if is_base(cls):
             return
 
         # build a dict of entities for each frame where there are entities
@@ -620,7 +643,8 @@ class EntityMeta(type):
         for name, prop in sorted_props:
             prop.attach(cls, name)
 
-        # process mutators. Needed before setup_proxy for metadata
+        # Process mutators. Needed before _install_autosetup_triggers so that
+        # we know of the metadata
         process_mutators(cls)
 
         # setup misc options here (like tablename etc.)
@@ -709,7 +733,7 @@ def _cleanup_autosetup_triggers(cls):
 def setup_entities(entities):
     '''Setup all entities in the list passed as argument'''
 
-    for entity in elixir.entities:
+    for entity in entities:
         if entity._descriptor.autosetup:
             _cleanup_autosetup_triggers(entity)
 
@@ -782,7 +806,7 @@ class Entity(object):
     tutorial.
     '''
     __metaclass__ = EntityMeta
-
+    
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)

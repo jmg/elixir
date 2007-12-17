@@ -50,3 +50,27 @@ class TestCustomBase(object):
         b = A.query.filter_by(name="b1").one()
         
         assert b.data == '-b1-'
+
+    def test_non_object_base(self):
+        class BaseParent(object):
+            def test(self):
+                return "success"
+
+        class InheritedBase(BaseParent):
+            __metaclass__ = EntityMeta
+
+        class A(InheritedBase):
+            name = Field(String(30))
+
+        setup_all(True)
+        
+        a1 = A(name="a1")
+        
+        session.flush()
+        session.clear()
+        
+        a = A.query.filter_by(name="a1").one()
+        
+        assert a.name == 'a1'
+        assert a.test() == "success"
+        
