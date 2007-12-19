@@ -314,11 +314,11 @@ class EntityDescriptor(object):
 
         # create a list of callbacks for each event
         methods = {}
-        for name, item in self.entity.__dict__.items():
-            if hasattr(item, '_elixir_events'):
-                for event in item._elixir_events:
+        for name, method in self.entity.__dict__.items():
+            if hasattr(method, '_elixir_events'):
+                for event in method._elixir_events:
                     event_methods = methods.setdefault(event, [])
-                    event_methods.append(item)
+                    event_methods.append(method)
         if not methods:
             return
         
