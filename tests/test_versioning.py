@@ -4,6 +4,11 @@ from datetime import datetime, timedelta
 
 import time
 
+nextOneValue = 0
+def nextOne():
+    global nextOneValue
+    nextOneValue += 2
+    return nextOneValue
 
 def setup():
     global Director, Movie, Actor
@@ -20,10 +25,11 @@ def setup():
         description = Field(String(512))
         releasedate = Field(DateTime)
         ignoreme = Field(Integer, default=0)
+        autoupd = Field(Integer, default=nextOne, onupdate=nextOne)
         director = ManyToOne('Director', inverse='movies')
         actors = ManyToMany('Actor', inverse='movies', tablename='movie_casting')
         using_options(tablename='movies')
-        acts_as_versioned(ignore=['ignoreme'])
+        acts_as_versioned(ignore=['ignoreme', 'autoupd'])
 
 
     class Actor(Entity):
@@ -61,6 +67,7 @@ class TestVersioning(object):
         assert movie.version == 1
         assert movie.title == '12 Monkeys'
         assert movie.director.name == 'Terry Gilliam'
+        assert movie.autoupd == 2, movie.autoupd
         movie.description = 'description two'
         session.flush(); session.clear()
     
@@ -71,7 +78,7 @@ class TestVersioning(object):
         movie = Movie.get_by(title='12 Monkeys')
         movie.description = 'description three'
         session.flush(); session.clear()
-    
+
         # Edit the ignored field, this shouldn't change the version
         monkeys = Movie.get_by(title='12 Monkeys')
         monkeys.ignoreme = 1
@@ -82,6 +89,7 @@ class TestVersioning(object):
         time.sleep(1)
     
         movie = Movie.get_by(title='12 Monkeys')
+        assert movie.autoupd == 8, movie.autoupd
         oldest_version = movie.get_as_of(after_create)
         middle_version = movie.get_as_of(after_update_one)
         latest_version = movie.get_as_of(after_update_two)
@@ -91,13 +99,17 @@ class TestVersioning(object):
         assert oldest_version.version == 1
         assert oldest_version.description == 'draft description'
         assert oldest_version.ignoreme == 0
+        assert oldest_version.autoupd is not None
+        assert oldest_version.autoupd > 0
     
         assert middle_version.version == 2
         assert middle_version.description == 'description two'
+        assert middle_version.autoupd > oldest_version.autoupd
     
-        assert latest_version.version == 3
+        assert latest_version.version == 3, 'version=%i' % latest_version.version
         assert latest_version.description == 'description three'
         assert latest_version.ignoreme == 1
+        assert latest_version.autoupd > middle_version.autoupd
     
         differences = latest_version.compare_with(oldest_version)
         assert differences['description'] == ('description three', 'draft description')
@@ -105,12 +117,30 @@ class TestVersioning(object):
         assert len(movie.versions) == 3
         assert movie.versions[0] == oldest_version
         assert movie.versions[1] == middle_version
-    
-        movie.revert_to(1)
+        assert [v.version for v in movie.versions] == [1, 2, 3]
+
+        movie.description = 'description four'
+
+        movie.revert_to(2)
         session.flush(); session.clear()
     
         movie = Movie.get_by(title='12 Monkeys')
-        assert movie.version == 1
-        assert movie.timestamp == initial_timestamp
-        assert movie.title == '12 Monkeys'
-        assert movie.director.name == 'Terry Gilliam'
+        assert movie.version == 2, "version=%i, should be 2" % movie.version
+        assert movie.description == 'description two', movie.description
+
+        movie.description = "description 3"
+        session.flush(); session.clear();
+
+        movie = Movie.get_by(title='12 Monkeys')
+        movie.description = "description 4"
+        session.flush(); session.clear();
+
+        movie = Movie.get_by(title='12 Monkeys')
+        assert movie.version == 4
+        movie.revert_to(movie.versions[-2])
+        movie.description = "description 5"
+        session.flush(); session.clear();
+
+        movie = Movie.get_by(title='12 Monkeys')
+        assert movie.version == 4
+        assert movie.versions[-2].description == "description 3"

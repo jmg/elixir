@@ -87,29 +87,10 @@ class VersionedMapperExtension(MapperExtension):
         instance.version = 1
         instance.timestamp = datetime.now()
         return EXT_PASS
-        
-    def after_insert(self, mapper, connection, instance):
-        colvalues = dict([(key, getattr(instance, key)) 
-                          for key in instance.c.keys()])
-        instance.__class__.__history_table__.insert().execute(colvalues)
-        return EXT_PASS
-    
+            
     def before_update(self, mapper, connection, instance):
-        colvalues = dict([(key, getattr(instance, key)) 
-                          for key in instance.c.keys()])
-        history = instance.__class__.__history_table__
-        
-        values = history.select(get_history_where(instance), 
-                                order_by=[desc(history.c.timestamp)],
-                                limit=1).execute().fetchone()
-        # In case the data was dumped into the db, the initial version might 
-        # be missing so we put this version in as the original.
-        if not values:
-            instance.version = colvalues['version'] = 1
-            instance.timestamp = colvalues['timestamp'] = datetime.now()
-            history.insert().execute(colvalues)
-            return EXT_PASS
-        
+        values = instance.table.select(get_entity_where(instance)).execute().fetchone() 
+
         # SA might've flagged this for an update even though it didn't change.
         # This occurs when a relation is updated, thus marking this instance
         # for a save/update operation. We check here against the last version
@@ -121,9 +102,10 @@ class VersionedMapperExtension(MapperExtension):
                 continue
             if getattr(instance, key) != values[key]:
                 # the instance was really updated, so we create a new version
-                instance.version = colvalues['version'] = instance.version + 1
-                instance.timestamp = colvalues['timestamp'] = datetime.now()
-                history.insert().execute(colvalues)
+                colvalues = dict(values.items()) 
+                instance.__class__.__history_table__.insert().execute(colvalues) 
+                instance.version = instance.version + 1
+                instance.timestamp = datetime.now()
                 break
 
         return EXT_PASS
@@ -189,9 +171,14 @@ class VersionedEntityBuilder(object):
                         
         # attach utility methods and properties to the entity
         def get_versions(self):
-            return object_session(self).query(Version) \
-                                       .filter(get_history_where(self)) \
-                                       .all()
+            v = object_session(self).query(Version) \
+                                    .filter(get_history_where(self)) \
+                                    .order_by(Version.c.version) \
+                                    .all()
+            # history contains all the previous records.
+            # Add the current one to the list to get all the versions
+            v.append(self)
+            return v
         
         def get_as_of(self, dt):
             # if the passed in timestamp is older than our current version's
@@ -208,6 +195,9 @@ class VersionedEntityBuilder(object):
             return query.first()
         
         def revert_to(self, to_version):
+            if isinstance(to_version, Version):
+                to_version = to_version.version
+                
             hist = entity.__history_table__
             old_version = hist.select(and_(
                 get_history_where(self), 
@@ -220,6 +210,7 @@ class VersionedEntityBuilder(object):
             
             hist.delete(and_(get_history_where(self), 
                              hist.c.version >= to_version)).execute()
+            self.expire()
             for event in after_revert_events: 
                 event(self)
         
