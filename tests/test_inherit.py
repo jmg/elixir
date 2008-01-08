@@ -31,22 +31,26 @@ def do_tst(inheritance, polymorphic, with_rel, expected_res):
         data4 = Field(String(20))
         using_options(inheritance=inheritance, polymorphic=polymorphic)
 
+    class E(A):
+        using_options(inheritance=inheritance, polymorphic=polymorphic)
+
     setup_all(True)
 
     A(data1='a1')
     B(data1='b1', data2='b2')
     C(data1='c1', data2='c2', data3='c3')
     D(data1='d1', data4='d4')
+    E(data1='e1')
 
     session.flush()
     session.clear()
 
     res = {}
-    for class_ in (A, B, C, D):
+    for class_ in (A, B, C, D, E):
         res[class_.__name__] = class_.query.all()
         res[class_.__name__].sort(key=lambda o: o.__class__.__name__) 
 
-    for query_class in ('A', 'B', 'C', 'D'):
+    for query_class in ('A', 'B', 'C', 'D', 'E'):
         assert len(res[query_class]) == len(expected_res[query_class])
         for real, expected in zip(res[query_class], expected_res[query_class]):
             assert real.__class__.__name__ == expected
@@ -58,15 +62,16 @@ class TestInheritance(object):
 
     def test_singletable_inheritance(self):
         do_tst('single', False, True, {
-            'A': ('A', 'A', 'A', 'A'),
-            'B': ('B', 'B', 'B', 'B'),
-            'C': ('C', 'C', 'C', 'C'),
-            'D': ('D', 'D', 'D', 'D'),
+            'A': ('A', 'A', 'A', 'A', 'A'),
+            'B': ('B', 'B', 'B', 'B', 'B'),
+            'C': ('C', 'C', 'C', 'C', 'C'),
+            'D': ('D', 'D', 'D', 'D', 'D'),
+            'E': ('E', 'E', 'E', 'E', 'E')
         })
 
     # this is related to SA ticket 866 
     # http://www.sqlalchemy.org/trac/ticket/866
-    # the problam was caused by the fact that the attribute-based syntax left
+    # the problem was caused by the fact that the attribute-based syntax left
     # the class-attributes in place after initialization (in Elixir 0.4).
     def test_missing_value(self):
         class A(Entity):
@@ -85,10 +90,11 @@ class TestInheritance(object):
 
     def test_polymorphic_singletable_inheritance(self):
         do_tst('single', True, True, {
-            'A': ('A', 'B', 'C', 'D'),
+            'A': ('A', 'B', 'C', 'D', 'E'),
             'B': ('B', 'C'),
             'C': ('C',),
             'D': ('D',),
+            'E': ('E',),
         })
 
     def test_concrete_inheritance(self):
@@ -98,22 +104,25 @@ class TestInheritance(object):
             'B': ('B',),
             'C': ('C',),
             'D': ('D',),
+            'E': ('E',),
         })
 
     def test_multitable_inheritance(self):
         do_tst('multi', False, True, {
-            'A': ('A', 'A', 'A', 'A'),
+            'A': ('A', 'A', 'A', 'A', 'A'),
             'B': ('B', 'B'),
             'C': ('C',),
             'D': ('D',),
+            'E': ('E',),
         })
  
     def test_polymorphic_multitable_inheritance(self):
         do_tst('multi', True, True, {
-            'A': ('A', 'B', 'C', 'D'),
+            'A': ('A', 'B', 'C', 'D', 'E'),
             'B': ('B', 'C'),
             'C': ('C',),
             'D': ('D',),
+            'E': ('E',),
         })
 
         
