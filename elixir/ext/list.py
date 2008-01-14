@@ -84,6 +84,14 @@ __all__ = ['acts_as_list']
 __doc_all__ = []
 
 
+def get_entity_where(instance):
+    clauses = []
+    for column in instance.table.primary_key.columns:
+        instance_value = getattr(instance, column.name)
+        clauses.append(column==instance_value)
+    return and_(*clauses)
+
+
 class ListEntityBuilder(object):
     
     def __init__(self, entity, qualifier_method=None):
@@ -134,7 +142,7 @@ class ListEntityBuilder(object):
             
             # move this item to the max position
             self.table.update(
-                self.table.c.id == self.id,
+                get_entity_where(self),
                 values={
                     self.table.c.position : select(
                         [func.max(self.table.c.position)+1],
@@ -157,7 +165,7 @@ class ListEntityBuilder(object):
             ).execute()
 
             # move this item to the first position
-            self.table.update(self.table.c.id == self.id).execute(position=1)
+            self.table.update(get_entity_where(self)).execute(position=1)
             
         
         def move_to(self, position):
@@ -183,7 +191,7 @@ class ListEntityBuilder(object):
             }).execute()
             
             # update this item's position to the desired position
-            self.table.update(self.table.c.id==self.id).execute(position=position)
+            self.table.update(get_entity_where(self)).execute(position=position)
         
         
         def move_lower(self): self.move_to(self.position+1)
