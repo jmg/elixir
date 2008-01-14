@@ -11,21 +11,15 @@ methods attached to it, including:
 +----------------------+------------------------------------------------------+
 | Method Name          | Description                                          |
 +======================+======================================================+
-| ``move_lower``       | Specify a custom column name.                        |
+| ``move_lower``       | Move the item lower in the list                      |
 +----------------------+------------------------------------------------------+
-| ``move_higher``      | Specify whether or not this field can be set to None |
-|                      | (left without a value). Defaults to ``False``,       |
-|                      | unless the field is a primary key.                   |
+| ``move_higher``      | Move the item higher in the list                     |
 +----------------------+------------------------------------------------------+
-| ``move_to_bottom``   | Specify whether or not the column(s) created by this |
-|                      | relationship should act as a primary_key.            |
-|                      | Defaults to ``False``.                               |
+| ``move_to_bottom``   | Move the item to the bottom of the list              |
 +----------------------+------------------------------------------------------+
-| ``move_to_top``      | A dictionary holding any other keyword argument you  |
-|                      | might want to pass to the Column.                    |
+| ``move_to_top``      | Move the item to the top of the list                 |
 +----------------------+------------------------------------------------------+
-| ``move_to_position`` | A dictionary holding any other keyword argument you  |
-|                      | might want to pass to the Column.                    |
+| ``move_to``          | Move the item to a specific position in the list     |
 +----------------------+------------------------------------------------------+
 
 
