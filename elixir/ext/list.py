@@ -5,8 +5,11 @@ acts_as_list plugin, which is currently more full-featured than this plugin.
 
 Once you flag an entity with an `acts_as_list()` statement, a column will be
 added to the entity called `position` which will be an integer column that is
-managed for you by the plugin. In addition, your entity will get a series of new
-methods attached to it, including:
+managed for you by the plugin.  You can pass an alternative column name to 
+the plugin using the `column_name` keyword argument.
+
+In addition, your entity will get a series of new methods attached to it,
+including:
 
 +----------------------+------------------------------------------------------+
 | Method Name          | Description                                          |
@@ -42,7 +45,7 @@ Example model usage:
         def qualify(self):
             return ToDo.owner_id == self.owner_id
 
-        acts_as_list(qualify)
+        acts_as_list(qualifier=qualify)
 
     class Person(Entity):
         name = Field(String(64))
@@ -94,49 +97,54 @@ def get_entity_where(instance):
 
 class ListEntityBuilder(object):
     
-    def __init__(self, entity, qualifier_method=None):
+    def __init__(self, entity, qualifier=None, column_name='position'):
         self.entity = entity
-        self.qualifier_method = qualifier_method
+        self.qualifier_method = qualifier
+        self.column_name = column_name
     
     def create_non_pk_cols(self):
-        self.entity._descriptor.add_column(Column('position', Integer))
+        self.position_column = Column(self.column_name, Integer)
+        self.entity._descriptor.add_column(self.position_column)
     
     def after_table(self):
+        position_column = self.position_column
+        position_column_name = self.column_name
+        
         qualifier_method = self.qualifier_method 
         if not qualifier_method:
-            qualifier_method = lambda self: self.position==self.position
+            qualifier_method = lambda self: None
         
         @before_insert
         def _init_position(self):
             s = select(
-                [(func.max(self.table.c.position)+1).label('value')],
+                [(func.max(position_column)+1).label('value')],
                 qualifier_method(self)
             ).union(
                 select([literal(1).label('value')])
             )
-            self.position = select([func.max(s.c.value)])
+            setattr(self, position_column_name, select([func.max(s.c.value)]))
         
         @before_delete
         def _shift_items(self):
             self.table.update(
                 and_(
-                    self.table.c.position > self.position,
+                    position_column > getattr(self, position_column_name),
                     qualifier_method(self)
                 ),
                 values={
-                    self.table.c.position : self.table.c.position - 1
+                    position_column : position_column - 1
                 }
             ).execute()
-            
+        
         def move_to_bottom(self):        
             # move the items that were above this item up one
             self.table.update(
                 and_(
-                    self.table.c.position >= self.position,
+                    position_column >= getattr(self, position_column_name),
                     qualifier_method(self)
                 ),
                 values = {
-                    self.table.c.position : self.table.c.position - 1
+                    position_column : position_column - 1
                 }
             ).execute()
             
@@ -144,60 +152,63 @@ class ListEntityBuilder(object):
             self.table.update(
                 get_entity_where(self),
                 values={
-                    self.table.c.position : select(
-                        [func.max(self.table.c.position)+1],
+                    position_column : select(
+                        [func.max(position_column) + 1],
                         qualifier_method(self)
                     )
                 }
             ).execute()
             
-            
         def move_to_top(self):
             # move the items that were above this item down one
             self.table.update(
                 and_(
-                    self.table.c.position <= self.position,
+                    position_column <= getattr(self, position_column_name),
                     qualifier_method(self)
                 ),
                 values = {
-                    self.table.c.position : self.table.c.position + 1
+                    position_column : position_column + 1
                 }
             ).execute()
 
             # move this item to the first position
-            self.table.update(get_entity_where(self)).execute(position=1)
+            self.table.update(get_entity_where(self)).execute(**{position_column_name:1})
             
-        
         def move_to(self, position):
+            current_position = getattr(self, position_column_name)
+            
             # determine which direction we're moving
-            if position < self.position:
+            if position < current_position:
                 where = and_(
-                    position <= self.table.c.position,
-                    self.table.c.position < self.position,
+                    position <= position_column,
+                    position_column < current_position,
                     qualifier_method(self)
                 )
                 modifier = 1
-            elif position > self.position:
+            elif position > current_position:
                 where = and_(
-                    self.position < self.table.c.position,
-                    self.table.c.position <= position,
+                    current_position < position_column,
+                    position_column <= position,
                     qualifier_method(self)
                 )
                 modifier = -1
             
             # shift the items in between the current and new positions
             self.table.update(where, values = {
-                    self.table.c.position : self.table.c.position + modifier
+                position_column : position_column + modifier
             }).execute()
             
             # update this item's position to the desired position
-            self.table.update(get_entity_where(self)).execute(position=position)
+            self.table.update(get_entity_where(self)).execute(**{position_column_name:position})
+        
+        def move_lower(self): 
+            self.move_to(getattr(self, position_column_name)+1)
+        
+        def move_higher(self): 
+            self.move_to(getattr(self, position_column_name)-1)
         
         
-        def move_lower(self): self.move_to(self.position+1)
-        def move_higher(self): self.move_to(self.position-1)
-        
-        
+        # attach new methods to entity
         self.entity._init_position = _init_position
         self.entity._shift_items = _shift_items
         self.entity.move_lower = move_lower

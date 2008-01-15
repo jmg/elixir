@@ -10,8 +10,8 @@ def setup():
 
         def qualify(self):
             return ToDo.owner_id == self.owner_id
-
-        acts_as_list(qualify)
+            
+        acts_as_list(qualifier=qualify, column_name='position')
         
         def __repr__(self):
             return '<%d:%s>' % (self.position, self.subject)
