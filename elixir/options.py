@@ -32,7 +32,10 @@ The list of supported arguments are as follows:
 |                     | a usable state.                                       |
 +---------------------+-------------------------------------------------------+
 | ``polymorphic``     | Whether the inheritance should be polymorphic or not. |
-|                     | Defaults to ``True``.                                 |
+|                     | Defaults to ``True``. The column used to store the    |
+|                     | type of each row is named "row_type" by default. You  |
+|                     | can change this by passing the desired name for the   |
+|                     | column to this argument.                              |
 +---------------------+-------------------------------------------------------+
 | ``metadata``        | Specify a custom MetaData for this entity.            |
 |                     | By default, entities uses the global                  |
