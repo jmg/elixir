@@ -396,8 +396,9 @@ class EntityDescriptor(object):
                 if self.children or self.parent:
                     #TODO: make this customizable (both callable and string)
                     #TODO: include module name
-                    kwargs['polymorphic_identity'] = \
-                        self.entity.__name__.lower()
+                    if 'polymorphic_identity' not in kwargs:
+                        kwargs['polymorphic_identity'] = \
+                            self.entity.__name__.lower()
 
                 if self.inheritance == 'concrete':
                     kwargs['concrete'] = True
