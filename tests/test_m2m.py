@@ -12,7 +12,7 @@ class TestManyToMany(object):
     
     def teardown(self):
         cleanup_all(True)
-    
+        
     def test_simple(self):
         class A(Entity):
             name = Field(String(60))
@@ -34,7 +34,39 @@ class TestManyToMany(object):
 
         assert a in b.as_
         assert b in a.bs_
+    
+    def test_column_format(self):
+        class A(Entity):
+            using_options(tablename='aye')
+            name = Field(String(60))
+            bs_ = ManyToMany('B', column_format='%(entity)s_%(key)s')
 
+        class B(Entity):
+            using_options(tablename='bee')
+            name = Field(String(60))
+            as_ = ManyToMany('A', column_format='%(entity)s_%(key)s')
+
+        setup_all(True)
+
+        b1 = B(name='b1', as_=[A(name='a1')])
+
+        session.flush()
+        session.clear()
+
+        a = A.query.one()
+        b = B.query.one()
+
+        assert a in b.as_
+        assert b in a.bs_
+        
+        found_a = False
+        found_b = False
+        for column in A.mapper.get_property('bs_').secondary.columns:
+            if column.name == 'a_id': found_a = True
+            elif column.name == 'b_id': found_b = True
+        assert found_a
+        assert found_b
+    
     def test_multi_pk_in_target(self):
         class A(Entity):
             key1 = Field(Integer, primary_key=True, autoincrement=False)

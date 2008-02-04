@@ -224,6 +224,13 @@ relationships accept the following optional (keyword) arguments:
 |                    | entity. These field names can optionally be prefixed   |
 |                    | by a minus (for descending order).                     |
 +--------------------+--------------------------------------------------------+
+| ``column_format``  | Specify an alternate format string for naming the      |
+|                    | columns in the mapping table.  The default value is    |
+|                    | defined in ``elixir.options.M2MCOL_NAMEFORMAT``.  You  |
+|                    | will be passed ``tablename``, ``key``, and ``entity``  |
+|                    | as arguments to the format string.                     |
++--------------------+--------------------------------------------------------+
+
 
 ================
 DSL-based syntax
@@ -670,6 +677,7 @@ class ManyToMany(Relationship):
             self.remote_side = [self.remote_side]
         self.ondelete = kwargs.pop('ondelete', None)
         self.onupdate = kwargs.pop('onupdate', None)
+        self.column_format = kwargs.pop('column_format', options.M2MCOL_NAMEFORMAT)
 
         self.secondary_table = None
         self.primaryjoin_clauses = list()
@@ -748,10 +756,11 @@ class ManyToMany(Relationship):
                 fk_refcols = list()
             
                 for pk_col in desc.primary_keys:
-                    colname = options.M2MCOL_NAMEFORMAT % \
+                    colname = self.column_format % \
                               {'tablename': desc.tablename,
-                               'key': pk_col.key}
-
+                               'key': pk_col.key,
+                               'entity': desc.entity.__name__.lower()}
+                    
                     # In case we have a many-to-many self-reference, we 
                     # need to tweak the names of the columns so that we 
                     # don't end up with twice the same column name.
