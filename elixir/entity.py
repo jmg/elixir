@@ -200,8 +200,9 @@ class EntityDescriptor(object):
                     # key columns 
                     parent_desc = self.parent._descriptor
                     for pk_col in parent_desc.primary_keys:
-                        colname = "%s_%s" % (self.parent.__name__.lower(),
-                                             pk_col.key)
+                        colname = options.MULTIINHERITANCECOL_NAMEFORMAT % \
+                                  {'entity': self.parent.__name__.lower(),
+                                   'key': pk_col.key}
 
                         # it seems like SA ForeignKey is not happy being given
                         # a real column object when said column is not yet 

@@ -151,6 +151,7 @@ __doc_all__ = ['options_defaults']
 FKCOL_NAMEFORMAT = "%(relname)s_%(key)s"
 M2MCOL_NAMEFORMAT = "%(tablename)s_%(key)s"
 CONSTRAINT_NAMEFORMAT = "%(tablename)s_%(colnames)s_fk"
+MULTIINHERITANCECOL_NAMEFORMAT = "%(entity)s_%(key)s"
 
 # other global constants
 DEFAULT_AUTO_PRIMARYKEY_NAME = "id"
