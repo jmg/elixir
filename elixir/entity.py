@@ -209,8 +209,9 @@ class EntityDescriptor(object):
                         # attached to a table
                         pk_col_name = "%s.%s" % (parent_desc.tablename, 
                                                  pk_col.key)
-                        col = Column(colname, pk_col.type, 
-                                     ForeignKey(pk_col_name), primary_key=True)
+                        fk = ForeignKey(pk_col_name, ondelete='cascade')
+                        col = Column(colname, pk_col.type, fk,
+                                     primary_key=True)
                         self.add_column(col)
             elif not self.has_pk and self.auto_primarykey:
                 if isinstance(self.auto_primarykey, basestring):

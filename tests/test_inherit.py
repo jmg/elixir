@@ -7,8 +7,12 @@ import elixir
 
 def setup():
     metadata.bind = 'sqlite:///'
+#    metadata.bind = 'postgres://localhost/test'
 #    metadata.bind.echo = True
     elixir.options_defaults['shortnames'] = True
+
+def teardown():
+    elixir.options_defaults['shortnames'] = False
 
 def do_tst(inheritance, polymorphic, with_rel, expected_res):
     class A(Entity):
@@ -87,6 +91,26 @@ class TestInheritance(object):
         b1 = B(name="b1") # no value for other
 
         session.flush()
+
+    def test_delete_parent(self):
+        class A(Entity):
+            using_options(inheritance='multi')
+
+        class B(A):
+            using_options(inheritance='multi')
+            name = Field(String(30))
+
+        setup_all(True)
+
+        b1 = B(name='b1')
+
+        session.flush()
+
+        A.table.delete().execute()
+
+        # this doesn't work on sqlite (because it relies on the database
+        # enforcing the foreign key constraint cascade rule).
+#        assert not B.table.select().execute().fetchall()
 
     def test_polymorphic_singletable_inheritance(self):
         do_tst('single', True, True, {
