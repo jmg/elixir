@@ -2,32 +2,32 @@ from turbogears.database    import metadata, session
 from elixir                 import Unicode, DateTime, String, Integer
 from elixir                 import Entity, has_field, using_options
 from elixir                 import has_many, belongs_to, has_and_belongs_to_many
+from elixir                 import setup_all
 from sqlalchemy             import ForeignKey
 from datetime               import datetime
-
 
 #
 # application model
 #
 
 class Director(Entity):
-    has_field('name', Unicode(60))
-    has_many('movies', of_kind='Movie', inverse='director')
+    name = Field(Unicode(60))
+    movies = OneToMany('Movie', inverse='director')
     using_options(tablename='directors')
 
 
 class Movie(Entity):
-    has_field('title', Unicode(60))
-    has_field('description', Unicode(512))
-    has_field('releasedate', DateTime)
-    belongs_to('director', of_kind='Director', inverse='movies')
-    has_and_belongs_to_many('actors', of_kind='Actor', inverse='movies', tablename='movie_casting')
+    title = Field(Unicode(60))
+    description = Field(Unicode(512))
+    releasedate = Field(DateTime)
+    director = ManyToOne('Director', inverse='movies')
+    actors = ManyToMany('Actor', inverse='movies', tablename='movie_casting')
     using_options(tablename='movies')
 
 
 class Actor(Entity):
-    has_field('name', Unicode(60))
-    has_and_belongs_to_many('movies', of_kind='Movie', inverse='actors', tablename='movie_casting')
+    name = Field(Unicode(60))
+    movies = ManyToMany('Movie', inverse='actors', tablename='movie_casting')
     using_options(tablename='actors')
    
 
@@ -36,9 +36,9 @@ class Actor(Entity):
 # 
 
 class Visit(Entity):
-    has_field('visit_key', String(40), primary_key=True)
-    has_field('created', DateTime, required=True, default=datetime.now)
-    has_field('expiry', DateTime)
+    visit_key = Field(String(40), primary_key=True)
+    created = Field(DateTime, required=True, default=datetime.now)
+    expiry = Field(DateTime)
     using_options(tablename='visit')
     
     @classmethod
@@ -46,27 +46,27 @@ class Visit(Entity):
         return Visit.get(visit_key)
 
 class VisitIdentity(Entity):
-    has_field('visit_key', String(40), primary_key=True)
-    belongs_to('user', of_kind='User', colname='user_id', use_alter=True)
+    visit_key = Field(String(40), primary_key=True)
+    user = ManyToOne('User', colname='user_id', use_alter=True)
     using_options(tablename='visit_identity')
 
 class Group(Entity):
-    has_field('group_id', Integer, primary_key=True)
-    has_field('group_name', Unicode(16), unique=True)
-    has_field('display_name', Unicode(255))
-    has_field('created', DateTime, default=datetime.now)
-    has_and_belongs_to_many('users', of_kind='User', inverse='groups')
-    has_and_belongs_to_many('permissions', of_kind='Permission', inverse='groups')
+    group_id = Field(Integer, primary_key=True)
+    group_name = Field(Unicode(16), unique=True)
+    display_name = Field(Unicode(255))
+    created = Field(DateTime, default=datetime.now)
+    users = ManyToMany('User', inverse='groups')
+    permissions = ManyToMany('Permission', inverse='groups')
     using_options(tablename='tg_group')
 
 class User(Entity):
-    has_field('user_id', Integer, primary_key=True)
-    has_field('user_name', Unicode(16), unique=True)
-    has_field('email_address', Unicode(255), unique=True)
-    has_field('display_name', Unicode(255))
-    has_field('password', Unicode(40))
-    has_field('created', DateTime, default=datetime.now)
-    has_and_belongs_to_many('groups', of_kind='Group', inverse='users')
+    user_id = Field(Integer, primary_key=True)
+    user_name = Field(Unicode(16), unique=True)
+    email_address = Field(Unicode(255), unique=True)
+    display_name = Field(Unicode(255))
+    password = Field(Unicode(40))
+    created = Field(DateTime, default=datetime.now)
+    groups = ManyToMany('Group', inverse='users')
     using_options(tablename='tg_user')
     
     @property
@@ -77,8 +77,11 @@ class User(Entity):
         return perms
 
 class Permission(Entity):
-    has_field('permission_id', Integer, primary_key=True)
-    has_field('permission_name', Unicode(16), unique=True)
-    has_field('description', Unicode(255))
-    has_and_belongs_to_many('groups', of_kind='Group', inverse='permissions')
+    permission_id = Field(Integer, primary_key=True)
+    permission_name = Field(Unicode(16), unique=True)
+    description = Field(Unicode(255))
+    groups = ManyToMany('Group', inverse='permissions')
     using_options(tablename='permission')
+
+# create the table and mapper instances for the above entities
+setup_all()

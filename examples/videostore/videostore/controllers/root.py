@@ -10,7 +10,7 @@ class Root(RootController):
     @expose(template='videostore.templates.index')
     @identity.require(identity.not_anonymous())
     def index(self):
-        return dict(movies=Movie.select())
+        return dict(movies=Movie.query.all())
     
     
     @expose(template='videostore.templates.movie')
