@@ -21,6 +21,8 @@ Bug fixes:
 - A child entity doesn't inherit anymore its parent entity statements (such as
   options) if it doesn't use any statement itself.
 - Made inheritance work for custom base classes (closes #25).
+- Fixed the inverse relationship matching when the inverse relationship is 
+  defined in a parent Entity (thanks to Alexandre da Silva).
 - Fixed bug in setup_entities (it always used the global entity list and not
   the list given as argument).
 - Fixed the versioning extension not appropriately handling versioned

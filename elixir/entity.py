@@ -529,7 +529,7 @@ class EntityDescriptor(object):
             if rel.name == name:
                 return rel
         if self.parent:
-            return self.parent.find_relationship(name)
+            return self.parent._descriptor.find_relationship(name)
         else:
             return None
 

@@ -64,15 +64,6 @@ class TestInheritance(object):
     def teardown(self):
         cleanup_all(True)
 
-    def test_singletable_inheritance(self):
-        do_tst('single', False, True, {
-            'A': ('A', 'A', 'A', 'A', 'A'),
-            'B': ('B', 'B', 'B', 'B', 'B'),
-            'C': ('C', 'C', 'C', 'C', 'C'),
-            'D': ('D', 'D', 'D', 'D', 'D'),
-            'E': ('E', 'E', 'E', 'E', 'E')
-        })
-
     # this is related to SA ticket 866 
     # http://www.sqlalchemy.org/trac/ticket/866
     # the problem was caused by the fact that the attribute-based syntax left
@@ -111,6 +102,36 @@ class TestInheritance(object):
         # this doesn't work on sqlite (because it relies on the database
         # enforcing the foreign key constraint cascade rule).
 #        assert not B.table.select().execute().fetchall()
+
+    def test_inverse_matching_on_parent(self):
+        options_defaults['inheritance'] = 'multi'
+
+        class Person(Entity):
+            using_options(inheritance='multi')
+
+            name = Field(UnicodeText)
+
+        class Parent(Person):
+            using_options(inheritance='multi')
+            childs = ManyToMany('Child', tablename='child_parent',
+                                inverse='parents')
+
+        class Child(Person):
+            using_options(inheritance='multi')
+
+            parents = ManyToMany('Parent', tablename='child_parent',
+                                 inverse='childs')
+
+        setup_all()
+
+    def test_singletable_inheritance(self):
+        do_tst('single', False, True, {
+            'A': ('A', 'A', 'A', 'A', 'A'),
+            'B': ('B', 'B', 'B', 'B', 'B'),
+            'C': ('C', 'C', 'C', 'C', 'C'),
+            'D': ('D', 'D', 'D', 'D', 'D'),
+            'E': ('E', 'E', 'E', 'E', 'E')
+        })
 
     def test_polymorphic_singletable_inheritance(self):
         do_tst('single', True, True, {
