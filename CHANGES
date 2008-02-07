@@ -6,6 +6,9 @@ New features:
   to specify an alternate format string for column names in the mapping table.
 - Added support for custom base classes which inherit from another class (ie
   not directly from object).
+- Added an alternate (nicer) syntax to define synonym properties.  This syntax
+  has a more limited scope, except that it can refer to properties defined in 
+  a parent entity. This is based on a patch from Alexandre da Silva.
 
 Changes:
 - Added check so that using an inexisting column in an order_by or other

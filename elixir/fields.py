@@ -66,7 +66,9 @@ The following Elixir-specific arguments are supported:
 +-------------------+---------------------------------------------------------+
 | ``synonym``       | Specify a synonym name for this field. The field will   |
 |                   | also be usable under that name in keyword-based Query   |
-|                   | functions such as filter_by.                            |
+|                   | functions such as filter_by. The Synonym class (see the |
+|                   | `properties` module) provides a similar functionality   |
+|                   | with an (arguably) nicer syntax, but a limited scope.   |
 +-------------------+---------------------------------------------------------+
 
 has_field

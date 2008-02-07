@@ -3,9 +3,9 @@ This module provides support for defining properties on your entities. It both
 provides, the `Property` class which acts as a building block for common 
 properties such as fields and relationships (for those, please consult the 
 corresponding modules), but also provides some more specialized properties, 
-such as `ColumnProperty`. It also provides the GenericProperty class which 
-allows you to wrap any SQLAlchemy property, and its DSL-syntax equivalent: 
-has_property_.
+such as `ColumnProperty` and `Synonym`. It also provides the GenericProperty 
+class which allows you to wrap any SQLAlchemy property, and its DSL-syntax 
+equivalent: has_property_.
 
 `has_property`
 --------------
@@ -31,7 +31,7 @@ Here is a quick example of how to use ``has_property``.
 '''
 
 from elixir.statements import PropertyStatement
-from sqlalchemy.orm import column_property
+from sqlalchemy.orm import column_property, synonym
 
 __doc_all__ = ['EntityBuilder', 'Property', 'GenericProperty', 
                'ColumnProperty']
@@ -150,6 +150,7 @@ class GenericProperty(Property):
     def evaluate_property(self, prop):
         return prop
 
+
 class ColumnProperty(GenericProperty):
     '''
     A specialized form of the GenericProperty to generate SQLAlchemy 
@@ -177,6 +178,31 @@ class ColumnProperty(GenericProperty):
 
     def evaluate_property(self, prop):
         return column_property(prop.label(self.name))
+
+
+class Synonym(GenericProperty):
+    '''
+    This class represents a synonym property of another property (column, ...)
+    of an entity.  As opposed to the `synonym` kwarg to the Field class (which 
+    share the same goal), this class can be used to define a synonym of a 
+    property defined in a parent class (of the current class). On the other
+    hand, it cannot define a synonym for the purpose of using a standard python 
+    property in queries. See the Field class for details on that usage.
+
+    .. sourcecode:: python
+
+    class Person(Entity):
+        name = Field(String(30))
+        primary_email = Field(String(100))
+        email_address = Synonym('primary_email')
+
+    class User(Person):
+        user_name = Synonym('name')
+        password = Field(String(20))
+    '''
+
+    def evaluate_property(self, prop):
+        return synonym(prop)
 
 #class Composite(GenericProperty):
 #    def __init__(self, prop):

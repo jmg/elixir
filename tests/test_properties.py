@@ -161,3 +161,39 @@ class TestSpecialProperties(object):
         
         assert p.name == 'Mr. X'
 
+    def test_synonym_class(self):
+        class Person(Entity):
+            name = Field(String(30))
+            primary_email = Field(String(100))
+            email_address = Synonym('primary_email')
+
+        class User(Person):
+            user_name = Synonym('name')
+            password = Field(String(20))
+
+        setup_all(True)
+
+        alexandre = Person(
+            name = u'Alexandre da Silva',
+            email_address = u'x@y.com'
+        )
+        johann = User(
+            name = 'Johann Felipe Voigt',
+            email_address = 'y@z.com',
+            password = 'unencrypted'
+        )
+
+        session.flush(); session.clear()
+
+        p = Person.get_by(name='Alexandre da Silva')
+        assert p.primary_email == 'x@y.com'
+
+        u = User.get_by(user_name='Johann Felipe Voigt')
+        assert u.email_address == 'y@z.com'
+
+        u.email_address = 'new@z.com'
+        session.flush(); session.clear()
+
+        p = Person.get_by(name='Johann Felipe Voigt')
+        assert p.primary_email == 'new@z.com'
+
