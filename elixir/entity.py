@@ -3,10 +3,7 @@ This module provides the ``Entity`` base class, as well as its metaclass
 ``EntityMeta``.
 '''
 
-try:
-    set
-except NameError:
-    from sets import Set as set
+from py23compat import set, rsplit
 
 import sys
 import warnings

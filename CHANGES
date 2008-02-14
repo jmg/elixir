@@ -1,3 +1,8 @@
+0.5.2
+Changes:
+- Made Elixir python 2.3 compatible again (based on a patch from 
+  Jason R. Coombs)
+
 0.5.1 - 2008-02-07
 
 New features:

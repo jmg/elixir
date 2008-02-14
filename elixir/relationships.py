@@ -335,6 +335,8 @@ from elixir.properties  import Property
 from elixir.entity      import EntityDescriptor, EntityMeta
 from sqlalchemy.ext.associationproxy import association_proxy
 
+from py23compat import rsplit
+
 import sys
 import options
 
@@ -418,7 +420,7 @@ class Relationship(Property):
             if isinstance(self.of_kind, EntityMeta):
                 self._target = self.of_kind
             else:
-                path = self.of_kind.rsplit('.', 1)
+                path = rsplit(self.of_kind, '.', 1)
                 classname = path.pop()
 
                 if path:
