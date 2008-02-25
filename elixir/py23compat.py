@@ -12,13 +12,14 @@ try:
 except NameError:
     # global name 'sorted' doesn't exist in Python2.3
     # this provides a poor-man's emulation of the sorted built-in method
-    def sorted(l, kwargs):
-        if 'key' not in kwargs:
-            raise Exception('Our python 2.3 version of sorted needs a key kwarg argument')
-        key_func = kwargs['key']
+    def sorted(l, **kwargs):
         sorted_list = list(l)
-        sorted_list.sort(lambda self, other: cmp(key_func(self),
-                                                 key_func(other)))
+        if 'key' in kwargs:
+            key_func = kwargs['key']
+            sorted_list.sort(lambda self, other: cmp(key_func(self),
+                                                     key_func(other)))
+        else:
+            sorted_list.sort()
         return sorted_list
 
 # rsplit
