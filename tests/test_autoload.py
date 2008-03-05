@@ -22,11 +22,11 @@ def setup():
         Column('feeder_id', Integer, ForeignKey('person.id')))
 
     category_table = Table('category', meta,
-        Column('name', String, primary_key=True))
+        Column('name', String(30), primary_key=True))
 
     person_category_table = Table('person_category', meta,
         Column('person_id', Integer, ForeignKey('person.id')),
-        Column('category_name', String, ForeignKey('category.name')))
+        Column('category_name', String(30), ForeignKey('category.name')))
 
     person_person_table = Table('person_person', meta,
         Column('person_id1', Integer, ForeignKey('person.id')),

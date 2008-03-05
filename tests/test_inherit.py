@@ -74,7 +74,7 @@ class TestInheritance(object):
 
         class B(A): 
             name = Field(String(30))
-            other = Field(String)
+            other = Field(Text)
 
         setup_all()
         create_all()

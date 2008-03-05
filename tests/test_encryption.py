@@ -6,15 +6,15 @@ def setup():
     global Person, Pet
     
     class Person(Entity):
-        name = Field(String)
-        password = Field(String)
-        ssn = Field(String)
+        name = Field(String(50))
+        password = Field(String(40))
+        ssn = Field(String(40))
         pets = OneToMany('Pet')
         acts_as_encrypted(for_fields=['password', 'ssn'], with_secret='secret')
 
     class Pet(Entity):
-        name = Field(String)
-        codename = Field(String)
+        name = Field(String(50))
+        codename = Field(String(50))
         acts_as_encrypted(for_fields=['codename'], with_secret='secret2')
         owner = ManyToOne('Person')
 
@@ -53,7 +53,6 @@ class TestEncryption(object):
         session.flush(); session.clear()
 
         p = Person.get_by(name='Jonathan LaCour')
-        print p.password
         assert p.password == 's3cr3tw0RD'
         assert p.ssn == '123-45-6789'
         assert p.pets[0].name == 'Winston'

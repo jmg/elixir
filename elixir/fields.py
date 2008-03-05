@@ -16,7 +16,7 @@ Here is a quick example of how to use the object-oriented syntax.
     class Person(Entity):
         id = Field(Integer, primary_key=True)
         name = Field(String(50), required=True)
-        biography = Field(String)
+        biography = Field(Text)
         photo = Field(Binary, deferred=True)
         _email = Field(String(20), colname='email', synonym='email')
 

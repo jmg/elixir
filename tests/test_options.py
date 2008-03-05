@@ -285,10 +285,10 @@ class TestTableOptions(object):
 
     def test_unique_constraint_belongs_to(self):
         class Author(Entity):
-            name = Field(String)
+            name = Field(String(50))
 
         class Book(Entity):
-            title = Field(String, required=True)
+            title = Field(String(200), required=True)
             author = ManyToOne("Author")
 
             using_table_options(UniqueConstraint("title", "author_id"))

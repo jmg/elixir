@@ -34,20 +34,20 @@ class TestOrders(object):
     def test_basic(self):
         class Address(Entity):
             street = Field(String(130))
-            city = Field(String)
+            city = Field(String(100))
             using_options(shortnames=True)
 
         class Comment(Entity):
             id = Field(Integer, primary_key=True)
-            name = Field(String)
-            text = Field(String)
+            name = Field(String(200))
+            text = Field(Text)
 
         is_addressable = associable(Address, 'addresses')
         is_commentable = associable(Comment, 'comments')
 
         class Person(Entity):
             id = Field(Integer, primary_key=True)
-            name = Field(String)
+            name = Field(String(50))
             orders = OneToMany('Order')
             using_options(shortnames=True)
             is_addressable()
@@ -95,13 +95,13 @@ class TestOrders(object):
         can_checkout = associable(Checkout, 'checked_out')
 
         class Article(Entity):
-            title = Field(String)
-            content = Field(String)
+            title = Field(String(200))
+            content = Field(Text)
             can_checkout('checked_out_by', uselist=False)
             using_options(tablename='article')
 
         class Villian(Entity):
-            name = Field(String)
+            name = Field(String(50))
             using_options(tablename='villian')
 
         setup_all(True)

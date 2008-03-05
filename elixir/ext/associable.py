@@ -58,7 +58,7 @@ the associated table:
     
     class Address(Entity):
         street = Field(String(130))
-        city = Field(String)
+        city = Field(String(100))
     
     is_addressable = associable(Address, 'addresses')
     

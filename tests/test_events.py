@@ -16,7 +16,7 @@ def setup():
     global Document
     
     class Document(Entity):
-        name = Field(String)
+        name = Field(String(50))
         
         @before_insert
         def pre_insert(self):
