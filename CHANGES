@@ -3,6 +3,10 @@ Changes:
 - Made Elixir python 2.3 compatible again (based on a patch from 
   Jason R. Coombs)
 
+Bug fixes:
+- Fixed act_as_list extension to work with DBMS that require subselects to be
+  aliased (patch by Alice McGregor)
+
 0.5.1 - 2008-02-07
 
 New features:

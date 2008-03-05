@@ -122,7 +122,8 @@ class ListEntityBuilder(object):
             ).union(
                 select([literal(1).label('value')])
             )
-            setattr(self, position_column_name, select([func.max(s.c.value)]))
+            a = s.alias()
+            setattr(self, position_column_name, select([func.max(a.c.value)]))
         
         @before_delete
         def _shift_items(self):
