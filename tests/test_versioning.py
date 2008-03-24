@@ -144,3 +144,20 @@ class TestVersioning(object):
         movie = Movie.get_by(title='12 Monkeys')
         assert movie.version == 4
         assert movie.versions[-2].description == "description 3"
+
+        # Updates to the history table must be inside the transaction
+        session.begin()
+        movie = Movie(id=3, title='Foo', description='1')
+        session.commit();
+        
+        session.begin()
+        movie.description = '2'
+        session.flush()
+        session.rollback()
+        session.clear()
+        
+        session.begin()
+        movie = Movie.get_by(title='Foo')
+        movie.description = '3'
+        session.commit()
+

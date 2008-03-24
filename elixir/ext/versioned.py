@@ -36,7 +36,9 @@ instance being reverted.
 
 The acts_as_versioned statement also accepts an optional `ignore` argument 
 that consists of a list of strings, specifying names of fields.  Changes in 
-those fields will not result in a version increment.
+those fields will not result in a version increment.  In addition, you can
+pass in an optional `check_concurrent` argument, which will use SQLAlchemy's
+built-in optimistic concurrency mechanisms. 
 
 Note that relationships that are stored in mapping tables will not be included
 as part of the versioning process, and will need to be handled manually. Only
@@ -103,7 +105,7 @@ class VersionedMapperExtension(MapperExtension):
             if getattr(instance, key) != values[key]:
                 # the instance was really updated, so we create a new version
                 colvalues = dict(values.items()) 
-                instance.__class__.__history_table__.insert().execute(colvalues) 
+                connection.execute(instance.__class__.__history_table__.insert(), colvalues)
                 instance.version = instance.version + 1
                 instance.timestamp = datetime.now()
                 break
@@ -111,9 +113,9 @@ class VersionedMapperExtension(MapperExtension):
         return EXT_PASS
         
     def before_delete(self, mapper, connection, instance):
-        instance.__history_table__.delete(
+        connection.execute(instance.__history_table__.delete(
             get_history_where(instance)
-        ).execute()
+        ))
         return EXT_PASS
 
 
@@ -126,9 +128,11 @@ versioned_mapper_extension = VersionedMapperExtension()
 
 class VersionedEntityBuilder(object):
         
-    def __init__(self, entity, ignore=[]):
+    def __init__(self, entity, ignore=[], check_concurrent=False):
         entity._descriptor.add_mapper_extension(versioned_mapper_extension)
         self.entity = entity
+        self.check_concurrent = check_concurrent
+        
         # Changes in these fields will be ignored
         entity.__ignored_fields__ = ignore
         entity.__ignored_fields__.extend(['version', 'timestamp'])
@@ -139,11 +143,15 @@ class VersionedEntityBuilder(object):
         timestamp_col = Column('timestamp', DateTime)
         self.entity._descriptor.add_column(version_col)
         self.entity._descriptor.add_column(timestamp_col)
+        
+        # add a concurrent_version column to the entity, if required
+        if self.check_concurrent:
+            self.entity._descriptor.version_id_col = 'concurrent_version'
    
     # we copy columns from the main entity table, so we need it to exist first
     def after_table(self):
         entity = self.entity
-
+        
         # look for events
         after_revert_events = []
         for name, func in inspect.getmembers(entity, inspect.ismethod):
@@ -152,8 +160,10 @@ class VersionedEntityBuilder(object):
         
         # create a history table for the entity
         #TODO: fail more noticeably in case there is a version col
-        columns = [column.copy() for column in entity.table.c 
-                                 if column.name != 'version']
+        columns = [
+            column.copy() for column in entity.table.c 
+            if column.name not in ('version', 'concurrent_version')
+        ]
         columns.append(Column('version', Integer, primary_key=True))
         table = Table(entity.table.name + '_history', entity.table.metadata, 
             *columns
@@ -221,7 +231,7 @@ class VersionedEntityBuilder(object):
         def compare_with(self, version):
             differences = {}
             for column in self.c:
-                if column.name == 'version':
+                if column.name in ('version', 'concurrent_version'):
                     continue
                 this = getattr(self, column.name)
                 that = getattr(version, column.name)
