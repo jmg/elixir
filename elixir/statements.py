@@ -1,7 +1,5 @@
 import sys
 
-__doc_all__ = []
-
 MUTATORS = '__elixir_mutators__'
 
 class ClassMutator(object):    
