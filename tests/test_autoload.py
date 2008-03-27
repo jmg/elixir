@@ -139,7 +139,7 @@ class TestAutoload(object):
         
         print "Persons in the '%s' category: %s." % (
                 c.name, 
-                ", ".join(p.name for p in c.persons))
+                ", ".join([p.name for p in c.persons]))
         
         assert len(c.persons) == 4
         assert c in grampa.categories

@@ -18,42 +18,40 @@ def setup():
     class Document(Entity):
         name = Field(String(50))
         
-        @before_insert
         def pre_insert(self):
             global before_insert_called
             before_insert_called += 1
+        pre_insert = before_insert(pre_insert)
         
-        @after_insert
         def post_insert(self):
             global after_insert_called
             after_insert_called += 1
+        post_insert = after_insert(post_insert)
 
-        @before_update
         def pre_update(self):
             global before_update_called
             before_update_called += 1
+        pre_update = before_update(pre_update)
         
-        @after_update
         def post_update(self):
             global after_update_called
             after_update_called += 1
+        post_update = after_update(post_update)
 
-        @before_delete
         def pre_delete(self):
             global before_delete_called
             before_delete_called += 1
+        pre_delete = before_delete(pre_delete)
         
-        @after_delete
         def post_delete(self):
             global after_delete_called
             after_delete_called += 1
+        post_delete = after_delete(post_delete)
     
-        @before_insert
-        @before_update
-        @before_delete
         def pre_any(self):
             global before_any_called
             before_any_called += 1
+        pre_any = before_insert(before_update(before_delete(pre_any)))
     metadata.bind = 'sqlite:///'
 
     setup_all()

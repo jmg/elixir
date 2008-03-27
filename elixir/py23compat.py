@@ -6,20 +6,33 @@ try:
 except NameError:
     from sets import Set as set
 
+orig_cmp = cmp
+# [].sort
+def sort_list(l, cmp=None, key=None, reverse=False):
+    try:
+        l.sort(cmp, key, reverse)
+    except TypeError, e:
+        if not str(e).startswith('sort expected at most 1 arguments'):
+            raise
+        if cmp is None:
+            cmp = orig_cmp
+        if key is not None:
+            # the cmp=cmp parameter is required to get the original comparator
+            # into the lambda namespace
+            cmp = lambda self, other, cmp=cmp: cmp(key(self), key(other))
+        if reverse:
+            cmp = lambda self, other, cmp=cmp: -cmp(self,other)
+        l.sort(cmp) 
+
 # sorted
 try:
     sorted = sorted
 except NameError:
     # global name 'sorted' doesn't exist in Python2.3
     # this provides a poor-man's emulation of the sorted built-in method
-    def sorted(l, **kwargs):
+    def sorted(l, cmp=None, key=None, reverse=False):
         sorted_list = list(l)
-        if 'key' in kwargs:
-            key_func = kwargs['key']
-            sorted_list.sort(lambda self, other: cmp(key_func(self),
-                                                     key_func(other)))
-        else:
-            sorted_list.sort()
+        sort_list(sorted_list, cmp, key, reverse)
         return sorted_list
 
 # rsplit

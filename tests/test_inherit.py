@@ -4,6 +4,7 @@
 
 from elixir import *
 import elixir
+from elixir.py23compat import sort_list
 
 def setup():
     metadata.bind = 'sqlite:///'
@@ -52,7 +53,7 @@ def do_tst(inheritance, polymorphic, with_rel, expected_res):
     res = {}
     for class_ in (A, B, C, D, E):
         res[class_.__name__] = class_.query.all()
-        res[class_.__name__].sort(key=lambda o: o.__class__.__name__) 
+        sort_list(res[class_.__name__], key=lambda o: o.__class__.__name__) 
 
     for query_class in ('A', 'B', 'C', 'D', 'E'):
         assert len(res[query_class]) == len(expected_res[query_class])

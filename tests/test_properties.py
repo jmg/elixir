@@ -93,7 +93,7 @@ class TestSpecialProperties(object):
         category = Category.query.one()
 #        assert category.score == 85 # doesn't work for now
         for user in category.users:
-            assert user.score == sum(tag.score for tag in user.tags)
+            assert user.score == sum([tag.score for tag in user.tags])
             for tag in user.tags:
                 assert tag.score == tag.score1 * tag.score2
 

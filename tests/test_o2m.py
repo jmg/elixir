@@ -61,7 +61,7 @@ class TestOneToMany(object):
         
         print "%s is %s's child." % (p.name, p.father.name)        
         print "His children are: %s." % (
-                " and ".join(c.name for c in p.children))
+                " and ".join([c.name for c in p.children]))
         
         assert p in p.father.children
         assert p.father is Person.get_by(name="Abe")

@@ -114,7 +114,6 @@ class ListEntityBuilder(object):
         if not qualifier_method:
             qualifier_method = lambda self: None
         
-        @before_insert
         def _init_position(self):
             s = select(
                 [(func.max(position_column)+1).label('value')],
@@ -124,8 +123,8 @@ class ListEntityBuilder(object):
             )
             a = s.alias()
             setattr(self, position_column_name, select([func.max(a.c.value)]))
+        _init_position = before_insert(_init_position)
         
-        @before_delete
         def _shift_items(self):
             self.table.update(
                 and_(
@@ -136,6 +135,7 @@ class ListEntityBuilder(object):
                     position_column : position_column - 1
                 }
             ).execute()
+        _shift_items = before_delete(_shift_items)
         
         def move_to_bottom(self):        
             # move the items that were above this item up one
