@@ -1,11 +1,19 @@
-0.5.2
+0.5.2 - 2008-03-28
+
+New features:
+- Added an optional `check_concurrency` keyword argument to the versioning 
+  extension, supporting the usage of SQLAlchemy's built-in optimistic 
+  concurrency check.
+
 Changes:
-- Made Elixir python 2.3 compatible again (based on a patch from 
+- Made Elixir python 2.3 compatible again (based on patches from 
   Jason R. Coombs)
 
 Bug fixes:
 - Fixed act_as_list extension to work with DBMS that require subselects to be
   aliased (patch by Alice McGregor)
+- Fixed the versioning extension so that the history table is updated within
+  the current transaction (patch from and closes ticket #35).
 
 0.5.1 - 2008-02-07
 
