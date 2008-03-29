@@ -1,9 +1,8 @@
 from turbogears.database    import metadata, session
 from elixir                 import Unicode, DateTime, String, Integer
-from elixir                 import Entity, has_field, using_options
-from elixir                 import has_many, belongs_to, has_and_belongs_to_many
+from elixir                 import Entity, Field, using_options
+from elixir                 import OneToMany, ManyToOne, ManyToMany
 from elixir                 import setup_all
-from sqlalchemy             import ForeignKey
 from datetime               import datetime
 
 #
