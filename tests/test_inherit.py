@@ -8,7 +8,7 @@ from elixir.py23compat import sort_list
 
 def setup():
     metadata.bind = 'sqlite:///'
-#    metadata.bind = 'postgres://localhost/test'
+#    metadata.bind = 'postgres://@/test'
 #    metadata.bind.echo = True
     elixir.options_defaults['shortnames'] = True
 
@@ -103,6 +103,27 @@ class TestInheritance(object):
         # this doesn't work on sqlite (because it relies on the database
         # enforcing the foreign key constraint cascade rule).
 #        assert not B.table.select().execute().fetchall()
+    
+    def test_inheritance_wh_schema(self):
+        # I can only test schema stuff on postgres
+        if metadata.bind.name != 'postgres':
+            print "schema test skipped"
+            return
+        
+        class A(Entity):
+            using_options(inheritance="multi")
+            using_table_options(schema="test")
+
+            row_id = Field(Integer, primary_key=True)
+            thing1 = Field(String(20))
+
+        class B(A):
+            using_options(inheritance="multi")
+            using_table_options(schema="test")
+
+            thing2 = Field(String(20))
+
+        setup_all(True)
 
     def test_inverse_matching_on_parent(self):
         options_defaults['inheritance'] = 'multi'

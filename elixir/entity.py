@@ -196,6 +196,10 @@ class EntityDescriptor(object):
                     # add columns with foreign keys to the parent's primary 
                     # key columns 
                     parent_desc = self.parent._descriptor
+                    schema = parent_desc.table_options.get('schema', None)
+                    tablename = parent_desc.tablename 
+                    if schema is not None:
+                        tablename = "%s.%s" % (schema, tablename)
                     for pk_col in parent_desc.primary_keys:
                         colname = options.MULTIINHERITANCECOL_NAMEFORMAT % \
                                   {'entity': self.parent.__name__.lower(),
@@ -204,8 +208,7 @@ class EntityDescriptor(object):
                         # it seems like SA ForeignKey is not happy being given
                         # a real column object when said column is not yet 
                         # attached to a table
-                        pk_col_name = "%s.%s" % (parent_desc.tablename, 
-                                                 pk_col.key)
+                        pk_col_name = "%s.%s" % (tablename, pk_col.key)
                         fk = ForeignKey(pk_col_name, ondelete='cascade')
                         col = Column(colname, pk_col.type, fk,
                                      primary_key=True)
