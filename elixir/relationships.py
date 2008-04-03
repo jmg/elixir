@@ -571,7 +571,7 @@ class ManyToOne(Relationship):
                 self.foreign_key.append(col)
 
                 # store the names of those columns
-                fk_colnames.append(colname)
+                fk_colnames.append(col.key)
 
                 # build the list of column "paths" the foreign key will 
                 # point to

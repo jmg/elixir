@@ -1,5 +1,5 @@
 """
-    simple test case
+    test has_*(..., through=...) syntax
 """
 
 from elixir import *
@@ -11,7 +11,7 @@ def setup():
 
 class TestThrough(object):
     def teardown(self):
-        cleanup_all()
+        cleanup_all(True)
     
     def test_rel_through(self):
         # converted from http://www.sqlalchemy.org/docs/04/plugins.html#plugins_associationproxy

@@ -51,6 +51,30 @@ class TestManyToOne(object):
 
         assert b.a.testx == 1
 
+    def test_wh_key_in_m2o_col_kwargs(self):
+        class A(Entity):
+            name = Field(String(128), default="foo")
+        
+        class B(Entity):
+            # specify a different key for the column so that
+            #  it doesn't override the property when the column
+            #  gets created.
+            a = ManyToOne('A', colname='a',
+                          column_kwargs=dict(key='a_id'))
+         
+        setup_all(True)
+
+        assert A.table.primary_key.columns.has_key('id')
+        assert B.table.columns.has_key('a_id')
+
+        a = A()
+        session.flush()
+        b = B(a=a)
+        session.flush()
+        session.clear()
+
+        assert B.query.first().a == A.query.first()
+
     def test_one_pk(self):
         class A(Entity):
             name = Field(String(40), primary_key=True)

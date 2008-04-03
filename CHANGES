@@ -2,6 +2,8 @@
 
 Bug fixes:
 - Fixed multi-table inheritance when using a non default schema (closes #38)
+- Fixed ManyToOne relationships using 'key' kwarg in their column_kwargs
+  (patch by Jason R. Coombs) 
 
 0.5.2 - 2008-03-28
 
