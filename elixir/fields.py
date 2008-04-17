@@ -195,6 +195,9 @@ class Field(Property):
                 group = self.deferred
             self.property = deferred(self.column, group=group)
         elif self.name != self.colname:
+            # if the property name is different from the column name, we need to
+            # add an explicit property (otherwise nothing is needed as it's done
+            # automatically by SA)
             self.property = self.column
 
         if self.property:
