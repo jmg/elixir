@@ -15,29 +15,27 @@ def setup():
 def teardown():
     elixir.options_defaults['shortnames'] = False
 
-def do_tst(inheritance, polymorphic, with_rel, expected_res):
+def do_tst(inheritance, polymorphic, expected_res):
     class A(Entity):
-        data1 = Field(String(20))
         using_options(inheritance=inheritance, polymorphic=polymorphic)
+        data1 = Field(String(20))
 
     class B(A):
-        data2 = Field(String(20))
-        if with_rel:
-            many_c = OneToMany('C', inverse='some_b')        
         using_options(inheritance=inheritance, polymorphic=polymorphic)
+        data2 = Field(String(20))
+        some_e = ManyToOne('E')
 
     class C(B):
-        data3 = Field(String(20))
-        if with_rel:
-            some_b = ManyToOne('B', inverse='many_c')
         using_options(inheritance=inheritance, polymorphic=polymorphic)
+        data3 = Field(String(20))
 
     class D(A):
-        data4 = Field(String(20))
         using_options(inheritance=inheritance, polymorphic=polymorphic)
+        data4 = Field(String(20))
 
     class E(A):
         using_options(inheritance=inheritance, polymorphic=polymorphic)
+        many_b = OneToMany('B')
 
     setup_all(True)
 
@@ -147,7 +145,7 @@ class TestInheritance(object):
         setup_all()
 
     def test_singletable_inheritance(self):
-        do_tst('single', False, True, {
+        do_tst('single', False, {
             'A': ('A', 'A', 'A', 'A', 'A'),
             'B': ('B', 'B', 'B', 'B', 'B'),
             'C': ('C', 'C', 'C', 'C', 'C'),
@@ -156,7 +154,7 @@ class TestInheritance(object):
         })
 
     def test_polymorphic_singletable_inheritance(self):
-        do_tst('single', True, True, {
+        do_tst('single', True, {
             'A': ('A', 'B', 'C', 'D', 'E'),
             'B': ('B', 'C'),
             'C': ('C',),
@@ -165,8 +163,7 @@ class TestInheritance(object):
         })
 
     def test_concrete_inheritance(self):
-        # concrete fails when there are relationships involved !
-        do_tst('concrete', False, False, {
+        do_tst('concrete', False, {
             'A': ('A',),
             'B': ('B',),
             'C': ('C',),
@@ -175,7 +172,7 @@ class TestInheritance(object):
         })
 
     def test_multitable_inheritance(self):
-        do_tst('multi', False, True, {
+        do_tst('multi', False, {
             'A': ('A', 'A', 'A', 'A', 'A'),
             'B': ('B', 'B'),
             'C': ('C',),
@@ -184,7 +181,7 @@ class TestInheritance(object):
         })
  
     def test_polymorphic_multitable_inheritance(self):
-        do_tst('multi', True, True, {
+        do_tst('multi', True, {
             'A': ('A', 'B', 'C', 'D', 'E'),
             'B': ('B', 'C'),
             'C': ('C',),
@@ -192,4 +189,3 @@ class TestInheritance(object):
             'E': ('E',),
         })
 
-        

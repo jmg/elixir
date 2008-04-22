@@ -27,9 +27,10 @@ The list of supported arguments are as follows:
 | Option Name         | Description                                           |
 +=====================+=======================================================+
 | ``inheritance``     | Specify the type of inheritance this entity must use. |
-|                     | It can be one of ``single`` or ``multi``. Defaults to |
-|                     | ``single``. Concrete inheritance is currently not in  |
-|                     | a usable state.                                       |
+|                     | It can be one of ``single``, ``concrete`` or          |
+|                     | ``multi``. Defaults to ``single``.                    |
+|                     | Note that polymorphic concrete inheritance is         |
+|                     | currently not implemented.                            |
 +---------------------+-------------------------------------------------------+
 | ``polymorphic``     | Whether the inheritance should be polymorphic or not. |
 |                     | Defaults to ``True``. The column used to store the    |

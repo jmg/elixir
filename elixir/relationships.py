@@ -553,7 +553,14 @@ class ManyToOne(Relationship):
                         % (self.name, self.entity.__name__, 
                            self.target.__name__))
 
-            for key_num, pk_col in enumerate(target_desc.primary_keys):
+            pks = target_desc.primary_keys
+            if not pks:
+                raise Exception("No primary key found in target table ('%s') "
+                                "for the '%s' relationship of the '%s' entity."
+                                % (self.target.tablename, self.name, 
+                                   self.entity.__name__))
+
+            for key_num, pk_col in enumerate(pks):
                 if self.colname:
                     colname = self.colname[key_num]
                 else:
@@ -561,19 +568,19 @@ class ManyToOne(Relationship):
                               {'relname': self.name, 
                                'key': pk_col.key}
 
-                # we can't add the column to the table directly as the table
+                # We can't add the column to the table directly as the table
                 # might not be created yet.
                 col = Column(colname, pk_col.type, **self.column_kwargs)
                 source_desc.add_column(col)
 
-                # build the list of local columns which will be part of
+                # Build the list of local columns which will be part of
                 # the foreign key
                 self.foreign_key.append(col)
 
-                # store the names of those columns
+                # Store the names of those columns
                 fk_colnames.append(col.key)
 
-                # build the list of column "paths" the foreign key will 
+                # Build the list of column "paths" the foreign key will 
                 # point to
                 target_path = "%s.%s" % (target_desc.tablename, pk_col.key)
                 schema = target_desc.table_options.get('schema', None)
@@ -581,7 +588,7 @@ class ManyToOne(Relationship):
                     target_path = "%s.%s" % (schema, target_path)
                 fk_refcols.append(target_path)
 
-                # build up the primary join. This is needed when you have 
+                # Build up the primary join. This is needed when you have 
                 # several belongs_to relationships between two objects
                 self.primaryjoin_clauses.append(col == pk_col)
             

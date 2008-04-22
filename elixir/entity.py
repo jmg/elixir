@@ -10,7 +10,8 @@ import warnings
 
 import sqlalchemy
 from sqlalchemy                    import Table, Column, Integer, \
-                                          desc, ForeignKey, and_
+                                          desc, ForeignKey, and_, \
+                                          ForeignKeyConstraint
 from sqlalchemy.orm                import Query, MapperExtension,\
                                           mapper, object_session, EXT_PASS
 from sqlalchemy.ext.sessioncontext import SessionContext
@@ -193,7 +194,7 @@ class EntityDescriptor(object):
         if not self.autoload:
             if self.parent:
                 if self.inheritance == 'multi':
-                    # add columns with foreign keys to the parent's primary 
+                    # Add columns with foreign keys to the parent's primary 
                     # key columns 
                     parent_desc = self.parent._descriptor
                     schema = parent_desc.table_options.get('schema', None)
@@ -205,7 +206,7 @@ class EntityDescriptor(object):
                                   {'entity': self.parent.__name__.lower(),
                                    'key': pk_col.key}
 
-                        # it seems like SA ForeignKey is not happy being given
+                        # It seems like SA ForeignKey is not happy being given
                         # a real column object when said column is not yet 
                         # attached to a table
                         pk_col_name = "%s.%s" % (tablename, pk_col.key)
@@ -213,12 +214,17 @@ class EntityDescriptor(object):
                         col = Column(colname, pk_col.type, fk,
                                      primary_key=True)
                         self.add_column(col)
+                elif self.inheritance == 'concrete':
+                    # Copy primary key columns from the parent.
+                    for col in self.parent._descriptor.columns:
+                        if col.primary_key:
+                            self.add_column(col.copy())
             elif not self.has_pk and self.auto_primarykey:
                 if isinstance(self.auto_primarykey, basestring):
                     colname = self.auto_primarykey
                 else:
                     colname = options.DEFAULT_AUTO_PRIMARYKEY_NAME
-                
+
                 self.add_column(
                     Column(colname, options.DEFAULT_AUTO_PRIMARYKEY_TYPE, 
                            primary_key=True))
@@ -258,11 +264,22 @@ class EntityDescriptor(object):
                 #TODO: we should also copy columns from the parent table if the
                 # parent is a base entity (whatever the inheritance type -> elif
                 # will need to be changed)
-                # copy all columns from parent table
+
+                # Copy all non-primary key columns from parent table (primary 
+                # key columns have already been copied earlier).
                 for col in self.parent._descriptor.columns:
-                    self.add_column(col.copy())
-                #FIXME: copy constraints. But those are not as simple to copy
-                #since the source column must be changed
+                    if not col.primary_key:
+                        self.add_column(col.copy())
+
+                #FIXME: use the public equivalent of _get_colspec when available 
+                for con in self.parent._descriptor.constraints:
+                    self.add_constraint(
+                        ForeignKeyConstraint(
+                            [c.key for c in con.columns],
+                            [e._get_colspec() for e in con.elements],
+                            name=con.name, #TODO: modify it
+                            onupdate=con.onupdate, ondelete=con.ondelete,
+                            use_alter=con.use_alter))
 
         if self.polymorphic and self.inheritance in ('single', 'multi') and \
            self.children and not self.parent:
@@ -454,7 +471,7 @@ class EntityDescriptor(object):
 
         # Autosetup triggers shouldn't be active anymore at this point, so we
         # can theoretically access the entity's table safely. But the problem 
-        # is that if, for some reason, the "trigger" removal phase didn't 
+        # is that if, for some reason, the trigger removal phase didn't 
         # happen, we'll get an infinite loop. So we just make sure we don't 
         # get one in any case.
         table = type.__getattribute__(self.entity, 'table')
@@ -476,6 +493,7 @@ class EntityDescriptor(object):
             raise Exception("property '%s' already exist in '%s' ! " % 
                             (name, self.entity.__name__))
         self.properties[name] = property
+
         mapper = self.entity.mapper
         if mapper:
             mapper.add_property(name, property)
@@ -547,6 +565,11 @@ class EntityDescriptor(object):
     columns = property(columns)
 
     def primary_keys(self):
+        """
+        Returns the list of primary key columns of the entity.
+
+        This property isn't valid before the "create_pk_cols" phase.
+        """
         if self.autoload:
             return [col for col in self.entity.table.primary_key.columns]
         else:
@@ -558,7 +581,8 @@ class EntityDescriptor(object):
 
 
 class TriggerProxy(object):
-    """A class that serves as a "trigger" ; accessing its attributes runs
+    """
+    A class that serves as a "trigger" ; accessing its attributes runs
     the setup_all function.
 
     Note that the `setup_all` is called on each access of the attribute.
