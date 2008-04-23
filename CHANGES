@@ -1,5 +1,11 @@
 0.5.3
 
+New features:
+- Added two new methods on the base entity: from_dict and to_dict, which can
+  be used to create (or output) a whole hierarchy of instances from (to) a
+  simple JSON-like dictionary notation (patch from Paul Johnston,
+  closes ticket #40).
+
 Bug fixes:
 - Fixed multi-table inheritance when using a non default schema (closes #38)
 - Fixed ManyToOne relationships using 'key' kwarg in their column_kwargs

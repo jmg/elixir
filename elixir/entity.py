@@ -839,8 +839,77 @@ class Entity(object):
             setattr(self, key, value)
 
     def set(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        self.from_dict(kwargs)
+
+    def from_dict(self, data):
+        """
+        Update a mapped class with data from a JSON-style nested dict/list
+        structure.
+        """
+        mapper = sqlalchemy.orm.object_mapper(self)
+        session = sqlalchemy.orm.object_session(self)
+        pkey = [c for c in mapper.mapped_table.columns if c.primary_key]
+
+        for col in mapper.mapped_table.c:
+            if not col.primary_key and data.has_key(col.name):
+                setattr(self, col.name, data[col.name])
+
+        for rel in mapper.iterate_properties:
+            rname = rel.key
+            if isinstance(rel, sqlalchemy.orm.properties.PropertyLoader) \
+                    and data.has_key(rname):
+                dbdata = getattr(self, rname)
+                if rel.uselist:
+                    # Build a lookup dict: {(pk1, pk2): value}
+                    lookup = dict([
+                        (tuple([getattr(o, c.name) for c in pkey]), o) 
+                        for o in dbdata])
+                    for row in data[rname]:
+                        # If any primary key columns are missing or None, 
+                        # create a new object
+                        if [1 for c in pkey if not row.get(c.name)]:
+                            subobj = rel.mapper.class_()
+                            dbdata.append(subobj)
+                        else:
+                            key = tuple([row[c.name] for c in pkey])
+                            subobj = lookup.pop(key, None)
+
+                            # If the row isn't found, we must fail the request
+                            # in a web scenario, this could be a parameter 
+                            # tampering attack
+                            if not subobj:
+                                raise sqlalchemy.exceptions.ArgumentError(
+                                        '%s row not found in database: %s' \
+                                        % (rname, repr(row)))
+                        subobj.from_dict(row)
+
+                    # Make sure the object list attribute doesn't contain any
+                    # old value (which are not present in the new data).
+                    for delobj in lookup.itervalues():
+                        dbdata.remove(delobj)
+                        session.delete(delobj)
+                else:
+                    if data[rname] is None:
+                        setattr(self, rname, None)
+                    else:
+                        if not dbdata:
+                            dbdata = rel.mapper.class_()
+                            setattr(self, rname, dbdata)
+                        dbdata.from_dict(data[rname])
+
+    def to_dict(self, deep={}, exclude=[]):
+        """Generate a JSON-style nested dict/list structure from an object."""
+        data = dict([(col.name, getattr(self, col.name))
+                     for col in self.table.c if col.name not in exclude])
+        for rname, rdeep in deep.iteritems():
+            dbdata = getattr(self, rname)
+            fks = self.mapper.get_property(rname).foreign_keys
+            exclude = [c.name for c in fks]
+            if isinstance(dbdata, list):
+                data[rname] = [o.to_dict(rdeep, exclude) for o in dbdata]
+            else:
+                data[rname] = dbdata.to_dict(rdeep, exclude)
+        return data
 
     # session methods
     def flush(self, *args, **kwargs):
