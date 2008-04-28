@@ -12,8 +12,9 @@ import sqlalchemy
 from sqlalchemy                    import Table, Column, Integer, \
                                           desc, ForeignKey, and_, \
                                           ForeignKeyConstraint
-from sqlalchemy.orm                import Query, MapperExtension,\
-                                          mapper, object_session, EXT_PASS
+from sqlalchemy.orm                import Query, MapperExtension, \
+                                          mapper, object_session, EXT_PASS, \
+                                          polymorphic_union
 from sqlalchemy.ext.sessioncontext import SessionContext
 
 import elixir
@@ -113,7 +114,7 @@ class EntityDescriptor(object):
         self.collection = getattr(self.module, '__entity_collection__',
                                   elixir.entities)
 
-        for option in ('autosetup', 'inheritance', 'polymorphic',
+        for option in ('autosetup', 'inheritance', 'polymorphic', 'identity',
                        'autoload', 'tablename', 'shortnames', 
                        'auto_primarykey', 'version_id_col', 
                        'allowcoloverride'):
@@ -151,10 +152,6 @@ class EntityDescriptor(object):
         self.objectstore = objectstore
 
         entity = self.entity
-        if self.inheritance == 'concrete' and self.polymorphic:
-            raise NotImplementedError("Polymorphic concrete inheritance is "
-                                      "not yet implemented.")
-
         if self.parent:
             if self.inheritance == 'single':
                 self.tablename = self.parent._descriptor.tablename
@@ -168,6 +165,23 @@ class EntityDescriptor(object):
                 self.tablename = tablename.lower()
         elif callable(self.tablename):
             self.tablename = self.tablename(entity)
+
+        if not self.identity:
+            if 'polymorphic_identity' in self.mapper_options:
+                self.identity = self.mapper_options['polymorphic_identity']
+            else:
+                #TODO: include module name
+                self.identity = entity.__name__.lower()
+        elif 'polymorphic_identity' in kwargs:
+            raise Exception('You cannot use the "identity" option and the '
+                            'polymorphic_identity mapper option at the same '
+                            'time.')
+        elif callable(self.identity):
+            self.identity = self.identity(entity)
+
+        if self.polymorphic:
+            if not isinstance(self.polymorphic, basestring):
+                self.polymorphic = options.DEFAULT_POLYMORPHIC_COL_NAME
 
     #---------------------
     # setup phase methods
@@ -281,11 +295,9 @@ class EntityDescriptor(object):
                             onupdate=con.onupdate, ondelete=con.ondelete,
                             use_alter=con.use_alter))
 
-        if self.polymorphic and self.inheritance in ('single', 'multi') and \
+        if self.polymorphic and \
+           self.inheritance in ('single', 'multi') and \
            self.children and not self.parent:
-            if not isinstance(self.polymorphic, basestring):
-                self.polymorphic = options.DEFAULT_POLYMORPHIC_COL_NAME
-                
             self.add_column(Column(self.polymorphic, 
                                    options.POLYMORPHIC_COL_TYPE))
 
@@ -378,7 +390,11 @@ class EntityDescriptor(object):
         '''
         if self.entity.mapper:
             return
-        
+
+        # for now we don't support the "abstract" parent class in a concrete
+        # inheritance scenario as demonstrated in
+        # sqlalchemy/test/orm/inheritance/concrete.py
+        # this should be added along other
         kwargs = self.mapper_options
         if self.order_by:
             kwargs['order_by'] = self.translate_order_by(self.order_by)
@@ -395,12 +411,22 @@ class EntityDescriptor(object):
                 col_pairs = zip(self.primary_keys,
                                 self.parent._descriptor.primary_keys)
                 kwargs['inherit_condition'] = \
-                    and_(*[pc == c for c,pc in col_pairs])
+                    and_(*[pc == c for c, pc in col_pairs])
 
             if self.polymorphic:
                 if self.children and not self.parent:
-                    kwargs['polymorphic_on'] = \
-                        self.get_column(self.polymorphic)
+                    if self.inheritance == 'concrete':
+                        keys = [(self.identity, self.entity.table)]
+                        keys.extend([(child._descriptor.identity, child.table) 
+                                     for child in self._get_children()])
+                        pjoin = polymorphic_union(
+                                    dict(keys), self.polymorphic, 'pjoin')
+                        kwargs['select_table'] = pjoin
+                        kwargs['polymorphic_on'] = \
+                            getattr(pjoin.c, self.polymorphic)
+                    else:
+                        kwargs['polymorphic_on'] = \
+                            self.get_column(self.polymorphic)
                     #TODO: this is an optimization, and it breaks the multi
                     # table polymorphic inheritance test with a relation. 
                     # So I turn it off for now. We might want to provide an 
@@ -411,15 +437,11 @@ class EntityDescriptor(object):
 #                        for child in children:
 #                            join = join.outerjoin(child.table)
 #                        kwargs['select_table'] = join
-                    
-                if self.children or self.parent:
-                    #TODO: make this customizable (both callable and string)
-                    #TODO: include module name
-                    if 'polymorphic_identity' not in kwargs:
-                        kwargs['polymorphic_identity'] = \
-                            self.entity.__name__.lower()
 
-                if self.inheritance == 'concrete':
+                if self.children or self.parent:
+                    kwargs['polymorphic_identity'] = self.identity
+
+                if self.parent and self.inheritance == 'concrete':
                     kwargs['concrete'] = True
 
         if 'primary_key' in kwargs:
@@ -493,6 +515,13 @@ class EntityDescriptor(object):
             raise Exception("property '%s' already exist in '%s' ! " % 
                             (name, self.entity.__name__))
         self.properties[name] = property
+
+#FIXME: something like this is needed to propagate the relationships from 
+# parent entities to their children in a concrete inheritance scenario. But 
+# this doesn't work because of the backref matching code.
+#        if self.children and self.inheritance == 'concrete':
+#            for child in self.children:
+#                child._descriptor.add_property(name, property)
 
         mapper = self.entity.mapper
         if mapper:

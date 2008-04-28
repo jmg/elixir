@@ -54,6 +54,7 @@ def do_tst(inheritance, polymorphic, expected_res):
         sort_list(res[class_.__name__], key=lambda o: o.__class__.__name__) 
 
     for query_class in ('A', 'B', 'C', 'D', 'E'):
+#        print res[query_class], expected_res[query_class]
         assert len(res[query_class]) == len(expected_res[query_class])
         for real, expected in zip(res[query_class], expected_res[query_class]):
             assert real.__class__.__name__ == expected
@@ -166,6 +167,19 @@ class TestInheritance(object):
         do_tst('concrete', False, {
             'A': ('A',),
             'B': ('B',),
+            'C': ('C',),
+            'D': ('D',),
+            'E': ('E',),
+        })
+
+    def test_polymorphic_concrete_inheritance(self):
+        # to get this test to work, I need to duplicate parent relationships in
+        # the children. The problem is that the properties are setup post 
+        # mapper setup, so I'll need to add some logic into the add_property 
+        # method which I'm reluctant to do.
+        do_tst('concrete', True, {
+            'A': ('A', 'B', 'C', 'D', 'E'),
+            'B': ('B', 'C'),
             'C': ('C',),
             'D': ('D',),
             'E': ('E',),

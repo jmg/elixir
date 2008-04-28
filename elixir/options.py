@@ -38,6 +38,23 @@ The list of supported arguments are as follows:
 |                     | can change this by passing the desired name for the   |
 |                     | column to this argument.                              |
 +---------------------+-------------------------------------------------------+
+| ``identity``        | Specify a custom polymorphic identity. When using     |
+|                     | polymorphic inheritance, this value (usually a        |
+|                     | string) will represent this particular entity (class) |
+|                     | . It will be used to differentiate it from other      |
+|                     | entities (classes) in your inheritance hierarchy when |
+|                     | loading from the database instances of different      |
+|                     | entities in that hierarchy at the same time.          |
+|                     | This value will be stored by default in the           |
+|                     | "row_type" column of the entity's table (see above).  |
+|                     | You can either provide a                              |
+|                     | plain string or a callable. The callable will be      |
+|                     | given the entity (ie class) as argument and must      |
+|                     | return a value (usually a string) representing the    |
+|                     | polymorphic identity of that entity.                  |
+|                     | By default, this value is automatically generated: it |
+|                     | is the name of the entity lower-cased.                |
++---------------------+-------------------------------------------------------+
 | ``metadata``        | Specify a custom MetaData for this entity.            |
 |                     | By default, entities uses the global                  |
 |                     | ``elixir.metadata``.                                  |
@@ -52,15 +69,18 @@ The list of supported arguments are as follows:
 |                     | plain string or a callable. The callable will be      |
 |                     | given the entity (ie class) as argument and must      |
 |                     | return a string representing the name of the table    |
-|                     | for that entity.                                      |
+|                     | for that entity. By default, the tablename is         |
+|                     | automatically generated: it is a concatenation of the |
+|                     | full module-path to the entity and the entity (class) |
+|                     | name itself. The result is lower-cased and separated  |
+|                     | by underscores ("_"), eg.: for an entity named        |
+|                     | "MyEntity" in the module "project1.model", the        |
+|                     | generated table name will be                          |
+|                     | "project1_model_myentity".                            |
 +---------------------+-------------------------------------------------------+
-| ``shortnames``      | Usually tablenames include the full module-path       |
-|                     | to the entity, but lower-cased and separated by       |
-|                     | underscores ("_"), eg.: "project1_model_myentity"     |
-|                     | for an entity named "MyEntity" in the module          |
-|                     | "project1.model".  If shortnames is ``True``, the     |
-|                     | tablename will just be the entity's classname         |
-|                     | lower-cased, ie. "myentity".                          |
+| ``shortnames``      | Specify whether or not the automatically generated    |
+|                     | table names include the full module-path              |
+|                     | to the entity. Defaults to ``True``.                  |
 +---------------------+-------------------------------------------------------+
 | ``auto_primarykey`` | If given as string, it will represent the             |
 |                     | auto-primary-key's column name.  If this option       |
@@ -68,13 +88,14 @@ The list of supported arguments are as follows:
 |                     | key if there's no primary key defined for the         |
 |                     | corresponding entity.  If this option is False,       |
 |                     | it will disallow auto-creation of a primary key.      |
+|                     | Defaults to ``True``.                                 |
 +---------------------+-------------------------------------------------------+
 | ``version_id_col``  | If this option is True, it will create a version      |
 |                     | column automatically using the default name. If given |
 |                     | as string, it will create the column using that name. |
 |                     | This can be used to prevent concurrent modifications  |
 |                     | to the entity's table rows (i.e. it will raise an     |
-|                     | exception if it happens).                             |
+|                     | exception if it happens). Defaults to ``False``.      |
 +---------------------+-------------------------------------------------------+
 | ``order_by``        | How to order select results. Either a string or a     |
 |                     | list of strings, composed of the field name,          |
@@ -89,7 +110,7 @@ The list of supported arguments are as follows:
 |                     | SQLAlchemy 0.4) objects. It also supports ``None``,   |
 |                     | in which case your entity will be mapped using a      |
 |                     | non-contextual mapper. This option can also be set    |
-|                     | for all entities of a module via by setting the       |
+|                     | for all entities of a module by setting the           |
 |                     | ``__session__`` attribute of that module.             |
 +---------------------+-------------------------------------------------------+
 | ``autosetup``       | Specify whether that entity will contain automatic    |
@@ -167,6 +188,7 @@ options_defaults = dict(
     autosetup=False,
     inheritance='single',
     polymorphic=True,
+    identity=None,
     autoload=False,
     tablename=None,
     shortnames=False,

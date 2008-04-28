@@ -1,10 +1,15 @@
-0.5.3
+0.6.0
 
 New features:
 - Added two new methods on the base entity: from_dict and to_dict, which can
   be used to create (or output) a whole hierarchy of instances from (to) a
   simple JSON-like dictionary notation (patch from Paul Johnston,
   closes ticket #40).
+- Added experimental (!) support for concrete table inheritance (both 
+  polymorphic or not).
+- Added new "identity" option which can be used to set a custom polymorphic
+  identity for an entity. It also accepts a callable so that you can generate
+  the identity name automatically from the class itself.
 
 Bug fixes:
 - Fixed multi-table inheritance when using a non default schema (closes #38)
