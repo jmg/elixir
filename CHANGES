@@ -6,7 +6,8 @@ New features:
   simple JSON-like dictionary notation (patch from Paul Johnston,
   closes ticket #40).
 - Added experimental (!) support for concrete table inheritance (both 
-  polymorphic or not).
+  polymorphic or not). Concrete polymorphic inheritance requires SQLalchemy
+  0.4.5 or later.
 - Added new "identity" option which can be used to set a custom polymorphic
   identity for an entity. It also accepts a callable so that you can generate
   the identity name automatically from the class itself.
