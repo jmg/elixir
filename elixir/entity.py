@@ -414,19 +414,24 @@ class EntityDescriptor(object):
                     and_(*[pc == c for c, pc in col_pairs])
 
             if self.polymorphic:
-                if self.children and not self.parent:
+                if self.children:
                     if self.inheritance == 'concrete':
                         keys = [(self.identity, self.entity.table)]
                         keys.extend([(child._descriptor.identity, child.table) 
                                      for child in self._get_children()])
+                        #XXX: we might need to change the alias name so that 
+                        # children (which are parent themselves) don't end up
+                        # with the same alias than their parent?
                         pjoin = polymorphic_union(
                                     dict(keys), self.polymorphic, 'pjoin')
-                        kwargs['select_table'] = pjoin
+
+                        kwargs['with_polymorphic'] = ('*', pjoin)
                         kwargs['polymorphic_on'] = \
                             getattr(pjoin.c, self.polymorphic)
-                    else:
+                    elif not self.parent:
                         kwargs['polymorphic_on'] = \
                             self.get_column(self.polymorphic)
+
                     #TODO: this is an optimization, and it breaks the multi
                     # table polymorphic inheritance test with a relation. 
                     # So I turn it off for now. We might want to provide an 
