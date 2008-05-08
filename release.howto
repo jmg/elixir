@@ -20,7 +20,7 @@ How to make a release:
 
   On older systems, you might need to upload the files manually to Pypi.
 
-- announce release on our news page
+- announce release on our news page (link to CHANGES)
 
 - announce release on those lists:
     - Elixir <sqlelixir@googlegroups.com> 
