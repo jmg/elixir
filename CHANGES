@@ -16,6 +16,14 @@ Bug fixes:
 - Fixed multi-table inheritance when using a non default schema (closes #38)
 - Fixed ManyToOne relationships using 'key' kwarg in their column_kwargs
   (patch by Jason R. Coombs) 
+- Fixed inheritance with autoloaded entities: when using autoload, we 
+  shouldn't try to add columns to the table (closes tickets #41 and #43).
+- Fixed ColumnProperty to work with latest version of SQLAlchemy (O.4.5 and
+  later)
+
+Misc:
+- Added AUTHORS list. If you are missing from this list, don't hesitate to
+  contact me.
 
 0.5.2 - 2008-03-28
 

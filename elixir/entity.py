@@ -260,64 +260,60 @@ class EntityDescriptor(object):
 
         if self.autoload != only_autoloaded:
             return
-        
-        if self.parent:
-            if self.inheritance == 'single':
-                # we know the parent is setup before the child
-                self.entity.table = self.parent.table 
 
-                # re-add the entity columns to the parent entity so that they
-                # are added to the parent's table (whether the parent's table
-                # is already setup or not).
-                for col in self.columns:
-                    self.parent._descriptor.add_column(col)
-                for constraint in self.constraints:
-                    self.parent._descriptor.add_constraint(constraint)
-                return
-            elif self.inheritance == 'concrete': 
-                #TODO: we should also copy columns from the parent table if the
-                # parent is a base entity (whatever the inheritance type -> elif
-                # will need to be changed)
-
-                # Copy all non-primary key columns from parent table (primary 
-                # key columns have already been copied earlier).
-                for col in self.parent._descriptor.columns:
-                    if not col.primary_key:
-                        self.add_column(col.copy())
-
-                #FIXME: use the public equivalent of _get_colspec when available 
-                for con in self.parent._descriptor.constraints:
-                    self.add_constraint(
-                        ForeignKeyConstraint(
-                            [c.key for c in con.columns],
-                            [e._get_colspec() for e in con.elements],
-                            name=con.name, #TODO: modify it
-                            onupdate=con.onupdate, ondelete=con.ondelete,
-                            use_alter=con.use_alter))
-
-        if self.polymorphic and \
-           self.inheritance in ('single', 'multi') and \
-           self.children and not self.parent:
-            self.add_column(Column(self.polymorphic, 
-                                   options.POLYMORPHIC_COL_TYPE))
-
-        if self.version_id_col:
-            if not isinstance(self.version_id_col, basestring):
-                self.version_id_col = options.DEFAULT_VERSION_ID_COL_NAME
-            self.add_column(Column(self.version_id_col, Integer))
-
-        # create list of columns and constraints
+        kwargs = self.table_options
         if self.autoload:
             args = self.table_args
+            kwargs['autoload'] = True
         else:
+            if self.parent:
+                if self.inheritance == 'single':
+                    # we know the parent is setup before the child
+                    self.entity.table = self.parent.table 
+
+                    # re-add the entity columns to the parent entity so that they
+                    # are added to the parent's table (whether the parent's table
+                    # is already setup or not).
+                    for col in self.columns:
+                        self.parent._descriptor.add_column(col)
+                    for constraint in self.constraints:
+                        self.parent._descriptor.add_constraint(constraint)
+                    return
+                elif self.inheritance == 'concrete': 
+                    #TODO: we should also copy columns from the parent table 
+                    # if the parent is a base (abstract?) entity (whatever the
+                    # inheritance type -> elif will need to be changed)
+
+                    # Copy all non-primary key columns from parent table 
+                    # (primary key columns have already been copied earlier).
+                    for col in self.parent._descriptor.columns:
+                        if not col.primary_key:
+                            self.add_column(col.copy())
+
+                    #FIXME: use the public equivalent of _get_colspec when 
+                    #available 
+                    for con in self.parent._descriptor.constraints:
+                        self.add_constraint(
+                            ForeignKeyConstraint(
+                                [c.key for c in con.columns],
+                                [e._get_colspec() for e in con.elements],
+                                name=con.name, #TODO: modify it
+                                onupdate=con.onupdate, ondelete=con.ondelete,
+                                use_alter=con.use_alter))
+
+            if self.polymorphic and \
+               self.inheritance in ('single', 'multi') and \
+               self.children and not self.parent:
+                self.add_column(Column(self.polymorphic, 
+                                       options.POLYMORPHIC_COL_TYPE))
+
+            if self.version_id_col:
+                if not isinstance(self.version_id_col, basestring):
+                    self.version_id_col = options.DEFAULT_VERSION_ID_COL_NAME
+                self.add_column(Column(self.version_id_col, Integer))
+
             args = self.columns + self.constraints + self.table_args
         
-        # specify options
-        kwargs = self.table_options
-
-        if self.autoload:
-            kwargs['autoload'] = True
-
         self.entity.table = Table(self.tablename, self.metadata, 
                                   *args, **kwargs)
 

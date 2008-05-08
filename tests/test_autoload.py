@@ -4,10 +4,21 @@ test autoloaded entities
 
 from sqlalchemy import Table, Column, ForeignKey, MetaData
 from elixir import *
+from elixir import options
 import elixir
 
+def setup_entity_raise(cls):
+    try:
+        setup_entities([cls])
+    except Exception, e:
+        pass
+    else:
+        assert False, "Exception did not occur setting up %s" % cls.__name__
+
+# ------
+
 def setup():
-    # First create the tables (it would be better to use an external db)
+    # First create the tables
     meta = MetaData('sqlite:///')
 
     person_table = Table('person', meta,
@@ -38,9 +49,7 @@ def setup():
 
     global Person, Animal, Category
 
-    #TODO: split these into individual classes for each test. It's best to wait
-    # till we can define several classes in a method with reference between them
-    # without having to make them global.
+    #TODO: split these into individual classes for each test.
     class Person(Entity):
         father = ManyToOne('Person')
         children = OneToMany('Person')
@@ -72,7 +81,7 @@ def teardown():
     cleanup_all()
     elixir.options_defaults.update(dict(autoload=False, shortnames=False))
 
-#-----------
+# -----------
 
 class TestAutoload(object):
     def setup(self):
@@ -82,7 +91,7 @@ class TestAutoload(object):
         drop_all()
         session.clear()
     
-    def test_autoload(self):
+    def test_simple(self):
         snowball = Animal(name="Snowball II")
         slh = Animal(name="Santa's Little Helper")
         homer = Person(name="Homer", animals=[snowball, slh], pets=[slh])
@@ -99,7 +108,7 @@ class TestAutoload(object):
         assert homer == lisa.pets[0].feeder
         assert homer == slh.owner
 
-    def test_autoload_selfref(self):
+    def test_selfref(self):
         grampa = Person(name="Abe")
         homer = Person(name="Homer")
         bart = Person(name="Bart")
@@ -119,7 +128,7 @@ class TestAutoload(object):
         assert p.father is Person.get_by(name="Abe")
         assert p is Person.get_by(name="Lisa").father
 
-    def test_autoload_m2m(self):
+    def test_m2m(self):
         stupid = Category(name="Stupid")
         simpson = Category(name="Simpson")
         old = Category(name="Old")
@@ -144,7 +153,7 @@ class TestAutoload(object):
         assert len(c.persons) == 4
         assert c in grampa.categories
 
-    def test_autoload_m2m_selfref(self):
+    def test_m2m_selfref(self):
         barney = Person(name="Barney")
         homer = Person(name="Homer", appreciate=[barney])
 
@@ -157,21 +166,7 @@ class TestAutoload(object):
         assert barney in homer.appreciate
         assert homer in barney.isappreciatedby
 
-
-def setup_entity_raise(cls):
-    try:
-        setup_entities([cls])
-    except Exception, e:
-        pass
-    else:
-        assert False, "Exception did not occur setting up %s" % cls.__name__
-
-class TestAutoloadOverrideColumn(object):
-    def setup(self):
-        create_all()
-
-    def teardown(self):
-        drop_all()
+    # overrides tests
 
     def test_override_pk_fails(self):
         class Person(Entity):
@@ -202,4 +197,52 @@ class TestAutoloadOverrideColumn(object):
         setup_entities([Animal])
         assert isinstance(Animal.table.columns['name'].type, String)
 
+    # ----------------
 
+    def test_nopk(self):
+        metadata.bind = 'sqlite:///'
+
+        local_meta = MetaData(metadata.bind)
+
+        table = Table('a', local_meta,
+            Column('id', Integer),
+            Column('name', String(32)))
+        
+        local_meta.create_all()
+
+        class A(Entity):
+            using_options(tablename='a', autoload=True)
+            using_mapper_options(primary_key=['id'])
+
+        setup_all()
+
+        a1 = A(id=1, name="a1")
+
+        session.flush()
+        session.clear()
+
+        res = A.query.all()
+
+        assert len(res) == 1
+        assert res[0].name == "a1"
+
+    def test_inheritance(self):
+        metadata.bind = 'sqlite:///'
+
+        local_meta = MetaData(metadata.bind)
+
+        table = Table('father', local_meta,
+            Column('id', Integer, primary_key=True),
+            Column('row_type', options.POLYMORPHIC_COL_TYPE))
+
+        local_meta.create_all()
+
+        options_defaults["autoload"] = True
+
+        class Father(Entity):
+            using_options(tablename='father')
+
+        class Son(Father): 
+            pass
+
+        setup_all()

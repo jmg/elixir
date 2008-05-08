@@ -73,7 +73,7 @@ class TestSpecialProperties(object):
             users = OneToMany('User', lazy=False) 
  
             score = ColumnProperty(lambda c: 
-                                   select([func.sum(User.score)],
+                                   select([func.avg(User.score)],
                                           User.category_id == c.id
                                          ).as_scalar())
         setup_all(True)
@@ -91,7 +91,7 @@ class TestSpecialProperties(object):
         session.clear()
 
         category = Category.query.one()
-#        assert category.score == 85 # doesn't work for now
+        assert category.score == 85
         for user in category.users:
             assert user.score == sum([tag.score for tag in user.tags])
             for tag in user.tags:

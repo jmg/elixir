@@ -177,7 +177,7 @@ class ColumnProperty(GenericProperty):
     '''
 
     def evaluate_property(self, prop):
-        return column_property(prop.label(self.name))
+        return column_property(prop.label(None))
 
 
 class Synonym(GenericProperty):
