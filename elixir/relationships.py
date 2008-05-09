@@ -688,7 +688,7 @@ class ManyToMany(Relationship):
         self.onupdate = kwargs.pop('onupdate', None)
         self.column_format = kwargs.pop('column_format', options.M2MCOL_NAMEFORMAT)
 
-        self.secondary_table = None
+        self.secondary_table = kwargs.pop('table', None)
         self.primaryjoin_clauses = list()
         self.secondaryjoin_clauses = list()
 
@@ -698,6 +698,9 @@ class ManyToMany(Relationship):
         return isinstance(other, ManyToMany)
 
     def create_tables(self):
+        # Warning: if the table was specified manually, the join clauses won't
+        # be computed. We might want to autodetect joins based on fk, as for 
+        # autoloaded entities
         if self.secondary_table:
             return
         
@@ -808,7 +811,7 @@ class ManyToMany(Relationship):
         if not self.target._descriptor.autoload:
             raise Exception(
                 "Entity '%s' is autoloaded and its '%s' "
-                "has_and_belongs_to_many relationship points to "
+                "ManyToMany relationship points to "
                 "the '%s' entity which is not autoloaded"
                 % (self.entity.__name__, self.name,
                    self.target.__name__))
@@ -823,7 +826,7 @@ class ManyToMany(Relationship):
             # information was defined on the inverse relationship)
             if not self.local_side and not self.remote_side:
                 raise Exception(
-                    "Self-referential has_and_belongs_to_many "
+                    "Self-referential ManyToMany "
                     "relationships in autoloaded entities need to have at "
                     "least one of either 'local_side' or 'remote_side' "
                     "argument specified. The '%s' relationship in the '%s' "
@@ -875,13 +878,13 @@ def _get_join_clauses(local_table, local_cols1, local_cols2, target_table):
     constraint_map = {}
     for constraint in local_table.constraints:
         if isinstance(constraint, ForeignKeyConstraint):
-
             use_constraint = True
             fk_colnames = []
 
             # if all columns point to the correct table, we use the constraint
             for fk in constraint.elements:
                 if fk.references(target_table):
+                    # local column key
                     fk_colnames.append(fk.parent.key)
                 else:
                     use_constraint = False
