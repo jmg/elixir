@@ -12,6 +12,9 @@ def setup():
     class MyBase(object):
         __metaclass__ = EntityMeta
 
+        def __init__(self, **kwargs):
+            for key, value in kwargs.items():
+                setattr(self, key, value)
 
 class TestCustomBase(object):
     def teardown(self):
@@ -64,7 +67,8 @@ class TestCustomBase(object):
 
         setup_all(True)
         
-        a1 = A(name="a1")
+        a1 = A()
+        a1.name = "a1" 
         
         session.flush()
         session.clear()
