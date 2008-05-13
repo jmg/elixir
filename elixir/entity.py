@@ -878,7 +878,6 @@ class Entity(object):
         """
         mapper = sqlalchemy.orm.object_mapper(self)
         session = sqlalchemy.orm.object_session(self)
-        pkey = [c for c in mapper.mapped_table.columns if c.primary_key]
 
         for col in mapper.mapped_table.c:
             if not col.primary_key and data.has_key(col.name):
@@ -890,6 +889,8 @@ class Entity(object):
                     and data.has_key(rname):
                 dbdata = getattr(self, rname)
                 if rel.uselist:
+                    pkey = [c for c in rel.table.columns if c.primary_key]
+
                     # Build a lookup dict: {(pk1, pk2): value}
                     lookup = dict([
                         (tuple([getattr(o, c.name) for c in pkey]), o) 
