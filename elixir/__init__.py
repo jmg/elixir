@@ -38,7 +38,7 @@ from elixir.statements import Statement
 
 __version__ = '0.6.0'
 
-__all__ = ['Entity', 'EntityMeta',
+__all__ = ['Entity', 'EntityMeta', 'entities',
            'Field', 'has_field', 'with_fields', 
            'has_property', 'GenericProperty', 'ColumnProperty', 'Synonym',
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many',
@@ -90,7 +90,21 @@ metadata = sqlalchemy.MetaData()
 metadatas = set()
 
 # default entity collection
-entities = list()
+class AttributeEntityList(list):
+    
+    def __init__(self):
+        self._entity_map = None
+        list.__init__(self)
+    
+    def __getattr__(self, key):
+        if self._entity_map is None:
+            self._entity_map = {}
+            for entity in self:
+                self._entity_map[entity.__name__] = entity
+        
+        return self._entity_map.get(key)
+            
+entities = AttributeEntityList()
 
 
 def create_all(*args, **kwargs):
