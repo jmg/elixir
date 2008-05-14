@@ -132,6 +132,7 @@ class EntityDescriptor(object):
         elixir.metadatas.add(self.metadata)
         if self.collection is not None:
             self.collection.append(self.entity)
+            self.collection.map_entity(self.entity, self.entity.__name__)
 
         objectstore = None
         session = self.session

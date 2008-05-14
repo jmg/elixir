@@ -93,17 +93,17 @@ metadatas = set()
 class AttributeEntityList(list):
     
     def __init__(self):
-        self._entity_map = None
+        self._entity_map = {}
         list.__init__(self)
     
-    def __getattr__(self, key):
-        if self._entity_map is None:
-            self._entity_map = {}
-            for entity in self:
-                self._entity_map[entity.__name__] = entity
-        
+    def map_entity(self, entity, key):
+        if key in self._entity_map:
+            warnings.warn('An entity named `%s` is already registered!' % key)
+        self._entity_map[key] = entity
+    
+    def __getattr__(self, key):        
         return self._entity_map.get(key)
-            
+
 entities = AttributeEntityList()
 
 
