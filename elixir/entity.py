@@ -931,8 +931,13 @@ class Entity(object):
 
     def to_dict(self, deep={}, exclude=[]):
         """Generate a JSON-style nested dict/list structure from an object."""
+        columns = []
+        for table in self.mapper.tables:
+            for col in table.c:
+                columns.append(col)
+            
         data = dict([(col.name, getattr(self, col.name))
-                     for col in self.table.c if col.name not in exclude])
+                     for col in columns if col.name not in exclude])
         for rname, rdeep in deep.iteritems():
             dbdata = getattr(self, rname)
             fks = self.mapper.get_property(rname).foreign_keys
