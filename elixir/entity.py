@@ -946,7 +946,7 @@ class Entity(object):
                      for col in columns if col.name not in exclude])
         for rname, rdeep in deep.iteritems():
             dbdata = getattr(self, rname)
-            fks = self.mapper.get_property(rname).foreign_keys
+            fks = self.mapper.get_property(rname).remote_side
             exclude = [c.name for c in fks]
             if isinstance(dbdata, list):
                 data[rname] = [o.to_dict(rdeep, exclude) for o in dbdata]
