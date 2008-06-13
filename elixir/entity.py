@@ -726,6 +726,16 @@ class EntityMeta(type):
             elixir.setup_all()
         return type.__call__(cls, *args, **kwargs)
 
+    def __setattr__(cls, key, value):
+        if isinstance(value, Property):
+            if hasattr(cls, '_setup_done'):
+                raise Exception('Cannot set attribute on a class after '
+                                'setup_all')
+            else:
+                value.attach(cls, key)
+        else:
+            type.__setattr__(cls, key, value)
+
 
 def _install_autosetup_triggers(cls, entity_name=None):
     #TODO: move as much as possible of those "_private" values to the

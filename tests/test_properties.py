@@ -197,3 +197,19 @@ class TestSpecialProperties(object):
         p = Person.get_by(name='Johann Felipe Voigt')
         assert p.primary_email == 'new@z.com'
 
+    def test_setattr(self):
+        class A(Entity):
+            pass
+
+        A.name = Field(String(30))
+
+        setup_all(True)
+
+        a1 = A(name='a1')
+
+        session.flush(); session.clear()
+
+        a = A.query.one()
+
+        assert a.name == 'a1'
+        
