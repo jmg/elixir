@@ -24,7 +24,7 @@ class TestSAIntegration(object):
         b_table = Table('b', metadata, 
             Column('id', Integer, primary_key=True),
             Column('name', String(60)),
-            Column('a_id', Integer, ForeignKey(A.c.id))
+            Column('a_id', Integer, ForeignKey(A.id))
         )
         b_table.create()
 

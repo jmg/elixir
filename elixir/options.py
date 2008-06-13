@@ -30,7 +30,10 @@ The list of supported arguments are as follows:
 |                     | It can be one of ``single``, ``concrete`` or          |
 |                     | ``multi``. Defaults to ``single``.                    |
 |                     | Note that polymorphic concrete inheritance is         |
-|                     | currently not implemented.                            |
+|                     | currently not implemented. See:                       |
+|                     | http://www.sqlalchemy.org/docs/04/mappers.html        |
+|                     | #advdatamapping_mapper_inheritance for an explanation |
+|                     | of the different kinds of inheritances.               |
 +---------------------+-------------------------------------------------------+
 | ``polymorphic``     | Whether the inheritance should be polymorphic or not. |
 |                     | Defaults to ``True``. The column used to store the    |

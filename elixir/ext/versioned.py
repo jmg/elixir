@@ -49,7 +49,7 @@ from datetime              import datetime
 import inspect
 
 from sqlalchemy            import Table, Column, and_, desc
-from sqlalchemy.orm        import mapper, MapperExtension, EXT_PASS, \
+from sqlalchemy.orm        import mapper, MapperExtension, EXT_CONTINUE, \
                                   object_session
 
 from elixir                import Integer, DateTime
@@ -88,7 +88,7 @@ class VersionedMapperExtension(MapperExtension):
     def before_insert(self, mapper, connection, instance):
         instance.version = 1
         instance.timestamp = datetime.now()
-        return EXT_PASS
+        return EXT_CONTINUE
             
     def before_update(self, mapper, connection, instance):
         values = instance.table.select(get_entity_where(instance)).execute().fetchone() 
@@ -99,7 +99,7 @@ class VersionedMapperExtension(MapperExtension):
         # to ensure we really should save this version and update the version
         # data.
         ignored = instance.__class__.__ignored_fields__
-        for key in instance.c.keys():
+        for key in instance.table.c.keys():
             if key in ignored:
                 continue
             if getattr(instance, key) != values[key]:
@@ -110,13 +110,13 @@ class VersionedMapperExtension(MapperExtension):
                 instance.timestamp = datetime.now()
                 break
 
-        return EXT_PASS
+        return EXT_CONTINUE
         
     def before_delete(self, mapper, connection, instance):
         connection.execute(instance.__history_table__.delete(
             get_history_where(instance)
         ))
-        return EXT_PASS
+        return EXT_CONTINUE
 
 
 versioned_mapper_extension = VersionedMapperExtension()
@@ -183,7 +183,7 @@ class VersionedEntityBuilder(object):
         def get_versions(self):
             v = object_session(self).query(Version) \
                                     .filter(get_history_where(self)) \
-                                    .order_by(Version.c.version) \
+                                    .order_by(Version.version) \
                                     .all()
             # history contains all the previous records.
             # Add the current one to the list to get all the versions
@@ -200,8 +200,8 @@ class VersionedEntityBuilder(object):
             # older version
             query = object_session(self).query(Version)
             query = query.filter(and_(get_history_where(self), 
-                                      Version.c.timestamp <= dt))
-            query = query.order_by(desc(Version.c.timestamp)).limit(1)
+                                      Version.timestamp <= dt))
+            query = query.order_by(desc(Version.timestamp)).limit(1)
             return query.first()
         
         def revert_to(self, to_version):
@@ -230,7 +230,7 @@ class VersionedEntityBuilder(object):
             
         def compare_with(self, version):
             differences = {}
-            for column in self.c:
+            for column in self.table.c:
                 if column.name in ('version', 'concurrent_version'):
                     continue
                 this = getattr(self, column.name)

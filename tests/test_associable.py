@@ -83,8 +83,8 @@ class TestOrders(object):
         assert '243 Hooper st.' in streets
         assert '123 Elm St.' in streets
         
-        people = Person.select_addresses(and_(Address.c.street=='132 Elm St',
-                                              Address.c.city=='Smallville'))
+        people = Person.select_addresses(and_(Address.street=='132 Elm St',
+                                              Address.city=='Smallville'))
         assert len(people) == 0
 
     def test_with_forward_ref(self):

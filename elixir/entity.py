@@ -13,9 +13,14 @@ from sqlalchemy                    import Table, Column, Integer, \
                                           desc, ForeignKey, and_, \
                                           ForeignKeyConstraint
 from sqlalchemy.orm                import Query, MapperExtension, \
-                                          mapper, object_session, EXT_PASS, \
+                                          mapper, object_session, \
+                                          EXT_CONTINUE, \
                                           polymorphic_union
-from sqlalchemy.ext.sessioncontext import SessionContext
+try:
+    from sqlalchemy.ext.sessioncontext import SessionContext
+except ImportError:
+    # Probably on sqlalchemy version 0.5
+    pass
 
 import elixir
 from elixir.statements import process_mutators
@@ -330,14 +335,15 @@ class EntityDescriptor(object):
                 for func in methods:
                     ret = func(instance)
                     # I couldn't commit myself to force people to 
-                    # systematicaly return EXT_PASS in all their event methods.
+                    # systematicaly return EXT_CONTINUE in all their event 
+                    # methods.
                     # But not doing that diverge to how SQLAlchemy works.
-                    # I should try to convince Mike to do EXT_PASS by default,
-                    # and stop processing as the special case.
-#                    if ret != EXT_PASS:
-                    if ret is not None and ret != EXT_PASS:
+                    # I should try to convince Mike to do EXT_CONTINUE by 
+                    # default, and stop processing as the special case.
+#                    if ret != EXT_CONTINUE:
+                    if ret is not None and ret != EXT_CONTINUE:
                         return ret
-                return EXT_PASS
+                return EXT_CONTINUE
             return proxy_method
 
         # create a list of callbacks for each event

@@ -12,6 +12,9 @@ New features:
   identity for an entity. It also accepts a callable so that you can generate
   the identity name automatically from the class itself.
 
+Changes:
+- require SQLAlchemy 0.4
+
 Bug fixes:
 - Fixed multi-table inheritance when using a non default schema (closes #38)
 - Fixed ManyToOne relationships using 'key' kwarg in their column_kwargs

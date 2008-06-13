@@ -113,7 +113,11 @@ class TestSessionOptions(object):
         cleanup_all()
 
     def test_session_context(self):
-        from sqlalchemy.ext.sessioncontext import SessionContext
+        try:
+            from sqlalchemy.ext.sessioncontext import SessionContext
+        except ImportError:
+            # we are probably on SQLAlchemy 0.5, no need to test this.
+            return
 
         engine = create_engine('sqlite:///')
         

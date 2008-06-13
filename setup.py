@@ -24,7 +24,7 @@ definitions.
       url="http://elixir.ematia.de",
       license = "MIT License",
       install_requires = [
-          "SQLAlchemy >= 0.3.9"
+          "SQLAlchemy >= 0.4.0"
       ],
       packages=find_packages(exclude=['ez_setup', 'tests', 'examples']),
       classifiers=[

@@ -28,7 +28,7 @@ an entity by entity basis, for added security.
 
 from Crypto.Cipher          import Blowfish 
 from elixir.statements      import Statement
-from sqlalchemy.orm         import MapperExtension, EXT_PASS
+from sqlalchemy.orm         import MapperExtension, EXT_CONTINUE
 
 __all__ = ['acts_as_encrypted']
 __doc_all__ = []
@@ -72,14 +72,17 @@ class ActsAsEncrypted(object):
             
             def before_insert(self, mapper, connection, instance):
                 perform_encryption(instance)
-                return EXT_PASS
+                return EXT_CONTINUE
             
             def before_update(self, mapper, connection, instance):       
                 perform_encryption(instance)
-                return EXT_PASS
+                return EXT_CONTINUE
             
             def populate_instance(self, mapper, selectcontext, row, instance, 
                                   *args, **kwargs):
+                #FIXME: this is not available anymore in 0.5
+                #<jek> Gedd: on_load will do what you want here.  
+                #the example in test/orm/instrumentation is the most succinct
                 mapper.populate_instance(selectcontext, instance, row, 
                                          *args, **kwargs)
                 perform_decryption(instance)
