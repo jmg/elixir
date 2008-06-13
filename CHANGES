@@ -11,6 +11,11 @@ New features:
 - Added new "identity" option which can be used to set a custom polymorphic
   identity for an entity. It also accepts a callable so that you can generate
   the identity name automatically from the class itself.
+* Added __setattr__ method on Metaclass so that you can add properties
+  slightly more easily after class definition (but before setup_all):
+    class A(Entity):
+        pass
+    A.name = Field(String(32))
 
 Changes:
 - require SQLAlchemy 0.4
