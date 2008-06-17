@@ -203,7 +203,7 @@ class TestSessionOptions(object):
         try:
             from sqlalchemy.orm import scoped_session, sessionmaker
         except ImportError:
-            print "Not on version 0.4 of sqlalchemy"
+            print "Not on version 0.4 or later of sqlalchemy"
             return
             
         engine = create_engine('sqlite:///')
@@ -229,7 +229,7 @@ class TestSessionOptions(object):
         try:
             from sqlalchemy.orm import scoped_session, sessionmaker
         except ImportError:
-            print "Not on version 0.4 of sqlalchemy"
+            print "Not on version 0.4 or later of sqlalchemy"
             return
 
         global __session__
@@ -287,7 +287,7 @@ class TestTableOptions(object):
 
         assert raised
 
-    def test_unique_constraint_belongs_to(self):
+    def test_unique_constraint_many_to_one(self):
         class Author(Entity):
             name = Field(String(50))
 

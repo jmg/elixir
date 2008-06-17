@@ -31,6 +31,9 @@ class TestSetup(object):
         assert isinstance(metadata.tables['person'], Table)
 
     def test_several_collections(self):
+        #FIXME: this test fails because the collections are simple lists and 
+        # the code in entity.py:140 assumes the collection object has a 
+        # map_entity method.
         collection1 = []
         collection2 = []
 
