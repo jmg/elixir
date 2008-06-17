@@ -47,6 +47,12 @@ def decrypt_value(value, secret):
                    .decrypt(value.decode('string_escape'))
 
 
+try:
+    from sqlalchemy.orm import EXT_PASS
+    SA05orlater = False
+except ImportError:
+    SA05orlater = True
+
 #
 # acts_as_encrypted statement
 #
@@ -77,16 +83,20 @@ class ActsAsEncrypted(object):
             def before_update(self, mapper, connection, instance):       
                 perform_encryption(instance)
                 return EXT_CONTINUE
-            
+        
+        if SA05orlater:
+            def on_reconstitute(self, mapper, instance):
+                perform_decryption(instance)
+                return True
+            EncryptedMapperExtension.on_reconstitute = on_reconstitute
+        else:
             def populate_instance(self, mapper, selectcontext, row, instance, 
                                   *args, **kwargs):
-                #FIXME: this is not available anymore in 0.5
-                #<jek> Gedd: on_load will do what you want here.  
-                #the example in test/orm/instrumentation is the most succinct
                 mapper.populate_instance(selectcontext, instance, row, 
                                          *args, **kwargs)
                 perform_decryption(instance)
                 return True
+            EncryptedMapperExtension.populate_instance = populate_instance
         
         # make sure that the entity's mapper has our mapper extension
         entity._descriptor.add_mapper_extension(EncryptedMapperExtension())
