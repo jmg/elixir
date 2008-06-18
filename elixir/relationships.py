@@ -326,19 +326,19 @@ ManyToMany_ relationships.
 
 '''
 
+import sys
+
 from sqlalchemy         import ForeignKeyConstraint, Column, \
                                Table, and_
 from sqlalchemy.orm     import relation, backref
+from sqlalchemy.ext.associationproxy import association_proxy
+
+import options
 from elixir.statements  import ClassMutator
 from elixir.fields      import Field
 from elixir.properties  import Property
 from elixir.entity      import EntityDescriptor, EntityMeta
-from sqlalchemy.ext.associationproxy import association_proxy
 
-from py23compat import rsplit
-
-import sys
-import options
 
 __doc_all__ = []
 
@@ -414,26 +414,11 @@ class Relationship(Property):
         kwargs.update(self.get_prop_kwargs())
         self.property = relation(self.target, **kwargs)
         self.entity._descriptor.add_property(self.name, self.property)
-    
+
     def target(self):
         if not self._target:
-            if isinstance(self.of_kind, EntityMeta):
-                self._target = self.of_kind
-            else:
-                path = rsplit(self.of_kind, '.', 1)
-                classname = path.pop()
-
-                if path:
-                    # do we have a fully qualified entity name?
-                    module = sys.modules[path.pop()]
-                    self._target = getattr(module, classname, None)
-                else:
-                    # If not, try the list of entities of the "caller" of the 
-                    # source class. Most of the time, this will be the module 
-                    # the class is defined in. But it could also be a method 
-                    # (inner classes).
-                    caller_entities = EntityMeta._entities[self.entity._caller]
-                    self._target = caller_entities[classname]
+            collection = self.entity._descriptor.collection
+            self._target = collection.resolve(self.of_kind, self.entity)
         return self._target
     target = property(target)
     

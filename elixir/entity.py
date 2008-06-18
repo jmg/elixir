@@ -9,13 +9,10 @@ import sys
 import warnings
 
 import sqlalchemy
-from sqlalchemy                    import Table, Column, Integer, \
-                                          desc, ForeignKey, and_, \
-                                          ForeignKeyConstraint
-from sqlalchemy.orm                import Query, MapperExtension, \
-                                          mapper, object_session, \
-                                          EXT_CONTINUE, \
-                                          polymorphic_union
+from sqlalchemy     import Table, Column, Integer, desc, ForeignKey, and_, \
+                           ForeignKeyConstraint
+from sqlalchemy.orm import Query, MapperExtension, mapper, object_session, \
+                           EXT_CONTINUE, polymorphic_union
 try:
     from sqlalchemy.ext.sessioncontext import SessionContext
 except ImportError:
@@ -85,12 +82,11 @@ class EntityDescriptor(object):
 
         self.builders = []
 
-        self.is_base = is_base(entity)
         self.parent = None
         self.children = []
 
         for base in entity.__bases__:
-            if isinstance(base, EntityMeta) and not is_base(base):
+            if isinstance(base, EntityMeta) and is_entity(base):
                 if self.parent:
                     raise Exception('%s entity inherits from several entities,'
                                     ' and this is not supported.' 
@@ -277,9 +273,9 @@ class EntityDescriptor(object):
                     # we know the parent is setup before the child
                     self.entity.table = self.parent.table 
 
-                    # re-add the entity columns to the parent entity so that they
-                    # are added to the parent's table (whether the parent's table
-                    # is already setup or not).
+                    # re-add the entity columns to the parent entity so that 
+                    # they are added to the parent's table (whether the 
+                    # parent's table is already setup or not).
                     for col in self.columns:
                         self.parent._descriptor.add_column(col)
                     for constraint in self.constraints:
@@ -654,16 +650,16 @@ class TriggerAttribute(object):
         elixir.setup_all()
         return getattr(owner, self.attrname)
 
-def is_base(cls):
+def is_entity(cls):
     """
-    Scan bases classes to see if any is an instance of EntityMeta. If we
-    don't find any, it means the current entity is a base class (like 
-    the 'Entity' class).
+    Scan the bases classes of `cls` to see if any is an instance of 
+    EntityMeta. If we don't find any, it means it is either an unrelated class
+    or an entity base class (like the 'Entity' class).
     """
     for base in cls.__bases__:
         if isinstance(base, EntityMeta):
-            return False
-    return True
+            return True
+    return False
 
 class EntityMeta(type):
     """
@@ -671,29 +667,14 @@ class EntityMeta(type):
     You should only use it directly if you want to define your own base class 
     for your entities (ie you don't want to use the provided 'Entity' class).
     """
-    _entities = {}
 
     def __init__(cls, name, bases, dict_):
         # Only process further subclasses of the base classes (Entity et al.),
         # not the base classes themselves. We don't want the base entities to 
         # be registered in an entity collection, nor to have a table name and 
         # so on. 
-        if is_base(cls):
+        if not is_entity(cls):
             return
-
-        # build a dict of entities for each frame where there are entities
-        # defined
-        caller_frame = sys._getframe(1)
-        cid = cls._caller = id(caller_frame)
-        caller_entities = EntityMeta._entities.setdefault(cid, {})
-        caller_entities[name] = cls
-
-        # Append all entities which are currently visible by the entity. This 
-        # will find more entities only if some of them where imported from 
-        # another module.
-        for entity in [e for e in caller_frame.f_locals.values() 
-                         if isinstance(e, EntityMeta)]:
-            caller_entities[entity.__name__] = entity
 
         # create the entity descriptor
         desc = cls._descriptor = EntityDescriptor(cls)
@@ -771,7 +752,7 @@ def _install_autosetup_triggers(cls, entity_name=None):
 
     #TODO: we might want to add all columns that will be available as
     #attributes on the class itself (in SA 0.4). This would be a pretty
-    #rare usecase, as people will hit the query attribute before the
+    #rare usecase, as people will normally hit the query attribute before the
     #column attributes, but still...
     for name in ('c', 'table', 'mapper', 'query'):
         setattr(cls, name, TriggerAttribute(name))
@@ -1006,108 +987,4 @@ class Entity(object):
     def get(cls, *args, **kwargs):
         return cls.query.get(*args, **kwargs)
     get = classmethod(get)
-
-    #-----------------#
-    # DEPRECATED LAND #
-    #-----------------#
-
-    def filter(cls, *args, **kwargs):
-        warnings.warn("The filter method on the class is deprecated."
-                      "You should use cls.query.filter(...)", 
-                      DeprecationWarning, stacklevel=2)
-        return cls.query.filter(*args, **kwargs)
-    filter = classmethod(filter)
-
-    def filter_by(cls, *args, **kwargs):
-        warnings.warn("The filter_by method on the class is deprecated."
-                      "You should use cls.query.filter_by(...)", 
-                      DeprecationWarning, stacklevel=2)
-        return cls.query.filter_by(*args, **kwargs)
-    filter_by = classmethod(filter_by)
-
-    def select(cls, *args, **kwargs):
-        warnings.warn("The select method on the class is deprecated."
-                      "You should use cls.query.filter(...).all()", 
-                      DeprecationWarning, stacklevel=2)
-        return cls.query.filter(*args, **kwargs).all()
-    select = classmethod(select)
-
-    def select_by(cls, *args, **kwargs):
-        warnings.warn("The select_by method on the class is deprecated."
-                      "You should use cls.query.filter_by(...).all()", 
-                      DeprecationWarning, stacklevel=2)
-        return cls.query.filter_by(*args, **kwargs).all()
-    select_by = classmethod(select_by)
-
-    def selectfirst(cls, *args, **kwargs):
-        warnings.warn("The selectfirst method on the class is deprecated."
-                      "You should use cls.query.filter(...).first()", 
-                      DeprecationWarning, stacklevel=2)
-        return cls.query.filter(*args, **kwargs).first()
-    selectfirst = classmethod(selectfirst)
-
-    def selectfirst_by(cls, *args, **kwargs):
-        warnings.warn("The selectfirst_by method on the class is deprecated."
-                      "You should use cls.query.filter_by(...).first()", 
-                      DeprecationWarning, stacklevel=2)
-        return cls.query.filter_by(*args, **kwargs).first()
-    selectfirst_by = classmethod(selectfirst_by)
-
-    def selectone(cls, *args, **kwargs):
-        warnings.warn("The selectone method on the class is deprecated."
-                      "You should use cls.query.filter(...).one()", 
-                      DeprecationWarning, stacklevel=2)
-        return cls.query.filter(*args, **kwargs).one()
-    selectone = classmethod(selectone)
-
-    def selectone_by(cls, *args, **kwargs):
-        warnings.warn("The selectone_by method on the class is deprecated."
-                      "You should use cls.query.filter_by(...).one()", 
-                      DeprecationWarning, stacklevel=2)
-        return cls.query.filter_by(*args, **kwargs).one()
-    selectone_by = classmethod(selectone_by)
-
-    def join_to(cls, *args, **kwargs):
-        warnings.warn("The join_to method on the class is deprecated."
-                      "You should use cls.query.join(...)", 
-                      DeprecationWarning, stacklevel=2)
-        return cls.query.join_to(*args, **kwargs).all()
-    join_to = classmethod(join_to)
-
-    def join_via(cls, *args, **kwargs):
-        warnings.warn("The join_via method on the class is deprecated."
-                      "You should use cls.query.join(...)", 
-                      DeprecationWarning, stacklevel=2)
-        return cls.query.join_via(*args, **kwargs).all()
-    join_via = classmethod(join_via)
-
-    def count(cls, *args, **kwargs):
-        warnings.warn("The count method on the class is deprecated."
-                      "You should use cls.query.filter(...).count()", 
-                      DeprecationWarning, stacklevel=2)
-        return cls.query.filter(*args, **kwargs).count()
-    count = classmethod(count)
-
-    def count_by(cls, *args, **kwargs):
-        warnings.warn("The count_by method on the class is deprecated."
-                      "You should use cls.query.filter_by(...).count()", 
-                      DeprecationWarning, stacklevel=2)
-        return cls.query.filter_by(*args, **kwargs).count()
-    count_by = classmethod(count_by)
-
-    def options(cls, *args, **kwargs):
-        warnings.warn("The options method on the class is deprecated."
-                      "You should use cls.query.options(...)", 
-                      DeprecationWarning, stacklevel=2)
-        return cls.query.options(*args, **kwargs)
-    options = classmethod(options)
-
-    def instances(cls, *args, **kwargs):
-        warnings.warn("The instances method on the class is deprecated."
-                      "You should use cls.query.instances(...)", 
-                      DeprecationWarning, stacklevel=2)
-        return cls.query.instances(*args, **kwargs)
-    instances = classmethod(instances)
-
-
 

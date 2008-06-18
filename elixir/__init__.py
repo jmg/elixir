@@ -20,7 +20,11 @@ try:
 except NameError:
     from sets import Set as set
 
+import sys
 import warnings
+
+from py23compat import rsplit
+
 import sqlalchemy
 from sqlalchemy.types import *
 
@@ -92,6 +96,7 @@ metadatas = set()
 
 # default entity collection
 class AttributeEntityList(list):
+    _entities = {}
     
     def __init__(self):
         self._entity_map = {}
@@ -100,8 +105,45 @@ class AttributeEntityList(list):
     def map_entity(self, entity, key):
         if key in self._entity_map:
             warnings.warn('An entity named `%s` is already registered!' % key)
+
+        # build a dict of entities for each frame where there are entities
+        # defined. 3 is because map_entity is called by:
+        # EntityDescriptor::setup_options (which is called by)
+        # EntityMeta::__init__
+        # which is called when the entity is defined
+        caller_frame = sys._getframe(3)
+        cid = entity._caller = id(caller_frame)
+        caller_entities = self._entities.setdefault(cid, {})
+        caller_entities[key] = entity
+
+        # Append all entities which are currently visible by the entity. This 
+        # will find more entities only if some of them where imported from 
+        # another module.
+        for ent in [e for e in caller_frame.f_locals.values() 
+                         if isinstance(e, EntityMeta)]:
+            caller_entities[ent.__name__] = ent
+        
         self._entity_map[key] = entity
     
+    def resolve(self, key, entity=None):
+        if isinstance(key, EntityMeta):
+            return key
+        else:
+            path = rsplit(key, '.', 1)
+            classname = path.pop()
+
+            if path:
+                # Do we have a fully qualified entity name?
+                module = sys.modules[path.pop()]
+                return getattr(module, classname, None)
+            else:
+                # If not, try the list of entities of the "caller" of the 
+                # source class. Most of the time, this will be the module 
+                # the class is defined in. But it could also be a method 
+                # (inner classes).
+                caller_entities = self._entities[entity._caller]
+                return caller_entities[classname]
+
     def __getattr__(self, key):        
         return self._entity_map.get(key)
 
