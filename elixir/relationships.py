@@ -785,8 +785,8 @@ class ManyToMany(Relationship):
                     # point to
                     target_path = "%s.%s" % (desc.tablename, pk_col.key)
                     schema = desc.table_options.get('schema', None)
-                    if e1_schema is not None:
-                        target_path = "%s.%s" % (e1_schema, target_path)
+                    if schema is not None:
+                        target_path = "%s.%s" % (schema, target_path)
                     fk_refcols.append(target_path)
 
                     # Build join clauses (in case we have a self-ref)

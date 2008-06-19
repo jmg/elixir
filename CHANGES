@@ -29,6 +29,8 @@ Bug fixes:
   shouldn't try to add columns to the table (closes tickets #41 and #43).
 - Fixed ColumnProperty to work with latest version of SQLAlchemy (O.4.5 and
   later)
+- Fixed ManyToMany relationships when not using the default schema 
+  (patch from Diez B. Roggisch, closes ticket #48)
 
 Misc:
 - Added AUTHORS list. If you are missing from this list, don't hesitate to
