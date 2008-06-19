@@ -50,8 +50,7 @@ class TestPackages(object):
 
         setup_all(True)
 
-        # 'a_id' in ... is not supported before SA 0.4
-        assert C.table.columns.has_key('a_id')
+        assert 'a_id' in C.table.columns
 
     def test_ref_to_imported_entity_using_name(self):
         sys.modules.pop('tests.a', None)
@@ -66,5 +65,5 @@ class TestPackages(object):
 
         setup_all(True)
 
-        assert C.table.columns.has_key('a_id')
+        assert 'a_id' in C.table.columns
 
