@@ -43,7 +43,7 @@ from elixir.statements import Statement
 
 __version__ = '0.6.0'
 
-__all__ = ['Entity', 'EntityMeta', 'entities',
+__all__ = ['Entity', 'EntityMeta', 'EntityCollection', 'entities',
            'Field', 'has_field', 'with_fields', 
            'has_property', 'GenericProperty', 'ColumnProperty', 'Synonym',
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many',
@@ -95,19 +95,23 @@ metadata = sqlalchemy.MetaData()
 metadatas = set()
 
 # default entity collection
-class AttributeEntityList(list):
-    _entities = {}
-    
+class EntityCollection(list):
     def __init__(self):
-        self._entity_map = {}
+        # _entities is a dict of entities for each frame where there are 
+        # entities defined.
+        self._entities = {}
+#        self._entity_map = {}
         list.__init__(self)
     
-    def map_entity(self, entity, key):
-        if key in self._entity_map:
-            warnings.warn('An entity named `%s` is already registered!' % key)
+    def map_entity(self, entity):
+        self.append(entity)
 
-        # build a dict of entities for each frame where there are entities
-        # defined. 3 is because map_entity is called by:
+        key = entity.__name__
+
+#        if key in self._entity_map:
+#            warnings.warn('An entity named `%s` is already registered!' % key)
+
+        # 3 is because map_entity is called by:
         # EntityDescriptor::setup_options (which is called by)
         # EntityMeta::__init__
         # which is called when the entity is defined
@@ -123,31 +127,36 @@ class AttributeEntityList(list):
                          if isinstance(e, EntityMeta)]:
             caller_entities[ent.__name__] = ent
         
-        self._entity_map[key] = entity
+#        self._entity_map[key] = entity
     
     def resolve(self, key, entity=None):
-        if isinstance(key, EntityMeta):
-            return key
+        '''
+        Resolve a key to an Entity. The optional `entity` argument is the
+        "source" entity when resolving relationship targets.
+        '''
+        path = rsplit(key, '.', 1)
+        classname = path.pop()
+        #XXX: use eval()?
+
+        if path:
+            # Do we have a fully qualified entity name?
+            module = sys.modules[path.pop()]
+            return getattr(module, classname, None)
         else:
-            path = rsplit(key, '.', 1)
-            classname = path.pop()
+            # If not, try the list of entities of the "caller" of the 
+            # source class. Most of the time, this will be the module 
+            # the class is defined in. But it could also be a method 
+            # (inner classes).
+            caller_entities = self._entities[entity._caller]
+            return caller_entities[classname]
 
-            if path:
-                # Do we have a fully qualified entity name?
-                module = sys.modules[path.pop()]
-                return getattr(module, classname, None)
-            else:
-                # If not, try the list of entities of the "caller" of the 
-                # source class. Most of the time, this will be the module 
-                # the class is defined in. But it could also be a method 
-                # (inner classes).
-                caller_entities = self._entities[entity._caller]
-                return caller_entities[classname]
+    def __getattr__(self, key):
+        print "GLOBALS", globals().keys()
+        print "LOCALS", locals().keys()
+        return self.resolve(key)
+#        return self._entity_map.get(key)
 
-    def __getattr__(self, key):        
-        return self._entity_map.get(key)
-
-entities = AttributeEntityList()
+entities = EntityCollection()
 
 
 def create_all(*args, **kwargs):

@@ -1,5 +1,5 @@
 """
-    simple test case
+   test collections
 """
 
 from sqlalchemy import Table
@@ -13,7 +13,7 @@ def setup():
 def teardown():
     cleanup_all()
 
-class TestSetup(object):
+class TestCollections(object):
     def teardown(self):
         cleanup_all()
     
@@ -31,21 +31,16 @@ class TestSetup(object):
         assert isinstance(metadata.tables['person'], Table)
 
     def test_several_collections(self):
-        #FIXME: this test fails because the collections are simple lists and 
-        # the code in entity.py:140 assumes the collection object has a 
-        # map_entity method.
-        collection1 = []
-        collection2 = []
+        collection1 = EntityCollection()
+        collection2 = EntityCollection()
 
         class A(Entity):
             name = Field(String(30))
-            using_options(collection=collection1, autosetup=False, 
-                          tablename='a')
+            using_options(collection=collection1, tablename='a')
 
         class B(Entity):
             name = Field(String(30))
-            using_options(collection=collection2, autosetup=False,
-                          tablename='b')
+            using_options(collection=collection2, tablename='b')
 
         # global collection should be empty
         assert A not in elixir.entities
@@ -59,6 +54,15 @@ class TestSetup(object):
 
         assert isinstance(metadata.tables['a'], Table)
         assert isinstance(metadata.tables['b'], Table)
+
+    def test_getattr(self):
+        collection = EntityCollection()
+
+        class A(Entity):
+            name = Field(String(30))
+            using_options(collection=collection)
+
+        assert collection.A == A
 
     def test_setup_after_cleanup(self):
         class A(Entity):

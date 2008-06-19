@@ -417,8 +417,11 @@ class Relationship(Property):
 
     def target(self):
         if not self._target:
-            collection = self.entity._descriptor.collection
-            self._target = collection.resolve(self.of_kind, self.entity)
+            if isinstance(self.of_kind, EntityMeta):
+                self._target = self.of_kind
+            else:
+                collection = self.entity._descriptor.collection
+                self._target = collection.resolve(self.of_kind, self.entity)
         return self._target
     target = property(target)
     
