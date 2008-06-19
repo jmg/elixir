@@ -701,6 +701,13 @@ class ManyToMany(Relationship):
 
         e1_desc = self.entity._descriptor
         e2_desc = self.target._descriptor
+
+        e1_schema = e1_desc.table_options.get('schema', None)
+        e2_schema = e2_desc.table_options.get('schema', None)
+        assert e1_schema == e2_schema, \
+               "Schema %r for entity %s differs from schema %r of entity %s" \
+               % (e1_schema, self.entity.__name__, 
+                  e2_schema, self.target.__name__)
        
         # First, we compute the name of the table. Note that some of the 
         # intermediary variables are reused later for the constraint 
@@ -774,9 +781,13 @@ class ManyToMany(Relationship):
                     # of the foreign key.
                     fk_colnames.append(colname)
 
-                    # Build the list of columns the foreign key will point
-                    # to.
-                    fk_refcols.append(desc.tablename + '.' + pk_col.key)
+                    # Build the list of column "paths" the foreign key will 
+                    # point to
+                    target_path = "%s.%s" % (desc.tablename, pk_col.key)
+                    schema = desc.table_options.get('schema', None)
+                    if e1_schema is not None:
+                        target_path = "%s.%s" % (e1_schema, target_path)
+                    fk_refcols.append(target_path)
 
                     # Build join clauses (in case we have a self-ref)
                     if self.entity is self.target:
@@ -793,7 +804,7 @@ class ManyToMany(Relationship):
             args = columns + constraints
             
             self.secondary_table = Table(tablename, e1_desc.metadata, 
-                                         *args)
+                                         schema=e1_schema, *args)
 
     def _reflect_table(self, tablename):
         if not self.target._descriptor.autoload:
