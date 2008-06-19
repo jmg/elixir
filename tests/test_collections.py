@@ -16,7 +16,7 @@ def teardown():
 class TestCollections(object):
     def teardown(self):
         cleanup_all()
-    
+
     def test_no_collection(self):
         class Person(Entity):
             name = Field(String(30))

@@ -51,7 +51,7 @@ def do_tst(inheritance, polymorphic, expected_res):
     res = {}
     for class_ in (A, B, C, D, E):
         res[class_.__name__] = class_.query.all()
-        sort_list(res[class_.__name__], key=lambda o: o.__class__.__name__) 
+        sort_list(res[class_.__name__], key=lambda o: o.__class__.__name__)
 
     for query_class in ('A', 'B', 'C', 'D', 'E'):
 #        print res[query_class], expected_res[query_class]
@@ -64,7 +64,7 @@ class TestInheritance(object):
     def teardown(self):
         cleanup_all(True)
 
-    # this is related to SA ticket 866 
+    # this is related to SA ticket 866
     # http://www.sqlalchemy.org/trac/ticket/866
     # the problem was caused by the fact that the attribute-based syntax left
     # the class-attributes in place after initialization (in Elixir 0.4).
@@ -72,7 +72,7 @@ class TestInheritance(object):
         class A(Entity):
             pass
 
-        class B(A): 
+        class B(A):
             name = Field(String(30))
             other = Field(Text)
 
@@ -102,13 +102,13 @@ class TestInheritance(object):
         # this doesn't work on sqlite (because it relies on the database
         # enforcing the foreign key constraint cascade rule).
 #        assert not B.table.select().execute().fetchall()
-    
+
     def test_inheritance_wh_schema(self):
         # I can only test schema stuff on postgres
         if metadata.bind.name != 'postgres':
             print "schema test skipped"
             return
-        
+
         class A(Entity):
             using_options(inheritance="multi")
             using_table_options(schema="test")
@@ -174,8 +174,8 @@ class TestInheritance(object):
 
 #    def test_polymorphic_concrete_inheritance(self):
         # to get this test to work, I need to duplicate parent relationships in
-        # the children. The problem is that the properties are setup post 
-        # mapper setup, so I'll need to add some logic into the add_property 
+        # the children. The problem is that the properties are setup post
+        # mapper setup, so I'll need to add some logic into the add_property
         # method which I'm reluctant to do.
 #        do_tst('concrete', True, {
 #            'A': ('A', 'B', 'C', 'D', 'E'),
@@ -193,7 +193,7 @@ class TestInheritance(object):
             'D': ('D',),
             'E': ('E',),
         })
- 
+
     def test_polymorphic_multitable_inheritance(self):
         do_tst('multi', True, {
             'A': ('A', 'B', 'C', 'D', 'E'),

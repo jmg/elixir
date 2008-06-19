@@ -1,21 +1,21 @@
 '''
 This module provides support for defining properties on your entities. It both
-provides, the `Property` class which acts as a building block for common 
-properties such as fields and relationships (for those, please consult the 
-corresponding modules), but also provides some more specialized properties, 
-such as `ColumnProperty` and `Synonym`. It also provides the GenericProperty 
-class which allows you to wrap any SQLAlchemy property, and its DSL-syntax 
+provides, the `Property` class which acts as a building block for common
+properties such as fields and relationships (for those, please consult the
+corresponding modules), but also provides some more specialized properties,
+such as `ColumnProperty` and `Synonym`. It also provides the GenericProperty
+class which allows you to wrap any SQLAlchemy property, and its DSL-syntax
 equivalent: has_property_.
 
 `has_property`
 --------------
-The ``has_property`` statement allows you to define properties which rely on 
+The ``has_property`` statement allows you to define properties which rely on
 their entity's table (and columns) being defined before they can be declared
 themselves. The `has_property` statement takes two arguments: first the name of
 the property to be defined and second a function (often given as an anonymous
 lambda) taking one argument and returning the desired SQLAlchemy property. That
 function will be called whenever the entity table is completely defined, and
-will be given the .c attribute of the entity as argument (as a way to access 
+will be given the .c attribute of the entity as argument (as a way to access
 the entity columns).
 
 Here is a quick example of how to use ``has_property``.
@@ -25,7 +25,7 @@ Here is a quick example of how to use ``has_property``.
     class OrderLine(Entity):
         has_field('quantity', Float)
         has_field('unit_price', Float)
-        has_property('price', 
+        has_property('price',
                      lambda c: column_property(
                          (c.quantity * c.unit_price).label('price')))
 '''
@@ -33,13 +33,13 @@ Here is a quick example of how to use ``has_property``.
 from elixir.statements import PropertyStatement
 from sqlalchemy.orm import column_property, synonym
 
-__doc_all__ = ['EntityBuilder', 'Property', 'GenericProperty', 
+__doc_all__ = ['EntityBuilder', 'Property', 'GenericProperty',
                'ColumnProperty']
 
 class EntityBuilder(object):
     '''
-    Abstract base class for all entity builders. An Entity builder is a class 
-    of objects which can be added to an Entity (usually by using special 
+    Abstract base class for all entity builders. An Entity builder is a class
+    of objects which can be added to an Entity (usually by using special
     properties or statements) to "build" that entity. Building an entity,
     meaning to add columns to its "main" table, create other tables, add
     properties to its mapper, ... To do so an EntityBuilder must override the
@@ -65,16 +65,16 @@ class EntityBuilder(object):
         pass
 
     def create_properties(self):
-        pass    
+        pass
 
     def before_mapper(self):
-        pass    
+        pass
 
     def after_mapper(self):
-        pass    
+        pass
 
     def finalize(self):
-        pass    
+        pass
 
 
 class CounterMeta(type):
@@ -97,7 +97,7 @@ class Property(EntityBuilder):
     Abstract base class for all properties of an Entity.
     '''
     __metaclass__ = CounterMeta
-    
+
     def __init__(self, *args, **kwargs):
         self.entity = None
         self.name = None
@@ -134,7 +134,7 @@ class GenericProperty(Property):
             price = GenericProperty(lambda c: column_property(
                              (c.quantity * c.unit_price).label('price')))
     '''
-    
+
     def __init__(self, prop):
         super(GenericProperty, self).__init__()
         self.prop = prop
@@ -153,14 +153,14 @@ class GenericProperty(Property):
 
 class ColumnProperty(GenericProperty):
     '''
-    A specialized form of the GenericProperty to generate SQLAlchemy 
-    ``column_property``'s. 
-    
-    It takes a single argument, which is a function (often 
-    given as an anonymous lambda) taking one argument and returning the 
+    A specialized form of the GenericProperty to generate SQLAlchemy
+    ``column_property``'s.
+
+    It takes a single argument, which is a function (often
+    given as an anonymous lambda) taking one argument and returning the
     desired (scalar-returning) SQLAlchemy ClauseElement. That function will be
-    called whenever the entity table is completely defined, and will be given 
-    the .c attribute of the entity as argument (as a way to access the entity 
+    called whenever the entity table is completely defined, and will be given
+    the .c attribute of the entity as argument (as a way to access the entity
     columns). The ColumnProperty will first wrap your ClauseElement in a label
     with the same name as the property, then wrap that in a column_property.
 
@@ -171,7 +171,7 @@ class ColumnProperty(GenericProperty):
             unit_price = Field(Numeric)
             price = ColumnProperty(lambda c: c.quantity * c.unit_price)
 
-    Please look at the `corresponding SQLAlchemy 
+    Please look at the `corresponding SQLAlchemy
     documentation <http://www.sqlalchemy.org/docs/04/mappers.html
     #advdatamapping_mapper_expressions>`_ for details.
     '''
@@ -183,10 +183,10 @@ class ColumnProperty(GenericProperty):
 class Synonym(GenericProperty):
     '''
     This class represents a synonym property of another property (column, ...)
-    of an entity.  As opposed to the `synonym` kwarg to the Field class (which 
-    share the same goal), this class can be used to define a synonym of a 
+    of an entity.  As opposed to the `synonym` kwarg to the Field class (which
+    share the same goal), this class can be used to define a synonym of a
     property defined in a parent class (of the current class). On the other
-    hand, it cannot define a synonym for the purpose of using a standard python 
+    hand, it cannot define a synonym for the purpose of using a standard python
     property in queries. See the Field class for details on that usage.
 
     .. sourcecode:: python

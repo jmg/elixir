@@ -1,9 +1,9 @@
 '''
-This module provides support for defining the fields (columns) of your 
+This module provides support for defining the fields (columns) of your
 entities. Elixir currently supports two syntaxes to do so: the default
 `Attribute-based syntax`_ as well as the has_field_ DSL statement.
 
-Note that the old with_fields_ statement is currently deprecated in favor of 
+Note that the old with_fields_ statement is currently deprecated in favor of
 the `Attribute-based syntax`_.
 
 Attribute-based syntax
@@ -27,17 +27,17 @@ Here is a quick example of how to use the object-oriented syntax.
         email = property(_get_email, _set_email)
 
 
-The Field class takes one mandatory argument, which is its type. Please refer 
-to SQLAlchemy documentation for a list of `types supported by SQLAlchemy 
+The Field class takes one mandatory argument, which is its type. Please refer
+to SQLAlchemy documentation for a list of `types supported by SQLAlchemy
 <http://www.sqlalchemy.org/docs/04/types.html>`_.
 
-Following that first mandatory argument, fields can take any number of 
-optional keyword arguments. Please note that all the **arguments** that are 
-**not specifically processed by Elixir**, as mentioned in the documentation 
-below **are passed on to the SQLAlchemy ``Column`` object**. Please refer to 
-the `SQLAlchemy Column object's documentation 
+Following that first mandatory argument, fields can take any number of
+optional keyword arguments. Please note that all the **arguments** that are
+**not specifically processed by Elixir**, as mentioned in the documentation
+below **are passed on to the SQLAlchemy ``Column`` object**. Please refer to
+the `SQLAlchemy Column object's documentation
 <http://www.sqlalchemy.org/docs/04/sqlalchemy_schema.html
-#docstrings_sqlalchemy.schema_Column>`_ for more details about other 
+#docstrings_sqlalchemy.schema_Column>`_ for more details about other
 supported keyword arguments.
 
 The following Elixir-specific arguments are supported:
@@ -77,7 +77,7 @@ has_field
 The `has_field` statement allows you to define fields one at a time.
 
 The first argument is the name of the field, the second is its type. Following
-these, any number of keyword arguments can be specified for additional 
+these, any number of keyword arguments can be specified for additional
 behavior. The following arguments are supported:
 
 +-------------------+---------------------------------------------------------+
@@ -110,13 +110,13 @@ Here is a quick example of how to use ``has_field``.
 with_fields
 -----------
 The `with_fields` statement is **deprecated** in favor of the `attribute-based
-syntax`_. 
+syntax`_.
 
-It allows you to define all fields of an entity at once. 
+It allows you to define all fields of an entity at once.
 Each keyword argument to this statement represents one field, which should
-be a `Field` object. The first argument to a Field object is its type. 
+be a `Field` object. The first argument to a Field object is its type.
 Following it, any number of keyword arguments can be specified for
-additional behavior. The `with_fields` statement supports the same keyword 
+additional behavior. The `with_fields` statement supports the same keyword
 arguments than the `has_field` statement.
 
 Here is a quick example of how to use ``with_fields``.
@@ -144,16 +144,16 @@ __doc_all__ = ['Field']
 class Field(Property):
     '''
     Represents the definition of a 'field' on an entity.
-    
+
     This class represents a column on the table where the entity is stored.
     This object is only used with the `with_fields` syntax for defining all
     fields for an entity at the same time. The `has_field` syntax does not
     require the manual creation of this object.
     '''
-    
+
     def __init__(self, type, *args, **kwargs):
         super(Field, self).__init__()
-        
+
         self.colname = kwargs.pop('colname', None)
         self.synonym = kwargs.pop('synonym', None)
         self.deferred = kwargs.pop('deferred', False)
@@ -164,7 +164,7 @@ class Field(Property):
 
         self.column = None
         self.property = None
-        
+
         self.args = args
         self.kwargs = kwargs
 
@@ -204,14 +204,14 @@ class Field(Property):
             self.entity._descriptor.add_property(self.name, self.property)
 
         if self.synonym:
-            self.entity._descriptor.add_property(self.synonym, 
+            self.entity._descriptor.add_property(self.synonym,
                                                  synonym(self.name))
 
 
 def has_field_handler(entity, name, *args, **kwargs):
     if 'through' in kwargs:
-        setattr(entity, name, 
-                association_proxy(kwargs.pop('through'), 
+        setattr(entity, name,
+                association_proxy(kwargs.pop('through'),
                                   kwargs.pop('attribute', name),
                                   **kwargs))
         return

@@ -13,13 +13,13 @@ def setup():
 class TestSpecialProperties(object):
     def teardown(self):
         cleanup_all(True)
-    
+
     def test_generic_property(self):
         class Tag(Entity):
             score1 = Field(Float)
             score2 = Field(Float)
 
-            score = GenericProperty( 
+            score = GenericProperty(
                          lambda c: column_property(
                              (c.score1 * c.score2).label('score')))
         setup_all(True)
@@ -29,7 +29,7 @@ class TestSpecialProperties(object):
 
         session.flush()
         session.clear()
-        
+
         for tag in Tag.query.all():
             assert tag.score == tag.score1 * tag.score2
 
@@ -47,7 +47,7 @@ class TestSpecialProperties(object):
 
         session.flush()
         session.clear()
-        
+
         for tag in Tag.query.all():
             assert tag.score == tag.score1 * tag.score2
 
@@ -55,36 +55,36 @@ class TestSpecialProperties(object):
         class Tag(Entity):
             score1 = Field(Float)
             score2 = Field(Float)
- 
+
             user = ManyToOne('User')
- 
+
             score = ColumnProperty(lambda c: c.score1 * c.score2)
- 
+
         class User(Entity):
             name = Field(String(16))
             category = ManyToOne('Category')
             tags = OneToMany('Tag', lazy=False)
-            score = ColumnProperty(lambda c: 
+            score = ColumnProperty(lambda c:
                                    select([func.sum(Tag.score)],
                                           Tag.user_id == c.id).as_scalar())
- 
+
         class Category(Entity):
             name = Field(String(16))
-            users = OneToMany('User', lazy=False) 
- 
-            score = ColumnProperty(lambda c: 
+            users = OneToMany('User', lazy=False)
+
+            score = ColumnProperty(lambda c:
                                    select([func.avg(User.score)],
                                           User.category_id == c.id
                                          ).as_scalar())
         setup_all(True)
- 
-        u1 = User(name='joe', tags=[Tag(score1=5.0, score2=3.0), 
+
+        u1 = User(name='joe', tags=[Tag(score1=5.0, score2=3.0),
                                     Tag(score1=55.0, score2=1.0)])
- 
-        u2 = User(name='bar', tags=[Tag(score1=5.0, score2=4.0), 
+
+        u2 = User(name='bar', tags=[Tag(score1=5.0, score2=4.0),
                                     Tag(score1=50.0, score2=1.0),
                                     Tag(score1=15.0, score2=2.0)])
- 
+
         c1 = Category(name='dummy', users=[u1, u2])
 
         session.flush()
@@ -101,7 +101,7 @@ class TestSpecialProperties(object):
         class Tag(Entity):
             has_field('score1', Float)
             has_field('score2', Float)
-            has_property('score', 
+            has_property('score',
                          lambda c: column_property(
                              (c.score1 * c.score2).label('score')))
 
@@ -112,7 +112,7 @@ class TestSpecialProperties(object):
 
         session.flush()
         session.clear()
-        
+
         for tag in Tag.query.all():
             assert tag.score == tag.score1 * tag.score2
 
@@ -156,9 +156,9 @@ class TestSpecialProperties(object):
 
         session.flush()
         session.clear()
-       
+
         p = Person.get_by(email='x@z.com')
-        
+
         assert p.name == 'Mr. X'
 
     def test_synonym_class(self):
@@ -212,4 +212,4 @@ class TestSpecialProperties(object):
         a = A.query.one()
 
         assert a.name == 'a1'
-        
+

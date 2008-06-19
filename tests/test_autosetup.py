@@ -16,7 +16,7 @@ def teardown():
 class TestSetup(object):
     def teardown(self):
         cleanup_all()
-    
+
     def test_autosetup_manual_setup_all(self):
         class Person(Entity):
             name = Field(String(30))
@@ -24,7 +24,7 @@ class TestSetup(object):
 
         # check that we have a fake table installed
         assert 'person' in metadata.tables
-        assert isinstance(metadata.tables['person'], 
+        assert isinstance(metadata.tables['person'],
                           elixir.entity.TriggerProxy)
 
         setup_all()
@@ -39,13 +39,13 @@ class TestSetup(object):
 
         # check that we have a fake table installed
         assert 'person' in metadata.tables
-        assert isinstance(metadata.tables['person'], 
+        assert isinstance(metadata.tables['person'],
                           elixir.entity.TriggerProxy)
 
         cleanup_all()
 
         assert 'person' not in metadata.tables
-    
+
     def test_drop_create_drop(self):
         class User(Entity):
             using_options(tablename='users')
@@ -71,7 +71,7 @@ class TestSetup(object):
 
         # check that accessing the table didn't trigger the setup
         assert 'person' not in metadata.tables
-        
+
         setup_all()
 
         assert isinstance(metadata.tables['person'], Table)
@@ -84,14 +84,14 @@ class TestSetup(object):
         assert 'person' in metadata.tables
         homer = Person(name="Homer Simpson")
         assert isinstance(metadata.tables['person'], Table)
-        
+
     def test_getattr(self):
         class Person(Entity):
             name = Field(String(30))
             using_options(autosetup=True, tablename='person')
 
         tablename = Person.table.name
-        assert tablename == 'person' 
+        assert tablename == 'person'
         assert isinstance(metadata.tables['person'], Table)
 
     def test_createall(self):
@@ -122,7 +122,7 @@ class TestSetup(object):
     # in SA 0.4.2).
 #    def test_mapper(self):
         # we want to hit the mapper directly (without hitting any of the
-        # other triggers first). We do so by getting a query object using a 
+        # other triggers first). We do so by getting a query object using a
         # manual session.
 #        class Person(Entity):
 #            name = Field(String(30))

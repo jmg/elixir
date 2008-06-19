@@ -1,10 +1,10 @@
 from elixir import *
 from elixir.ext.encrypted import acts_as_encrypted
- 
+
 
 def setup():
     global Person, Pet
-    
+
     class Person(Entity):
         name = Field(String(50))
         password = Field(String(40))
@@ -18,7 +18,7 @@ def setup():
         acts_as_encrypted(for_fields=['codename'], with_secret='secret2')
         owner = ManyToOne('Person')
 
-    
+
     metadata.bind = 'sqlite:///'
 
 
@@ -29,15 +29,15 @@ def teardown():
 class TestEncryption(object):
     def setup(self):
         setup_all(True)
-    
+
     def teardown(self):
         drop_all()
         session.clear()
-    
-    def test_encryption(self):    
+
+    def test_encryption(self):
         jonathan = Person(
-            name=u'Jonathan LaCour', 
-            password=u's3cr3tw0RD', 
+            name=u'Jonathan LaCour',
+            password=u's3cr3tw0RD',
             ssn=u'123-45-6789'
         )
         winston = Pet(

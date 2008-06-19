@@ -28,9 +28,9 @@ from elixir.properties import Property
 __doc_all__ = ['Entity', 'EntityMeta']
 
 
-try: 
+try:
     from sqlalchemy.orm import ScopedSession
-except ImportError: 
+except ImportError:
     # Not on sqlalchemy version 0.4
     ScopedSession = type(None)
 
@@ -56,7 +56,7 @@ def _do_mapping(session, cls, *args, **kwargs):
             def __call__(s):
                 return session.registry().query(cls)
 
-        if not 'query' in cls.__dict__: 
+        if not 'query' in cls.__dict__:
             cls.query = query()
 
         return mapper(cls, extension=extension, *args, **kwargs)
@@ -69,7 +69,7 @@ class EntityDescriptor(object):
     '''
     EntityDescriptor describes fields and options needed for table creation.
     '''
-    
+
     def __init__(self, entity):
         entity.table = None
         entity.mapper = None
@@ -89,7 +89,7 @@ class EntityDescriptor(object):
             if isinstance(base, EntityMeta) and is_entity(base):
                 if self.parent:
                     raise Exception('%s entity inherits from several entities,'
-                                    ' and this is not supported.' 
+                                    ' and this is not supported.'
                                     % self.entity.__name__)
                 else:
                     self.parent = base
@@ -116,18 +116,18 @@ class EntityDescriptor(object):
                                   elixir.entities)
 
         for option in ('autosetup', 'inheritance', 'polymorphic', 'identity',
-                       'autoload', 'tablename', 'shortnames', 
-                       'auto_primarykey', 'version_id_col', 
+                       'autoload', 'tablename', 'shortnames',
+                       'auto_primarykey', 'version_id_col',
                        'allowcoloverride'):
             setattr(self, option, options.options_defaults[option])
 
         for option_dict in ('mapper_options', 'table_options'):
-            setattr(self, option_dict, 
+            setattr(self, option_dict,
                     options.options_defaults[option_dict].copy())
 
     def setup_options(self):
         '''
-        Setup any values that might depend on using_options. For example, the 
+        Setup any values that might depend on using_options. For example, the
         tablename or the metadata.
         '''
         elixir.metadatas.add(self.metadata)
@@ -143,9 +143,9 @@ class EntityDescriptor(object):
             objectstore = elixir.Objectstore(session)
         elif not hasattr(session, 'registry'):
             # Both SessionContext and ScopedSession have a registry attribute,
-            # but objectstores (whether Elixir's or Activemapper's) don't, so 
+            # but objectstores (whether Elixir's or Activemapper's) don't, so
             # if we are here, it means an Objectstore is used for the session.
-#XXX: still true for activemapper post 0.4?            
+#XXX: still true for activemapper post 0.4?
             objectstore = session
             session = objectstore.context
 
@@ -192,13 +192,13 @@ class EntityDescriptor(object):
 
     def create_pk_cols(self):
         """
-        Create primary_key columns. That is, call the 'create_pk_cols' 
-        builders then add a primary key to the table if it hasn't already got 
-        one and needs one. 
-        
-        This method is "semi-recursive" in some cases: it calls the 
+        Create primary_key columns. That is, call the 'create_pk_cols'
+        builders then add a primary key to the table if it hasn't already got
+        one and needs one.
+
+        This method is "semi-recursive" in some cases: it calls the
         create_keys method on ManyToOne relationships and those in turn call
-        create_pk_cols on their target. It shouldn't be possible to have an 
+        create_pk_cols on their target. It shouldn't be possible to have an
         infinite loop since a loop of primary_keys is not a valid situation.
         """
         if self._pk_col_done:
@@ -209,11 +209,11 @@ class EntityDescriptor(object):
         if not self.autoload:
             if self.parent:
                 if self.inheritance == 'multi':
-                    # Add columns with foreign keys to the parent's primary 
-                    # key columns 
+                    # Add columns with foreign keys to the parent's primary
+                    # key columns
                     parent_desc = self.parent._descriptor
                     schema = parent_desc.table_options.get('schema', None)
-                    tablename = parent_desc.tablename 
+                    tablename = parent_desc.tablename
                     if schema is not None:
                         tablename = "%s.%s" % (schema, tablename)
                     for pk_col in parent_desc.primary_keys:
@@ -222,7 +222,7 @@ class EntityDescriptor(object):
                                    'key': pk_col.key}
 
                         # It seems like SA ForeignKey is not happy being given
-                        # a real column object when said column is not yet 
+                        # a real column object when said column is not yet
                         # attached to a table
                         pk_col_name = "%s.%s" % (tablename, pk_col.key)
                         fk = ForeignKey(pk_col_name, ondelete='cascade')
@@ -241,7 +241,7 @@ class EntityDescriptor(object):
                     colname = options.DEFAULT_AUTO_PRIMARYKEY_NAME
 
                 self.add_column(
-                    Column(colname, options.DEFAULT_AUTO_PRIMARYKEY_TYPE, 
+                    Column(colname, options.DEFAULT_AUTO_PRIMARYKEY_TYPE,
                            primary_key=True))
         self._pk_col_done = True
 
@@ -250,10 +250,10 @@ class EntityDescriptor(object):
 
     def before_table(self):
         self.call_builders('before_table')
-        
+
     def setup_table(self, only_autoloaded=False):
         '''
-        Create a SQLAlchemy table-object with all columns that have been 
+        Create a SQLAlchemy table-object with all columns that have been
         defined up to this point.
         '''
         if self.entity.table:
@@ -270,29 +270,29 @@ class EntityDescriptor(object):
             if self.parent:
                 if self.inheritance == 'single':
                     # we know the parent is setup before the child
-                    self.entity.table = self.parent.table 
+                    self.entity.table = self.parent.table
 
-                    # re-add the entity columns to the parent entity so that 
-                    # they are added to the parent's table (whether the 
+                    # re-add the entity columns to the parent entity so that
+                    # they are added to the parent's table (whether the
                     # parent's table is already setup or not).
                     for col in self.columns:
                         self.parent._descriptor.add_column(col)
                     for constraint in self.constraints:
                         self.parent._descriptor.add_constraint(constraint)
                     return
-                elif self.inheritance == 'concrete': 
-                    #TODO: we should also copy columns from the parent table 
+                elif self.inheritance == 'concrete':
+                    #TODO: we should also copy columns from the parent table
                     # if the parent is a base (abstract?) entity (whatever the
                     # inheritance type -> elif will need to be changed)
 
-                    # Copy all non-primary key columns from parent table 
+                    # Copy all non-primary key columns from parent table
                     # (primary key columns have already been copied earlier).
                     for col in self.parent._descriptor.columns:
                         if not col.primary_key:
                             self.add_column(col.copy())
 
-                    #FIXME: use the public equivalent of _get_colspec when 
-                    #available 
+                    #FIXME: use the public equivalent of _get_colspec when
+                    #available
                     for con in self.parent._descriptor.constraints:
                         self.add_constraint(
                             ForeignKeyConstraint(
@@ -305,7 +305,7 @@ class EntityDescriptor(object):
             if self.polymorphic and \
                self.inheritance in ('single', 'multi') and \
                self.children and not self.parent:
-                self.add_column(Column(self.polymorphic, 
+                self.add_column(Column(self.polymorphic,
                                        options.POLYMORPHIC_COL_TYPE))
 
             if self.version_id_col:
@@ -314,8 +314,8 @@ class EntityDescriptor(object):
                 self.add_column(Column(self.version_id_col, Integer))
 
             args = self.columns + self.constraints + self.table_args
-        
-        self.entity.table = Table(self.tablename, self.metadata, 
+
+        self.entity.table = Table(self.tablename, self.metadata,
                                   *args, **kwargs)
 
     def setup_reltables(self):
@@ -329,11 +329,11 @@ class EntityDescriptor(object):
             def proxy_method(self, mapper, connection, instance):
                 for func in methods:
                     ret = func(instance)
-                    # I couldn't commit myself to force people to 
-                    # systematicaly return EXT_CONTINUE in all their event 
+                    # I couldn't commit myself to force people to
+                    # systematicaly return EXT_CONTINUE in all their event
                     # methods.
                     # But not doing that diverge to how SQLAlchemy works.
-                    # I should try to convince Mike to do EXT_CONTINUE by 
+                    # I should try to convince Mike to do EXT_CONTINUE by
                     # default, and stop processing as the special case.
 #                    if ret != EXT_CONTINUE:
                     if ret is not None and ret != EXT_CONTINUE:
@@ -350,14 +350,14 @@ class EntityDescriptor(object):
                     event_methods.append(method)
         if not methods:
             return
-        
+
         # transform that list into methods themselves
         for event in methods:
             methods[event] = make_proxy_method(methods[event])
-        
+
         # create a custom mapper extension class, tailored to our entity
         ext = type('EventMapperExtension', (MapperExtension,), methods)()
-        
+
         # then, make sure that the entity's mapper has our mapper extension
         self.add_mapper_extension(ext)
 
@@ -373,7 +373,7 @@ class EntityDescriptor(object):
     def translate_order_by(self, order_by):
         if isinstance(order_by, basestring):
             order_by = [order_by]
-        
+
         order = list()
         for colname in order_by:
             col = self.get_column(colname.strip('-'))
@@ -396,7 +396,7 @@ class EntityDescriptor(object):
         kwargs = self.mapper_options
         if self.order_by:
             kwargs['order_by'] = self.translate_order_by(self.order_by)
-        
+
         if self.version_id_col:
             kwargs['version_id_col'] = self.get_column(self.version_id_col)
 
@@ -415,9 +415,9 @@ class EntityDescriptor(object):
                 if self.children:
                     if self.inheritance == 'concrete':
                         keys = [(self.identity, self.entity.table)]
-                        keys.extend([(child._descriptor.identity, child.table) 
+                        keys.extend([(child._descriptor.identity, child.table)
                                      for child in self._get_children()])
-                        #XXX: we might need to change the alias name so that 
+                        #XXX: we might need to change the alias name so that
                         # children (which are parent themselves) don't end up
                         # with the same alias than their parent?
                         pjoin = polymorphic_union(
@@ -431,8 +431,8 @@ class EntityDescriptor(object):
                             self.get_column(self.polymorphic)
 
                     #TODO: this is an optimization, and it breaks the multi
-                    # table polymorphic inheritance test with a relation. 
-                    # So I turn it off for now. We might want to provide an 
+                    # table polymorphic inheritance test with a relation.
+                    # So I turn it off for now. We might want to provide an
                     # option to turn it on.
 #                    if self.inheritance == 'multi':
 #                        children = self._get_children()
@@ -485,42 +485,42 @@ class EntityDescriptor(object):
         '''
         if check_duplicate is None:
             check_duplicate = not self.allowcoloverride
-        
+
         if check_duplicate and self.get_column(col.key, False) is not None:
-            raise Exception("Column '%s' already exist in '%s' ! " % 
+            raise Exception("Column '%s' already exist in '%s' ! " %
                             (col.key, self.entity.__name__))
         self._columns.append(col)
-        
+
         if col.primary_key:
             self.has_pk = True
 
         # Autosetup triggers shouldn't be active anymore at this point, so we
-        # can theoretically access the entity's table safely. But the problem 
-        # is that if, for some reason, the trigger removal phase didn't 
-        # happen, we'll get an infinite loop. So we just make sure we don't 
+        # can theoretically access the entity's table safely. But the problem
+        # is that if, for some reason, the trigger removal phase didn't
+        # happen, we'll get an infinite loop. So we just make sure we don't
         # get one in any case.
         table = type.__getattribute__(self.entity, 'table')
         if table:
             if check_duplicate and col.key in table.columns.keys():
-                raise Exception("Column '%s' already exist in table '%s' ! " % 
+                raise Exception("Column '%s' already exist in table '%s' ! " %
                                 (col.key, table.name))
             table.append_column(col)
 
     def add_constraint(self, constraint):
         self.constraints.append(constraint)
-        
+
         table = self.entity.table
         if table:
             table.append_constraint(constraint)
 
     def add_property(self, name, property, check_duplicate=True):
         if check_duplicate and name in self.properties:
-            raise Exception("property '%s' already exist in '%s' ! " % 
+            raise Exception("property '%s' already exist in '%s' ! " %
                             (name, self.entity.__name__))
         self.properties[name] = property
 
-#FIXME: something like this is needed to propagate the relationships from 
-# parent entities to their children in a concrete inheritance scenario. But 
+#FIXME: something like this is needed to propagate the relationships from
+# parent entities to their children in a concrete inheritance scenario. But
 # this doesn't work because of the backref matching code.
 #        if self.children and self.inheritance == 'concrete':
 #            for child in self.children:
@@ -529,7 +529,7 @@ class EntityDescriptor(object):
         mapper = self.entity.mapper
         if mapper:
             mapper.add_property(name, property)
-        
+
     def add_mapper_extension(self, extension):
         extensions = self.mapper_options.get('extension', [])
         if not isinstance(extensions, list):
@@ -584,14 +584,14 @@ class EntityDescriptor(object):
             return None
 
     def columns(self):
-        #FIXME: this would be more correct but it breaks inheritance, so I'll 
+        #FIXME: this would be more correct but it breaks inheritance, so I'll
         # use the old test for now.
 #        if self.entity.table:
-        if self.autoload: 
+        if self.autoload:
             return self.entity.table.columns
         else:
-            #FIXME: depending on the type of inheritance, we should also 
-            # return the parent entity's columns (for example for order_by 
+            #FIXME: depending on the type of inheritance, we should also
+            # return the parent entity's columns (for example for order_by
             # using a column defined in the parent.
             return self._columns
     columns = property(columns)
@@ -651,7 +651,7 @@ class TriggerAttribute(object):
 
 def is_entity(cls):
     """
-    Scan the bases classes of `cls` to see if any is an instance of 
+    Scan the bases classes of `cls` to see if any is an instance of
     EntityMeta. If we don't find any, it means it is either an unrelated class
     or an entity base class (like the 'Entity' class).
     """
@@ -662,25 +662,25 @@ def is_entity(cls):
 
 class EntityMeta(type):
     """
-    Entity meta class. 
-    You should only use it directly if you want to define your own base class 
+    Entity meta class.
+    You should only use it directly if you want to define your own base class
     for your entities (ie you don't want to use the provided 'Entity' class).
     """
 
     def __init__(cls, name, bases, dict_):
         # Only process further subclasses of the base classes (Entity et al.),
-        # not the base classes themselves. We don't want the base entities to 
-        # be registered in an entity collection, nor to have a table name and 
-        # so on. 
+        # not the base classes themselves. We don't want the base entities to
+        # be registered in an entity collection, nor to have a table name and
+        # so on.
         if not is_entity(cls):
             return
 
         # create the entity descriptor
         desc = cls._descriptor = EntityDescriptor(cls)
 
-        # Process attributes (using the assignment syntax), looking for 
+        # Process attributes (using the assignment syntax), looking for
         # 'Property' instances and attaching them to this entity.
-        properties = [(name, attr) for name, attr in dict_.iteritems() 
+        properties = [(name, attr) for name, attr in dict_.iteritems()
                                    if isinstance(attr, Property)]
         sorted_props = sorted(properties, key=lambda i: i[1]._counter)
 
@@ -695,7 +695,7 @@ class EntityMeta(type):
         desc.setup_options()
 
         # create trigger proxies
-        # TODO: support entity_name... It makes sense only for autoloaded 
+        # TODO: support entity_name... It makes sense only for autoloaded
         # tables for now, and would make more sense if we support "external"
         # tables
         if desc.autosetup:
@@ -729,17 +729,17 @@ def _install_autosetup_triggers(cls, entity_name=None):
     md = cls._descriptor.metadata
     md.tables[cls._table_key] = table_proxy
 
-    # We need to monkeypatch the metadata's table iterator method because 
-    # otherwise it doesn't work if the setup is triggered by the 
+    # We need to monkeypatch the metadata's table iterator method because
+    # otherwise it doesn't work if the setup is triggered by the
     # metadata.create_all().
-    # This is because ManyToMany relationships add tables AFTER the list 
-    # of tables that are going to be created is "computed" 
+    # This is because ManyToMany relationships add tables AFTER the list
+    # of tables that are going to be created is "computed"
     # (metadata.tables.values()).
     # see:
-    # - table_iterator method in MetaData class in sqlalchemy/schema.py 
+    # - table_iterator method in MetaData class in sqlalchemy/schema.py
     # - visit_metadata method in sqlalchemy/ansisql.py
     original_table_iterator = md.table_iterator
-    if not hasattr(original_table_iterator, 
+    if not hasattr(original_table_iterator,
                    '_non_elixir_patched_iterator'):
         def table_iterator(*args, **kwargs):
             elixir.setup_all()
@@ -772,7 +772,7 @@ def _cleanup_autosetup_triggers(cls):
     desc = cls._descriptor
     md = desc.metadata
 
-    # the fake table could have already been removed (namely in a 
+    # the fake table could have already been removed (namely in a
     # single table inheritance scenario)
     md.tables.pop(cls._table_key, None)
 
@@ -783,7 +783,7 @@ def _cleanup_autosetup_triggers(cls):
 
     del cls._has_triggers
 
-    
+
 def setup_entities(entities):
     '''Setup all entities in the list passed as argument'''
 
@@ -807,16 +807,16 @@ def setup_entities(entities):
 
 def cleanup_entities(entities):
     """
-    Try to revert back the list of entities passed as argument to the state 
-    they had just before their setup phase. It will not work entirely for 
+    Try to revert back the list of entities passed as argument to the state
+    they had just before their setup phase. It will not work entirely for
     autosetup entities as we need to remove the autosetup triggers.
 
-    As of now, this function is *not* functional in that it doesn't revert to 
-    the exact same state the entities were before setup. For example, the 
+    As of now, this function is *not* functional in that it doesn't revert to
+    the exact same state the entities were before setup. For example, the
     properties do not work yet as those would need to be regenerated (since the
-    columns they are based on are regenerated too -- and as such the 
-    corresponding joins are not correct) but this doesn't happen because of 
-    the way relationship setup is designed to be called only once (especially 
+    columns they are based on are regenerated too -- and as such the
+    corresponding joins are not correct) but this doesn't happen because of
+    the way relationship setup is designed to be called only once (especially
     the backref stuff in create_properties).
     """
     for entity in entities:
@@ -829,7 +829,7 @@ def cleanup_entities(entities):
 
         entity.table = None
         entity.mapper = None
-        
+
         desc._pk_col_done = False
         desc.has_pk = False
         desc._columns = []
@@ -840,27 +840,27 @@ def cleanup_entities(entities):
 class Entity(object):
     '''
     The base class for all entities
-    
+
     All Elixir model objects should inherit from this class. Statements can
     appear within the body of the definition of an entity to define its
     fields, relationships, and other options.
-    
+
     Here is an example:
 
     .. sourcecode:: python
-    
+
         class Person(Entity):
             name = Field(Unicode(128))
             birthdate = Field(DateTime, default=datetime.now)
-    
+
     Please note, that if you don't specify any primary keys, Elixir will
     automatically create one called ``id``.
-    
+
     For further information, please refer to the provided examples or
     tutorial.
     '''
     __metaclass__ = EntityMeta
-    
+
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -890,10 +890,10 @@ class Entity(object):
 
                     # Build a lookup dict: {(pk1, pk2): value}
                     lookup = dict([
-                        (tuple([getattr(o, c.name) for c in pkey]), o) 
+                        (tuple([getattr(o, c.name) for c in pkey]), o)
                         for o in dbdata])
                     for row in data[rname]:
-                        # If any primary key columns are missing or None, 
+                        # If any primary key columns are missing or None,
                         # create a new object
                         if [1 for c in pkey if not row.get(c.name)]:
                             subobj = rel.mapper.class_()
@@ -903,7 +903,7 @@ class Entity(object):
                             subobj = lookup.pop(key, None)
 
                             # If the row isn't found, we must fail the request
-                            # in a web scenario, this could be a parameter 
+                            # in a web scenario, this could be a parameter
                             # tampering attack
                             if not subobj:
                                 raise sqlalchemy.exceptions.ArgumentError(
@@ -931,7 +931,7 @@ class Entity(object):
         for table in self.mapper.tables:
             for col in table.c:
                 columns.append(col)
-            
+
         data = dict([(col.name, getattr(self, col.name))
                      for col in columns if col.name not in exclude])
         for rname, rdeep in deep.iteritems():
@@ -960,7 +960,7 @@ class Entity(object):
     def expunge(self, *args, **kwargs):
         return object_session(self).expunge(self, *args, **kwargs)
 
-    # This bunch of session methods, along with all the query methods below 
+    # This bunch of session methods, along with all the query methods below
     # only make sense when using a global/scoped/contextual session.
     def _global_session(self):
         return self._descriptor.session.registry()

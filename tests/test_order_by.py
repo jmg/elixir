@@ -7,7 +7,7 @@ from elixir import *
 
 def setup():
     global Record, Artist, Genre
-    
+
     class Record(Entity):
         title = Field(String(100))
         year = Field(Integer)
@@ -42,11 +42,11 @@ def setup():
         ("Metropolis Pt. 2: Scenes From A Memory", 1999),
         ("Octavarium", 2005),
         # 2005 is a mistake to make the test more interesting
-        ("Six Degrees Of Inner Turbulence", 2005), 
+        ("Six Degrees Of Inner Turbulence", 2005),
         ("Train Of Thought", 2003),
         ("When Dream And Day Unite", 1989)
     )
-    
+
     for title, year in titles:
         Record(title=title, artist=artist, year=year, genres=[genre])
 
@@ -61,7 +61,7 @@ def teardown():
 class TestOrderBy(object):
     def teardown(self):
         session.clear()
-    
+
     def test_mapper_order_by(self):
         records = Record.query.all()
 

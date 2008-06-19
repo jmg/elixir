@@ -55,7 +55,7 @@ def setup():
         children = OneToMany('Person')
         pets = OneToMany('Animal', inverse='owner')
         animals = OneToMany('Animal', inverse='feeder')
-        categories = ManyToMany('Category', 
+        categories = ManyToMany('Category',
                                 tablename='person_category')
         appreciate = ManyToMany('Person',
                                 tablename='person_person',
@@ -70,7 +70,7 @@ def setup():
 
 
     class Category(Entity):
-        persons = ManyToMany('Person', 
+        persons = ManyToMany('Person',
                                 tablename='person_category')
 
     metadata.bind = meta.bind
@@ -86,24 +86,24 @@ def teardown():
 class TestAutoload(object):
     def setup(self):
         create_all()
-        
+
     def teardown(self):
         drop_all()
         session.clear()
-    
+
     def test_simple(self):
         snowball = Animal(name="Snowball II")
         slh = Animal(name="Santa's Little Helper")
         homer = Person(name="Homer", animals=[snowball, slh], pets=[slh])
         lisa = Person(name="Lisa", pets=[snowball])
-        
+
         session.flush()
         session.clear()
-        
+
         homer = Person.get_by(name="Homer")
         lisa = Person.get_by(name="Lisa")
         slh = Animal.get_by(name="Santa's Little Helper")
-        
+
         assert len(homer.animals) == 2
         assert homer == lisa.pets[0].feeder
         assert homer == slh.owner
@@ -113,16 +113,16 @@ class TestAutoload(object):
         homer = Person(name="Homer")
         bart = Person(name="Bart")
         lisa = Person(name="Lisa")
-        
+
         grampa.children.append(homer)
         homer.children.append(bart)
         lisa.father = homer
-        
+
         session.flush()
         session.clear()
-        
+
         p = Person.get_by(name="Homer")
-        
+
         assert p in p.father.children
         assert p.father.name == "Abe"
         assert p.father is Person.get_by(name="Abe")
@@ -137,19 +137,19 @@ class TestAutoload(object):
         homer = Person(name="Homer", categories=[simpson, stupid])
         bart = Person(name="Bart")
         lisa = Person(name="Lisa")
-        
+
         simpson.persons.extend([bart, lisa])
-        
+
         session.flush()
         session.clear()
-        
+
         c = Category.get_by(name="Simpson")
         grampa = Person.get_by(name="Abe")
-        
+
         print "Persons in the '%s' category: %s." % (
-                c.name, 
+                c.name,
                 ", ".join([p.name for p in c.persons]))
-        
+
         assert len(c.persons) == 4
         assert c in grampa.categories
 
@@ -159,7 +159,7 @@ class TestAutoload(object):
 
         session.flush()
         session.clear()
-        
+
         homer = Person.get_by(name="Homer")
         barney = Person.get_by(name="Barney")
 
@@ -207,7 +207,7 @@ class TestAutoload(object):
         table = Table('a', local_meta,
             Column('id', Integer),
             Column('name', String(32)))
-        
+
         local_meta.create_all()
 
         class A(Entity):
@@ -242,7 +242,7 @@ class TestAutoload(object):
         class Father(Entity):
             using_options(tablename='father')
 
-        class Son(Father): 
+        class Son(Father):
             pass
 
         setup_all()

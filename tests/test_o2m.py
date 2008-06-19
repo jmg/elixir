@@ -10,7 +10,7 @@ def setup():
 class TestOneToMany(object):
     def teardown(self):
         cleanup_all(True)
-    
+
     def test_simple(self):
         class A(Entity):
             name = Field(String(60))
@@ -39,7 +39,7 @@ class TestOneToMany(object):
     def test_selfref(self):
         class Person(Entity):
             name = Field(String(30))
-            
+
             father = ManyToOne('Person', inverse='children')
             children = OneToMany('Person', inverse='father')
 
@@ -49,20 +49,20 @@ class TestOneToMany(object):
         homer = Person(name="Homer")
         bart = Person(name="Bart")
         lisa = Person(name="Lisa")
-        
-        grampa.children.append(homer)        
+
+        grampa.children.append(homer)
         homer.children.append(bart)
         lisa.father = homer
-        
+
         session.flush()
         session.clear()
-        
+
         p = Person.get_by(name="Homer")
-        
-        print "%s is %s's child." % (p.name, p.father.name)        
+
+        print "%s is %s's child." % (p.name, p.father.name)
         print "His children are: %s." % (
                 " and ".join([c.name for c in p.children]))
-        
+
         assert p in p.father.children
         assert p.father is Person.get_by(name="Abe")
         assert p is Person.get_by(name="Lisa").father
@@ -97,10 +97,10 @@ class TestOneToMany(object):
         node.children.append(TreeNode(name='node1'))
         node.children.append(node2)
         node.children.append(TreeNode(name='node3'))
-            
+
         session.flush()
         session.clear()
-        
+
         root = TreeNode.get_by(name='rootnode')
         print root
 
@@ -114,13 +114,13 @@ class TestOneToMany(object):
             belongs_to('owner', of_kind='Person')
 
         setup_all(True)
-        
+
         santa = Person(name="Santa Claus")
         rudolph = Animal(name="Rudolph", owner=santa)
-        
+
         session.flush()
         session.clear()
-      
+
         santa = Person.get_by(name="Santa Claus")
 
         assert Animal.get_by(name="Rudolph") in santa.pets

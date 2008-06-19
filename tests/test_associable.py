@@ -14,7 +14,7 @@ def setup(self):
 class TestOrders(object):
     def teardown(self):
         cleanup_all(True)
-    
+
     def test_empty(self):
         class Foo(Entity):
             pass
@@ -82,7 +82,7 @@ class TestOrders(object):
         streets = [adr.street for adr in people[0].addresses]
         assert '243 Hooper st.' in streets
         assert '123 Elm St.' in streets
-        
+
         people = Person.select_addresses(and_(Address.street=='132 Elm St',
                                               Address.city=='Smallville'))
         assert len(people) == 0

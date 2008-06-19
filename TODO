@@ -26,11 +26,11 @@ Website/doc related
 Code related
 ------------
 
-- Besides, the current system also has another case I don't like: if the user 
+- Besides, the current system also has another case I don't like: if the user
   specifies an inverse (on one or both sides) but also set a table name on one
-  side (or two different table names), it will consider the relation as being 
-  different even though the user explicitly told it was the same. This should 
-  not happen. The system should rather throw an exception in that case. But 
+  side (or two different table names), it will consider the relation as being
+  different even though the user explicitly told it was the same. This should
+  not happen. The system should rather throw an exception in that case. But
   this last part should be easilty fixable, I think (it'a a matter of tweaking
   the is_inverse method of the HasAndBelongsToMany class)...
 
@@ -50,15 +50,15 @@ discussed before doing anything.
 - provide optional "runtime setattr" validation (as a recipe?)
   http://www.sqlalchemy.org/trac/attachment/ticket/547
   * the provided "_find_class_descriptor" seem overly complex though
-  * the (unlikely?) case where a parent who is not inheriting from XFBase (or 
+  * the (unlikely?) case where a parent who is not inheriting from XFBase (or
     Entity) defines a property will probably fail because of line 16.
 
 - add __revision__ (+ svn property) to all elixir files?
 
 - support all mapper arguments which take column arguments in a generic way
 
-- instead of linking the descriptor in the entity (cls._descriptor) we could 
-  do it externally, like the mappers in SA. This would solve some of the 
+- instead of linking the descriptor in the entity (cls._descriptor) we could
+  do it externally, like the mappers in SA. This would solve some of the
   ugliness we have in the current implementation (mostly in target).
 
 - add polymorphic references
@@ -80,9 +80,9 @@ discussed before doing anything.
   See:
   http://www.sqlalchemy.org/trac/browser/sqlalchemy/trunk/examples/poly_assoc
 
-- investigate whether it would be possible to do a generic acts_as(xxx) 
+- investigate whether it would be possible to do a generic acts_as(xxx)
   instead of the acts_as_taggable Jonathan demonstrated
-  
+
 - implement something like:
 
     class A(Entity):
@@ -97,7 +97,7 @@ discussed before doing anything.
   http://spyced.blogspot.com/2007/01/why-sqlalchemy-impresses-me.html
   ie relations using any "selectable" instead of the normal object table.
 
-    mapper(User, users, 
+    mapper(User, users,
         properties={
            'orders': relation(mapper(Order, orders), order_by=orders.c.id),
            'max_order': relation(mapper(Order, max_orders, non_primary=True),

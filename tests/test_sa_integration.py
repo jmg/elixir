@@ -12,7 +12,7 @@ def setup():
 class TestSAIntegration(object):
     def teardown(self):
         cleanup_all(True)
-    
+
     def test_sa_to_elixir(self):
         class A(Entity):
             name = Field(String(60))
@@ -21,7 +21,7 @@ class TestSAIntegration(object):
         # SQLAlchemy.
         setup_all(True)
 
-        b_table = Table('b', metadata, 
+        b_table = Table('b', metadata,
             Column('id', Integer, primary_key=True),
             Column('name', String(60)),
             Column('a_id', Integer, ForeignKey(A.id))
@@ -48,7 +48,7 @@ class TestSAIntegration(object):
         assert b.a.name == 'a1'
 
 #    def test_elxir_to_sa(self):
-#        a_table = Table('a', metadata, 
+#        a_table = Table('a', metadata,
 #            Column('id', Integer, primary_key=True),
 #            Column('name', String(60)),
 #        )
@@ -62,7 +62,7 @@ class TestSAIntegration(object):
 #        class B(Entity):
 #            name = Field(String(60))
 #            a = ManyToOne('A')
-#    
+#
 #        setup_all(True)
 #
 #        a1 = A()

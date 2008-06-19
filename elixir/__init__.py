@@ -6,7 +6,7 @@ A declarative layer on top of the `SQLAlchemy library
 the ability to create simple Python classes that map directly to relational
 database tables (this pattern is often referred to as the Active Record design
 pattern), providing many of the benefits of traditional databases
-without losing the convenience of Python objects. 
+without losing the convenience of Python objects.
 
 Elixir is intended to replace the ActiveMapper SQLAlchemy extension, and the
 TurboEntity project but does not intend to replace SQLAlchemy's core features,
@@ -44,7 +44,7 @@ from elixir.statements import Statement
 __version__ = '0.6.0'
 
 __all__ = ['Entity', 'EntityMeta', 'EntityCollection', 'entities',
-           'Field', 'has_field', 'with_fields', 
+           'Field', 'has_field', 'with_fields',
            'has_property', 'GenericProperty', 'ColumnProperty', 'Synonym',
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many',
            'ManyToOne', 'OneToOne', 'OneToMany', 'ManyToMany',
@@ -61,27 +61,27 @@ __doc_all__ = ['create_all', 'drop_all',
 
 
 class Objectstore(object):
-    """a wrapper for a SQLAlchemy session-making object, such as 
+    """a wrapper for a SQLAlchemy session-making object, such as
     SessionContext or ScopedSession.
-    
+
     Uses the ``registry`` attribute present on both objects
     (versions 0.3 and 0.4) in order to return the current
     contextual session.
     """
-    
+
     def __init__(self, ctx):
         self.context = ctx
 
     def __getattr__(self, name):
         return getattr(self.context.registry(), name)
-    
+
     session = property(lambda s:s.context.registry())
 
 # default session
-try: 
+try:
     from sqlalchemy.orm import scoped_session
     session = scoped_session(sqlalchemy.orm.create_session)
-except ImportError: 
+except ImportError:
     # Not on version 0.4 of sqlalchemy
     from sqlalchemy.ext.sessioncontext import SessionContext
     session = Objectstore(SessionContext(sqlalchemy.orm.create_session))
@@ -97,12 +97,12 @@ metadatas = set()
 # default entity collection
 class EntityCollection(list):
     def __init__(self):
-        # _entities is a dict of entities for each frame where there are 
+        # _entities is a dict of entities for each frame where there are
         # entities defined.
         self._entities = {}
 #        self._entity_map = {}
         list.__init__(self)
-    
+
     def map_entity(self, entity):
         self.append(entity)
 
@@ -120,15 +120,15 @@ class EntityCollection(list):
         caller_entities = self._entities.setdefault(cid, {})
         caller_entities[key] = entity
 
-        # Append all entities which are currently visible by the entity. This 
-        # will find more entities only if some of them where imported from 
+        # Append all entities which are currently visible by the entity. This
+        # will find more entities only if some of them where imported from
         # another module.
-        for ent in [e for e in caller_frame.f_locals.values() 
+        for ent in [e for e in caller_frame.f_locals.values()
                          if isinstance(e, EntityMeta)]:
             caller_entities[ent.__name__] = ent
-        
+
 #        self._entity_map[key] = entity
-    
+
     def resolve(self, key, entity=None):
         '''
         Resolve a key to an Entity. The optional `entity` argument is the
@@ -143,9 +143,9 @@ class EntityCollection(list):
             module = sys.modules[path.pop()]
             return getattr(module, classname, None)
         else:
-            # If not, try the list of entities of the "caller" of the 
-            # source class. Most of the time, this will be the module 
-            # the class is defined in. But it could also be a method 
+            # If not, try the list of entities of the "caller" of the
+            # source class. Most of the time, this will be the module
+            # the class is defined in. But it could also be a method
             # (inner classes).
             caller_entities = self._entities[entity._caller]
             return caller_entities[classname]
@@ -188,7 +188,7 @@ def setup_all(create_tables=False, *args, **kwargs):
 
 
 def cleanup_all(drop_tables=False, *args, **kwargs):
-    '''Clear all mappers, clear the session, and clear all metadatas. 
+    '''Clear all mappers, clear the session, and clear all metadatas.
     Optionally drops the tables.
     '''
     if drop_tables:

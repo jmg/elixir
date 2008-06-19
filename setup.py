@@ -13,10 +13,10 @@ relational database tables (this pattern is often referred to as the Active
 Record design pattern), providing many of the benefits of traditional
 databases without losing the convenience of Python objects.
 
-Elixir is intended to replace the ActiveMapper SQLAlchemy extension, and the 
+Elixir is intended to replace the ActiveMapper SQLAlchemy extension, and the
 TurboEntity project but does not intend to replace SQLAlchemy's core features,
-and instead focuses on providing a simpler syntax for defining model objects 
-when you do not need the full expressiveness of SQLAlchemy's manual mapper 
+and instead focuses on providing a simpler syntax for defining model objects
+when you do not need the full expressiveness of SQLAlchemy's manual mapper
 definitions.
 """,
       author="Gaetan de Menten, Daniel Haus and Jonathan LaCour",

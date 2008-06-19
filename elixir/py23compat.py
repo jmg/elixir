@@ -22,7 +22,7 @@ def sort_list(l, cmp=None, key=None, reverse=False):
             cmp = lambda self, other, cmp=cmp: cmp(key(self), key(other))
         if reverse:
             cmp = lambda self, other, cmp=cmp: -cmp(self,other)
-        l.sort(cmp) 
+        l.sort(cmp)
 
 # sorted
 try:
@@ -62,9 +62,9 @@ except AttributeError:
         ['foo', 'bar', 'baz']
         """
         assert maxsplit >= 0
-        
+
         if maxsplit == 0: return [s]
-        
+
         # the following lines perform the function, but inefficiently.
         #  This may be adequate for compatibility purposes
         items = s.split(delim)

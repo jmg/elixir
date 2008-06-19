@@ -12,7 +12,7 @@ class TestAutoloadMixed(object):
         conn.execute("""CREATE TABLE user
         (user_id INTEGER PRIMARY KEY AUTOINCREMENT)""")
         conn.close()
-        
+
     def test_belongs_to(self):
         class User(Entity):
             using_options(tablename='user', autoload=True)

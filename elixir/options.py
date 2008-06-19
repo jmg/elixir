@@ -1,17 +1,17 @@
 '''
 This module provides support for defining several options on your Elixir
-entities.  There are three different kinds of options that can be set 
+entities.  There are three different kinds of options that can be set
 up, and for this there are three different statements: using_options_,
 using_table_options_ and using_mapper_options_.
 
-Alternatively, these options can be set on all Elixir entities by modifying 
+Alternatively, these options can be set on all Elixir entities by modifying
 the `options_defaults` dictionary before defining any entity.
 
 `using_options`
 ---------------
 The 'using_options' DSL statement allows you to set up some additional
 behaviors on your model objects, including table names, ordering, and
-more.  To specify an option, simply supply the option as a keyword 
+more.  To specify an option, simply supply the option as a keyword
 argument onto the statement, as follows:
 
 .. sourcecode:: python
@@ -138,10 +138,10 @@ For examples, please refer to the examples and unit tests.
 
 `using_table_options`
 ---------------------
-The 'using_table_options' DSL statement allows you to set up some 
-additional options on your entity table. It is meant only to handle the 
+The 'using_table_options' DSL statement allows you to set up some
+additional options on your entity table. It is meant only to handle the
 options which are not supported directly by the 'using_options' statement.
-By opposition to the 'using_options' statement, these options are passed 
+By opposition to the 'using_options' statement, these options are passed
 directly to the underlying SQLAlchemy Table object (both non-keyword arguments
 and keyword arguments) without any processing.
 
@@ -149,20 +149,20 @@ For further information, please refer to the `SQLAlchemy table's documentation
 <http://www.sqlalchemy.org/docs/04/sqlalchemy_schema.html
 #docstrings_sqlalchemy.schema_Table>`_.
 
-You might also be interested in the section about `constraints 
+You might also be interested in the section about `constraints
 <http://www.sqlalchemy.org/docs/04/metadata.html#metadata_constraints>`_.
 
 `using_mapper_options`
 ----------------------
-The 'using_mapper_options' DSL statement allows you to set up some 
-additional options on your entity mapper. It is meant only to handle the 
+The 'using_mapper_options' DSL statement allows you to set up some
+additional options on your entity mapper. It is meant only to handle the
 options which are not supported directly by the 'using_options' statement.
-By opposition to the 'using_options' statement, these options are passed 
-directly to the underlying SQLAlchemy mapper (as keyword arguments) 
+By opposition to the 'using_options' statement, these options are passed
+directly to the underlying SQLAlchemy mapper (as keyword arguments)
 without any processing.
 
-For further information, please refer to the `SQLAlchemy mapper 
-function's documentation 
+For further information, please refer to the `SQLAlchemy mapper
+function's documentation
 <http://www.sqlalchemy.org/docs/04/sqlalchemy_orm.html
 #docstrings_sqlalchemy.orm_modfunc_mapper>`_.
 '''
@@ -186,7 +186,7 @@ DEFAULT_POLYMORPHIC_COL_NAME = "row_type"
 POLYMORPHIC_COL_SIZE = 40
 POLYMORPHIC_COL_TYPE = String(POLYMORPHIC_COL_SIZE)
 
-# 
+#
 options_defaults = dict(
     autosetup=False,
     inheritance='single',
@@ -216,7 +216,7 @@ def using_options_handler(entity, *args, **kwargs):
         if kwarg in valid_options:
             setattr(entity._descriptor, kwarg, kwargs[kwarg])
         else:
-            raise Exception("'%s' is not a valid option for Elixir entities." 
+            raise Exception("'%s' is not a valid option for Elixir entities."
                             % kwarg)
 
 

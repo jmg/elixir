@@ -23,7 +23,7 @@ How to make a release:
 - announce release on our news page (link to CHANGES)
 
 - announce release on those lists:
-    - Elixir <sqlelixir@googlegroups.com> 
+    - Elixir <sqlelixir@googlegroups.com>
     - SQLAlchemy <sqlalchemy@googlegroups.com>
     - TurboGears <turbogears@googlegroups.com>
     - Python announce <python-announce-list@python.org>

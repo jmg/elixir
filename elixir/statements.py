@@ -2,20 +2,20 @@ import sys
 
 MUTATORS = '__elixir_mutators__'
 
-class ClassMutator(object):    
+class ClassMutator(object):
     '''
     DSL-style syntax
-    
+
     A ``ClassMutator`` object represents a DSL term.
     '''
-    
+
     def __init__(self, handler):
         '''
         Create a new ClassMutator, using the `handler` callable to process it
         when the time will come.
         '''
         self.handler = handler
-    
+
     # called when a mutator (eg. "has_field(...)") is parsed
     def __call__(self, *args, **kwargs):
         # self in this case is the "generic" mutator (eg "has_field")
@@ -27,7 +27,7 @@ class ClassMutator(object):
 
     def process(self, entity, *args, **kwargs):
         '''
-        Process one mutator. This version simply calls the handler callable, 
+        Process one mutator. This version simply calls the handler callable,
         but another mutator (sub)class could do more processing.
         '''
         self.handler(entity, *args, **kwargs)
@@ -36,7 +36,7 @@ class ClassMutator(object):
 #TODO: move this to the super class (to be created here) of EntityMeta
 def process_mutators(entity):
     '''
-    Apply all mutators of the given entity. That is, loop over all mutators 
+    Apply all mutators of the given entity. That is, loop over all mutators
     in the class's mutator list and process them.
     '''
     # we don't use getattr here to not inherit from the parent mutators

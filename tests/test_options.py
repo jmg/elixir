@@ -4,7 +4,7 @@ test options
 
 from sqlalchemy import UniqueConstraint, create_engine, Column
 from sqlalchemy.orm import create_session
-from sqlalchemy.exceptions import SQLError, ConcurrentModificationError 
+from sqlalchemy.exceptions import SQLError, ConcurrentModificationError
 from elixir import *
 
 class TestOptions(object):
@@ -18,28 +18,28 @@ class TestOptions(object):
     def test_version_id_col(self):
         class Person(Entity):
             name = Field(String(30))
- 
+
             using_options(version_id_col=True)
- 
+
         setup_all()
         Person.table.create()
- 
+
         p1 = Person(name='Daniel')
         session.flush()
         session.clear()
-        
+
         person = Person.query.first()
         person.name = 'Gaetan'
         session.flush()
         session.clear()
         assert person.row_version == 2
- 
+
         person = Person.query.first()
         person.name = 'Jonathan'
         session.flush()
         session.clear()
         assert person.row_version == 3
- 
+
         # check that a concurrent modification raises exception
         p1 = Person.query.first()
         s2 = create_session()
@@ -76,7 +76,7 @@ class TestOptions(object):
         setup_all()
 
         # Note that this test is bogus as you cannot just change a column this
-        # way since the mapper is already constructed at this point and will 
+        # way since the mapper is already constructed at this point and will
         # use the old column!!! This test is only meant as a way to check no
         # exception is raised.
         #TODO: provide a proper test (using autoloaded tables)
@@ -120,9 +120,9 @@ class TestSessionOptions(object):
             return
 
         engine = create_engine('sqlite:///')
-        
+
         ctx = SessionContext(lambda: create_session(bind=engine))
-        
+
         class Person(Entity):
             using_options(session=ctx)
             firstname = Field(String(30))
@@ -134,13 +134,13 @@ class TestSessionOptions(object):
         homer = Person(firstname="Homer", surname='Simpson')
         bart = Person(firstname="Bart", surname='Simpson')
         ctx.current.flush()
-        
+
         assert Person.query.session is ctx.current
         assert Person.query.filter_by(firstname='Homer').one() is homer
 
     def test_manual_session(self):
         engine = create_engine('sqlite:///')
-        
+
         class Person(Entity):
             using_options(session=None)
             firstname = Field(String(30))
@@ -157,7 +157,7 @@ class TestSessionOptions(object):
         session.save(homer)
         session.save(bart)
         session.flush()
-       
+
         bart.delete()
         session.flush()
 
@@ -167,8 +167,8 @@ class TestSessionOptions(object):
     def test_activemapper_session(self):
         try:
             from sqlalchemy.orm import scoped_session, sessionmaker
-            #TODO: this test, as-is has no sense on SA 0.4 since activemapper 
-            # session uses scoped_session, but we need to provide a new 
+            #TODO: this test, as-is has no sense on SA 0.4 since activemapper
+            # session uses scoped_session, but we need to provide a new
             # test for that.
             return
         except ImportError:
@@ -178,7 +178,7 @@ class TestSessionOptions(object):
             from sqlalchemy.ext import activemapper
         except ImportError:
             return
-            
+
         engine = create_engine('sqlite:///')
 
         store = activemapper.Objectstore(lambda: create_session(bind=engine))
@@ -205,7 +205,7 @@ class TestSessionOptions(object):
         except ImportError:
             print "Not on version 0.4 or later of sqlalchemy"
             return
-            
+
         engine = create_engine('sqlite:///')
 
         Session = scoped_session(sessionmaker(bind=engine))
@@ -224,7 +224,7 @@ class TestSessionOptions(object):
 
         assert Person.query.session is Session()
         assert Person.query.filter_by(firstname='Homer').one() is homer
-        
+
     def test_global_scoped_session(self):
         try:
             from sqlalchemy.orm import scoped_session, sessionmaker
@@ -233,12 +233,12 @@ class TestSessionOptions(object):
             return
 
         global __session__
-        
+
         engine = create_engine('sqlite:///')
-        
+
         session = scoped_session(sessionmaker(bind=engine))
         __session__ = session
-        
+
         class Person(Entity):
             firstname = Field(String(30))
             surname = Field(String(30))
@@ -249,12 +249,12 @@ class TestSessionOptions(object):
         homer = Person(firstname="Homer", surname='Simpson')
         bart = Person(firstname="Bart", surname='Simpson')
         session.flush()
-        
+
         assert Person.query.session is session()
         assert Person.query.filter_by(firstname='Homer').one() is homer
 
         del __session__
-        
+
 class TestTableOptions(object):
     def setup(self):
         metadata.bind = 'sqlite:///'
@@ -263,7 +263,7 @@ class TestTableOptions(object):
         cleanup_all()
 
     def test_unique_constraint(self):
-        
+
         class Person(Entity):
             firstname = Field(String(30))
             surname = Field(String(30))
