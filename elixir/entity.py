@@ -6,7 +6,9 @@ This module provides the ``Entity`` base class, as well as its metaclass
 from py23compat import set, rsplit, sorted
 
 import sys
+import inspect
 import warnings
+from copy import copy
 
 import sqlalchemy
 from sqlalchemy     import Table, Column, Integer, desc, ForeignKey, and_, \
@@ -83,6 +85,7 @@ class EntityDescriptor(object):
         self.builders = []
 
         self.parent = None
+        #XXX: use entity.__subclasses__ ?
         self.children = []
 
         for base in entity.__bases__:
@@ -98,6 +101,7 @@ class EntityDescriptor(object):
         # columns and constraints waiting for a table to exist
         self._columns = list()
         self.constraints = list()
+
         # properties waiting for a mapper to exist
         self.properties = dict()
 
@@ -660,6 +664,7 @@ def is_entity(cls):
             return True
     return False
 
+
 class EntityMeta(type):
     """
     Entity meta class.
@@ -683,9 +688,23 @@ class EntityMeta(type):
         properties = [(name, attr) for name, attr in dict_.iteritems()
                                    if isinstance(attr, Property)]
         sorted_props = sorted(properties, key=lambda i: i[1]._counter)
-
         for name, prop in sorted_props:
             prop.attach(cls, name)
+
+        entity_base = None
+        for base in bases:
+            if isinstance(base, EntityMeta):
+                if not is_entity(base):
+                    entity_base = base
+        if entity_base:
+            # Process attributes (using the assignment syntax), looking for
+            # 'Property' instances and attaching them to this entity.
+            base_props = inspect.getmembers(entity_base,
+                                            lambda a: isinstance(a, Property))
+            local_props = [(name, copy(attr)) for name, attr in base_props]
+            sorted_props = sorted(local_props, key=lambda i: i[1]._counter)
+            for name, prop in sorted_props:
+                prop.attach(cls, name)
 
         # Process mutators. Needed before _install_autosetup_triggers so that
         # we know of the metadata

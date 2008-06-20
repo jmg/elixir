@@ -115,7 +115,7 @@ class Property(EntityBuilder):
 
         # delete the original attribute so that it doesn't interfere with
         # SQLAlchemy.
-        if hasattr(entity, name):
+        if name in entity.__dict__:
             delattr(entity, name)
 
     def __repr__(self):
