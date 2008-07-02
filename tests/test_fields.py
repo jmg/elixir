@@ -21,7 +21,7 @@ class TestFields(object):
         homer = Person(firstname="Homer", surname="Simpson")
         bart = Person(firstname="Bart", surname="Simpson")
 
-        session.flush()
+        session.commit()
         session.clear()
 
         p = Person.get_by(firstname="Homer")
@@ -38,7 +38,7 @@ class TestFields(object):
         homer = Person(firstname="Homer", surname="Simpson")
         bart = Person(firstname="Bart", surname="Simpson")
 
-        session.flush()
+        session.commit()
         session.clear()
 
         p = Person.get_by(firstname="Homer")
@@ -57,7 +57,7 @@ class TestFields(object):
         homer = Person(firstname="Homer", surname="Simpson")
         bart = Person(firstname="Bart", surname="Simpson")
 
-        session.flush()
+        session.commit()
         session.clear()
 
         p = Person.get_by(firstname="Homer")

@@ -12,7 +12,7 @@ New features:
   identity for an entity. It also accepts a callable so that you can generate
   the identity name automatically from the class itself.
 - Added __setattr__ method on Metaclass so that you can add properties
-  slightly more easily after class definition (but before setup_all):
+  slightly more easily after class definition (but *before* setup_all):
     class A(Entity):
         pass
     A.name = Field(String(32))
@@ -20,6 +20,13 @@ New features:
 Changes:
 - Added support for SQLAlchemy 0.5, and dropped support for version 0.3 and
   earlier.
+- The default session (elixir.session) uses sessionmaker() instead of
+  create_session(), which means it has now the following characterisics:
+    * autoflush=True
+    * autocommit=False (with SA 0.5 -- equivalent to transactional=True with 
+      SA 0.4)
+    * autoexpire=True (with SA 0.5).
+- removed objectstore
 
 Bug fixes:
 - Fixed multi-table inheritance when using a non default schema (closes #38)

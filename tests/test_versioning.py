@@ -27,14 +27,16 @@ def setup():
         ignoreme = Field(Integer, default=0)
         autoupd = Field(Integer, default=nextOne, onupdate=nextOne)
         director = ManyToOne('Director', inverse='movies')
-        actors = ManyToMany('Actor', inverse='movies', tablename='movie_casting')
+        actors = ManyToMany('Actor', inverse='movies',
+                            tablename='movie_casting')
         using_options(tablename='movies')
         acts_as_versioned(ignore=['ignoreme', 'autoupd'])
 
 
     class Actor(Entity):
         name = Field(String(60))
-        movies = ManyToMany('Movie', inverse='actors', tablename='movie_casting')
+        movies = ManyToMany('Movie', inverse='actors',
+                            tablename='movie_casting')
         using_options(tablename='actors')
 
     setup_all()
@@ -51,13 +53,14 @@ class TestVersioning(object):
 
     def teardown(self):
         drop_all()
-        session.clear()
+        session.close()
 
     def test_versioning(self):
         gilliam = Director(name='Terry Gilliam')
-        monkeys = Movie(id=1, title='12 Monkeys', description='draft description', director=gilliam)
+        monkeys = Movie(id=1, title='12 Monkeys',
+                        description='draft description', director=gilliam)
         bruce = Actor(name='Bruce Willis', movies=[monkeys])
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         time.sleep(1)
         after_create = datetime.now()
@@ -69,7 +72,7 @@ class TestVersioning(object):
         assert movie.director.name == 'Terry Gilliam'
         assert movie.autoupd == 2, movie.autoupd
         movie.description = 'description two'
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         time.sleep(1)
         after_update_one = datetime.now()
@@ -77,12 +80,12 @@ class TestVersioning(object):
 
         movie = Movie.get_by(title='12 Monkeys')
         movie.description = 'description three'
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         # Edit the ignored field, this shouldn't change the version
         monkeys = Movie.get_by(title='12 Monkeys')
         monkeys.ignoreme = 1
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         time.sleep(1)
         after_update_two = datetime.now()
@@ -106,13 +109,15 @@ class TestVersioning(object):
         assert middle_version.description == 'description two'
         assert middle_version.autoupd > oldest_version.autoupd
 
-        assert latest_version.version == 3, 'version=%i' % latest_version.version
+        assert latest_version.version == 3, \
+               'version=%i' % latest_version.version
         assert latest_version.description == 'description three'
         assert latest_version.ignoreme == 1
         assert latest_version.autoupd > middle_version.autoupd
 
         differences = latest_version.compare_with(oldest_version)
-        assert differences['description'] == ('description three', 'draft description')
+        assert differences['description'] == \
+               ('description three', 'draft description')
 
         assert len(movie.versions) == 3
         assert movie.versions[0] == oldest_version
@@ -122,42 +127,26 @@ class TestVersioning(object):
         movie.description = 'description four'
 
         movie.revert_to(2)
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         movie = Movie.get_by(title='12 Monkeys')
         assert movie.version == 2, "version=%i, should be 2" % movie.version
         assert movie.description == 'description two', movie.description
 
         movie.description = "description 3"
-        session.flush(); session.clear();
+        session.commit(); session.clear()
 
         movie = Movie.get_by(title='12 Monkeys')
         movie.description = "description 4"
-        session.flush(); session.clear();
+        session.commit(); session.clear()
 
         movie = Movie.get_by(title='12 Monkeys')
         assert movie.version == 4
         movie.revert_to(movie.versions[-2])
         movie.description = "description 5"
-        session.flush(); session.clear();
+        session.commit(); session.clear()
 
         movie = Movie.get_by(title='12 Monkeys')
         assert movie.version == 4
         assert movie.versions[-2].description == "description 3"
-
-        # Updates to the history table must be inside the transaction
-        session.begin()
-        movie = Movie(id=3, title='Foo', description='1')
-        session.commit();
-
-        session.begin()
-        movie.description = '2'
-        session.flush()
-        session.rollback()
-        session.clear()
-
-        session.begin()
-        movie = Movie.get_by(title='Foo')
-        movie.description = '3'
-        session.commit()
 

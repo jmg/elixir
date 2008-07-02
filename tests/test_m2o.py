@@ -23,7 +23,7 @@ class TestManyToOne(object):
 
         b1 = B(name='b1', a=A(name='a1'))
 
-        session.flush()
+        session.commit()
         session.clear()
 
         b = B.query.one()
@@ -44,7 +44,7 @@ class TestManyToOne(object):
 
         b1 = B(a=A(testx=1))
 
-        session.flush()
+        session.commit()
         session.clear()
 
         b = B.query.one()
@@ -68,9 +68,9 @@ class TestManyToOne(object):
         assert B.table.columns.has_key('a_id')
 
         a = A()
-        session.flush()
+        session.commit()
         b = B(a=a)
-        session.flush()
+        session.commit()
         session.clear()
 
         assert B.query.first().a == A.query.first()
@@ -165,7 +165,7 @@ class TestManyToOne(object):
         b1 = B(name="b1", a_rel1=a1, a_rel2=a2)
         b2 = B(name="b2", a_rel1=a1, a_rel2=a1)
 
-        session.flush()
+        session.commit()
         session.clear()
 
         a1 = A.get_by(name="a1")
@@ -189,7 +189,7 @@ class TestManyToOne(object):
         santa = Person(name="Santa Claus")
         rudolph = Animal(name="Rudolph", owner=santa)
 
-        session.flush()
+        session.commit()
         session.clear()
 
         assert "Claus" in Animal.get_by(name="Rudolph").owner.name

@@ -20,7 +20,7 @@ class TestOneToOne(object):
 
         b1 = B(name='b1', a=A(name='a1'))
 
-        session.flush()
+        session.commit()
         session.clear()
 
         b = B.query.one()

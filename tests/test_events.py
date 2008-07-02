@@ -71,15 +71,15 @@ class TestEvents(object):
 
     def test_events(self):
         d = Document(name='My Document')
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         d = Document.query.get(1)
         d.name = 'My Document Updated'
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         d = Document.query.get(1)
         d.delete()
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         assert before_insert_called == 1
         assert before_update_called == 1

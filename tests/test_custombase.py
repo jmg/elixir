@@ -28,7 +28,7 @@ class TestCustomBase(object):
 
         a1 = A(name="a1")
 
-        session.flush()
+        session.commit()
         session.clear()
 
         a = A.query.filter_by(name="a1").one()
@@ -47,7 +47,7 @@ class TestCustomBase(object):
         a1 = A(name="a1")
         b1 = B(name="b1", data="-b1-")
 
-        session.flush()
+        session.commit()
         session.clear()
 
         b = A.query.filter_by(name="b1").one()
@@ -70,7 +70,7 @@ class TestCustomBase(object):
         a1 = A()
         a1.name = "a1"
 
-        session.flush()
+        session.commit()
         session.clear()
 
         a = A.query.filter_by(name="a1").one()

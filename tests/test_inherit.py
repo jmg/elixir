@@ -45,7 +45,7 @@ def do_tst(inheritance, polymorphic, expected_res):
     D(data1='d1', data4='d4')
     E(data1='e1')
 
-    session.flush()
+    session.commit()
     session.clear()
 
     res = {}
@@ -81,7 +81,7 @@ class TestInheritance(object):
 
         b1 = B(name="b1") # no value for other
 
-        session.flush()
+        session.commit()
 
     def test_delete_parent(self):
         class A(Entity):
@@ -95,7 +95,7 @@ class TestInheritance(object):
 
         b1 = B(name='b1')
 
-        session.flush()
+        session.commit()
 
         A.table.delete().execute()
 

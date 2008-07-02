@@ -107,11 +107,9 @@ The list of supported arguments are as follows:
 | ``session``         | Specify a custom contextual session for this entity.  |
 |                     | By default, entities uses the global                  |
 |                     | ``elixir.session``.                                   |
-|                     | This option accepts Objectstore                       |
-|                     | (found in Elixir and ActiveMapper), SessionContext    |
-|                     | (found in SQLAlchemy 0.3) or ScopedSession (found in  |
-|                     | SQLAlchemy 0.4) objects. It also supports ``None``,   |
-|                     | in which case your entity will be mapped using a      |
+|                     | This option takes a ``ScopedSession`` object or       |
+|                     | ``None``. In the later case your entity will be       |
+|                     | mapped using a                                        |
 |                     | non-contextual mapper. This option can also be set    |
 |                     | for all entities of a module by setting the           |
 |                     | ``__session__`` attribute of that module.             |

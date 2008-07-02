@@ -25,10 +25,10 @@ class TestOneToMany(object):
         a1 = A(name='a1')
         b1 = B(name='b1', a=a1)
 
-        # does it work before a flush? (does the backref work?)
+        # does it work before a commit? (does the backref work?)
         assert b1 in a1.bs
 
-        session.flush()
+        session.commit()
         session.clear()
 
         b = B.query.one()
@@ -54,7 +54,7 @@ class TestOneToMany(object):
         homer.children.append(bart)
         lisa.father = homer
 
-        session.flush()
+        session.commit()
         session.clear()
 
         p = Person.get_by(name="Homer")
@@ -98,7 +98,7 @@ class TestOneToMany(object):
         node.children.append(node2)
         node.children.append(TreeNode(name='node3'))
 
-        session.flush()
+        session.commit()
         session.clear()
 
         root = TreeNode.get_by(name='rootnode')
@@ -118,7 +118,7 @@ class TestOneToMany(object):
         santa = Person(name="Santa Claus")
         rudolph = Animal(name="Rudolph", owner=santa)
 
-        session.flush()
+        session.commit()
         session.clear()
 
         santa = Person.get_by(name="Santa Claus")

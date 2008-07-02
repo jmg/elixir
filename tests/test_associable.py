@@ -72,7 +72,7 @@ class TestOrders(object):
         neworder.address = home
         user.orders.append(neworder)
 
-        session.flush()
+        session.commit()
         session.clear()
 
         # Queries using the added helpers
@@ -108,5 +108,5 @@ class TestOrders(object):
 
         art = Article(title='Hope Soars')
 
-        session.flush()
+        session.commit()
         session.clear()

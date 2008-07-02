@@ -3,7 +3,7 @@ test options
 """
 
 from sqlalchemy import UniqueConstraint, create_engine, Column
-from sqlalchemy.orm import create_session
+from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.exceptions import SQLError, ConcurrentModificationError
 from elixir import *
 
@@ -25,30 +25,30 @@ class TestOptions(object):
         Person.table.create()
 
         p1 = Person(name='Daniel')
-        session.flush()
+        session.commit()
         session.clear()
 
         person = Person.query.first()
         person.name = 'Gaetan'
-        session.flush()
-        session.clear()
+        session.commit()
         assert person.row_version == 2
+        session.clear()
 
         person = Person.query.first()
         person.name = 'Jonathan'
-        session.flush()
-        session.clear()
+        session.commit()
         assert person.row_version == 3
+        session.clear()
 
         # check that a concurrent modification raises exception
         p1 = Person.query.first()
-        s2 = create_session()
+        s2 = sessionmaker()()
         p2 = s2.query(Person).first()
         p1.name = "Daniel"
         p2.name = "Gaetan"
-        s2.flush()
+        s2.commit()
         try:
-            session.flush()
+            session.commit()
             assert False
         except ConcurrentModificationError:
             pass
@@ -112,32 +112,6 @@ class TestSessionOptions(object):
     def teardown(self):
         cleanup_all()
 
-    def test_session_context(self):
-        try:
-            from sqlalchemy.ext.sessioncontext import SessionContext
-        except ImportError:
-            # we are probably on SQLAlchemy 0.5, no need to test this.
-            return
-
-        engine = create_engine('sqlite:///')
-
-        ctx = SessionContext(lambda: create_session(bind=engine))
-
-        class Person(Entity):
-            using_options(session=ctx)
-            firstname = Field(String(30))
-            surname = Field(String(30))
-
-        setup_all()
-        create_all(engine)
-
-        homer = Person(firstname="Homer", surname='Simpson')
-        bart = Person(firstname="Bart", surname='Simpson')
-        ctx.current.flush()
-
-        assert Person.query.session is ctx.current
-        assert Person.query.filter_by(firstname='Homer').one() is homer
-
     def test_manual_session(self):
         engine = create_engine('sqlite:///')
 
@@ -149,65 +123,24 @@ class TestSessionOptions(object):
         setup_all()
         create_all(engine)
 
-        session = create_session(bind=engine)
+        Session = sessionmaker(bind=engine)
+        session = Session()
 
         homer = Person(firstname="Homer", surname='Simpson')
         bart = Person(firstname="Bart", surname='Simpson')
 
         session.save(homer)
         session.save(bart)
-        session.flush()
+        session.commit()
 
         bart.delete()
-        session.flush()
+        session.commit()
 
         assert session.query(Person).filter_by(firstname='Homer').one() is homer
         assert session.query(Person).count() == 1
 
-    def test_activemapper_session(self):
-        try:
-            from sqlalchemy.orm import scoped_session, sessionmaker
-            #TODO: this test, as-is has no sense on SA 0.4 since activemapper
-            # session uses scoped_session, but we need to provide a new
-            # test for that.
-            return
-        except ImportError:
-            pass
-
-        try:
-            from sqlalchemy.ext import activemapper
-        except ImportError:
-            return
-
-        engine = create_engine('sqlite:///')
-
-        store = activemapper.Objectstore(lambda: create_session(bind=engine))
-
-        class Person(Entity):
-            using_options(session=store)
-            firstname = Field(String(30))
-            surname = Field(String(30))
-
-        setup_all()
-        create_all(engine)
-
-        homer = Person(firstname="Homer", surname='Simpson')
-        bart = Person(firstname="Bart", surname='Simpson')
-
-        store.flush()
-
-        assert Person.query.session is store.context.current
-        assert Person.query.filter_by(firstname='Homer').one() is homer
-
     def test_scoped_session(self):
-        try:
-            from sqlalchemy.orm import scoped_session, sessionmaker
-        except ImportError:
-            print "Not on version 0.4 or later of sqlalchemy"
-            return
-
         engine = create_engine('sqlite:///')
-
         Session = scoped_session(sessionmaker(bind=engine))
 
         class Person(Entity):
@@ -220,22 +153,15 @@ class TestSessionOptions(object):
 
         homer = Person(firstname="Homer", surname='Simpson')
         bart = Person(firstname="Bart", surname='Simpson')
-        Session.flush()
+        Session.commit()
 
         assert Person.query.session is Session()
         assert Person.query.filter_by(firstname='Homer').one() is homer
 
     def test_global_scoped_session(self):
-        try:
-            from sqlalchemy.orm import scoped_session, sessionmaker
-        except ImportError:
-            print "Not on version 0.4 or later of sqlalchemy"
-            return
-
         global __session__
 
         engine = create_engine('sqlite:///')
-
         session = scoped_session(sessionmaker(bind=engine))
         __session__ = session
 
@@ -248,7 +174,7 @@ class TestSessionOptions(object):
 
         homer = Person(firstname="Homer", surname='Simpson')
         bart = Person(firstname="Bart", surname='Simpson')
-        session.flush()
+        session.commit()
 
         assert Person.query.session is session()
         assert Person.query.filter_by(firstname='Homer').one() is homer
@@ -275,13 +201,13 @@ class TestTableOptions(object):
         homer = Person(firstname="Homer", surname='Simpson')
         bart = Person(firstname="Bart", surname='Simpson')
 
-        session.flush()
+        session.commit()
 
         homer2 = Person(firstname="Homer", surname='Simpson')
 
         raised = False
         try:
-            session.flush()
+            session.commit()
         except SQLError:
             raised = True
 
@@ -303,18 +229,18 @@ class TestTableOptions(object):
         lotr = Book(title="The Lord of the Rings", author=tolkien)
         hobbit = Book(title="The Hobbit", author=tolkien)
 
-        session.flush()
+        session.commit()
 
         tolkien2 = Author(name="Tolkien")
         hobbit2 = Book(title="The Hobbit", author=tolkien2)
 
-        session.flush()
+        session.commit()
 
         hobbit3 = Book(title="The Hobbit", author=tolkien)
 
         raised = False
         try:
-            session.flush()
+            session.commit()
         except SQLError:
             raised = True
 

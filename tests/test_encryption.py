@@ -50,7 +50,7 @@ class TestEncryption(object):
         )
         jonathan.pets = [winston, nelson]
 
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         p = Person.get_by(name='Jonathan LaCour')
         assert p.password == 's3cr3tw0RD'
@@ -62,10 +62,10 @@ class TestEncryption(object):
 
         p.password = 'N3wpAzzw0rd'
 
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         p = Person.get_by(name='Jonathan LaCour')
         assert p.password == 'N3wpAzzw0rd'
         p.name = 'Jon LaCour'
 
-        session.flush(); session.clear()
+        session.commit(); session.clear()

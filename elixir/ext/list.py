@@ -5,7 +5,7 @@ acts_as_list plugin, which is currently more full-featured than this plugin.
 
 Once you flag an entity with an `acts_as_list()` statement, a column will be
 added to the entity called `position` which will be an integer column that is
-managed for you by the plugin.  You can pass an alternative column name to 
+managed for you by the plugin.  You can pass an alternative column name to
 the plugin using the `column_name` keyword argument.
 
 In addition, your entity will get a series of new methods attached to it,
@@ -37,7 +37,7 @@ Example model usage:
 
     from elixir import *
     from elixir.ext.list import acts_as_list
-    
+
     class ToDo(Entity):
         subject = Field(String(128))
         owner = ManyToOne('Person')
@@ -50,12 +50,12 @@ Example model usage:
     class Person(Entity):
         name = Field(String(64))
         todos = OneToMany('ToDo', order_by='position')
-        
 
-The above example can then be used to manage ordered todo lists for people. Note
-that you must set the `order_by` property on the `Person.todo` relation in order
-for the relation to respect the ordering. Here is an example of using this model
-in practice:
+
+The above example can then be used to manage ordered todo lists for people. 
+Note that you must set the `order_by` property on the `Person.todo` relation in
+order for the relation to respect the ordering. Here is an example of using 
+this model in practice:
 
 .. sourcecode:: python
 
@@ -63,18 +63,18 @@ in practice:
     p.todos.append(ToDo(subject='Three'))
     p.todos.append(ToDo(subject='Two'))
     p.todos.append(ToDo(subject='One'))
-    session.flush(); session.clear()
-    
+    session.commit(); session.clear()
+
     p = Person.query.filter_by(name='Jonathan').one()
     p.todos[0].move_to_bottom()
     p.todos[2].move_to_top()
-    session.flush(); session.clear()
-    
+    session.commit(); session.clear()
+
     p = Person.query.filter_by(name='Jonathan').one()
     assert p.todos[0].subject == 'One'
     assert p.todos[1].subject == 'Two'
     assert p.todos[2].subject == 'Three'
-    
+
 
 For more examples, refer to the unit tests for this plugin.
 '''
@@ -96,24 +96,24 @@ def get_entity_where(instance):
 
 
 class ListEntityBuilder(object):
-    
+
     def __init__(self, entity, qualifier=None, column_name='position'):
         self.entity = entity
         self.qualifier_method = qualifier
         self.column_name = column_name
-    
+
     def create_non_pk_cols(self):
         self.position_column = Column(self.column_name, Integer)
         self.entity._descriptor.add_column(self.position_column)
-    
+
     def after_table(self):
         position_column = self.position_column
         position_column_name = self.column_name
-        
-        qualifier_method = self.qualifier_method 
+
+        qualifier_method = self.qualifier_method
         if not qualifier_method:
             qualifier_method = lambda self: None
-        
+
         def _init_position(self):
             s = select(
                 [(func.max(position_column)+1).label('value')],
@@ -122,9 +122,10 @@ class ListEntityBuilder(object):
                 select([literal(1).label('value')])
             )
             a = s.alias()
+            #XXX: two func.max?
             setattr(self, position_column_name, select([func.max(a.c.value)]))
         _init_position = before_insert(_init_position)
-        
+
         def _shift_items(self):
             self.table.update(
                 and_(
@@ -136,8 +137,8 @@ class ListEntityBuilder(object):
                 }
             ).execute()
         _shift_items = before_delete(_shift_items)
-        
-        def move_to_bottom(self):        
+
+        def move_to_bottom(self):
             # move the items that were above this item up one
             self.table.update(
                 and_(
@@ -148,7 +149,7 @@ class ListEntityBuilder(object):
                     position_column : position_column - 1
                 }
             ).execute()
-            
+
             # move this item to the max position
             self.table.update(
                 get_entity_where(self),
@@ -159,7 +160,7 @@ class ListEntityBuilder(object):
                     )
                 }
             ).execute()
-            
+
         def move_to_top(self):
             # move the items that were above this item down one
             self.table.update(
@@ -168,16 +169,17 @@ class ListEntityBuilder(object):
                     qualifier_method(self)
                 ),
                 values = {
-                    position_column : position_column + 1
+                    position_column: position_column + 1
                 }
             ).execute()
 
             # move this item to the first position
-            self.table.update(get_entity_where(self)).execute(**{position_column_name:1})
-            
+            self.table.update(get_entity_where(self)) \
+                      .execute(**{position_column_name: 1})
+
         def move_to(self, position):
             current_position = getattr(self, position_column_name)
-            
+
             # determine which direction we're moving
             if position < current_position:
                 where = and_(
@@ -193,22 +195,23 @@ class ListEntityBuilder(object):
                     qualifier_method(self)
                 )
                 modifier = -1
-            
+
             # shift the items in between the current and new positions
             self.table.update(where, values = {
                 position_column : position_column + modifier
             }).execute()
-            
+
             # update this item's position to the desired position
-            self.table.update(get_entity_where(self)).execute(**{position_column_name:position})
-        
-        def move_lower(self): 
-            self.move_to(getattr(self, position_column_name)+1)
-        
-        def move_higher(self): 
-            self.move_to(getattr(self, position_column_name)-1)
-        
-        
+            self.table.update(get_entity_where(self)) \
+                      .execute(**{position_column_name: position})
+
+        def move_lower(self):
+            self.move_to(getattr(self, position_column_name) + 1)
+
+        def move_higher(self):
+            self.move_to(getattr(self, position_column_name) - 1)
+
+
         # attach new methods to entity
         self.entity._init_position = _init_position
         self.entity._shift_items = _shift_items

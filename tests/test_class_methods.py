@@ -21,7 +21,7 @@ class TestOldMethods(object):
 
         a1 = A(name="a1")
 
-        session.flush()
+        session.commit()
         session.clear()
 
         assert A.get(1).name == "a1"

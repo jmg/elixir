@@ -14,12 +14,7 @@ import sqlalchemy
 from sqlalchemy     import Table, Column, Integer, desc, ForeignKey, and_, \
                            ForeignKeyConstraint
 from sqlalchemy.orm import Query, MapperExtension, mapper, object_session, \
-                           EXT_CONTINUE, polymorphic_union
-try:
-    from sqlalchemy.ext.sessioncontext import SessionContext
-except ImportError:
-    # Probably on sqlalchemy version 0.5
-    pass
+                           EXT_CONTINUE, polymorphic_union, ScopedSession
 
 import elixir
 from elixir.statements import process_mutators
@@ -29,42 +24,6 @@ from elixir.properties import Property
 
 __doc_all__ = ['Entity', 'EntityMeta']
 
-
-try:
-    from sqlalchemy.orm import ScopedSession
-except ImportError:
-    # Not on sqlalchemy version 0.4
-    ScopedSession = type(None)
-
-
-def _do_mapping(session, cls, *args, **kwargs):
-    if session is None:
-        return mapper(cls, *args, **kwargs)
-    elif isinstance(session, ScopedSession):
-        return session.mapper(cls, *args, **kwargs)
-    elif isinstance(session, SessionContext):
-        extension = kwargs.pop('extension', None)
-        if extension is not None:
-            if not isinstance(extension, list):
-                extension = [extension]
-            extension.append(session.mapper_extension)
-        else:
-            extension = session.mapper_extension
-
-        class query(object):
-            def __getattr__(s, key):
-                return getattr(session.registry().query(cls), key)
-
-            def __call__(s):
-                return session.registry().query(cls)
-
-        if not 'query' in cls.__dict__:
-            cls.query = query()
-
-        return mapper(cls, extension=extension, *args, **kwargs)
-    else:
-        raise Exception("Failed to map entity '%s' with its table or "
-                        "selectable" % cls.__name__)
 
 
 class EntityDescriptor(object):
@@ -115,7 +74,6 @@ class EntityDescriptor(object):
         # set default value for options with an optional module-level default
         self.metadata = getattr(self.module, '__metadata__', elixir.metadata)
         self.session = getattr(self.module, '__session__', elixir.session)
-        self.objectstore = None
         self.collection = getattr(self.module, '__entity_collection__',
                                   elixir.entities)
 
@@ -137,24 +95,6 @@ class EntityDescriptor(object):
         elixir.metadatas.add(self.metadata)
         if self.collection is not None:
             self.collection.map_entity(self.entity)
-
-        objectstore = None
-        session = self.session
-        if session is None or isinstance(session, ScopedSession):
-            # no stinking objectstore
-            pass
-        elif isinstance(session, SessionContext):
-            objectstore = elixir.Objectstore(session)
-        elif not hasattr(session, 'registry'):
-            # Both SessionContext and ScopedSession have a registry attribute,
-            # but objectstores (whether Elixir's or Activemapper's) don't, so
-            # if we are here, it means an Objectstore is used for the session.
-#XXX: still true for activemapper post 0.4?
-            objectstore = session
-            session = objectstore.context
-
-        self.session = session
-        self.objectstore = objectstore
 
         entity = self.entity
         if self.parent:
@@ -461,9 +401,16 @@ class EntityDescriptor(object):
         else:
             args = [self.entity.table]
 
-        self.entity.mapper = _do_mapping(self.session, self.entity,
-                                         properties=self.properties,
-                                         *args, **kwargs)
+        # do the mapping
+        kwargs['properties'] = self.properties
+        if self.session is None:
+            self.entity.mapper = mapper(self.entity, *args, **kwargs)
+        elif isinstance(self.session, ScopedSession):
+            self.entity.mapper = self.session.mapper(self.entity,
+                                                     *args, **kwargs)
+        else:
+            raise Exception("Failed to map entity '%s' with its table or "
+                            "selectable" % self.entity.__name__)
 
     def after_mapper(self):
         self.call_builders('after_mapper')
@@ -964,8 +911,8 @@ class Entity(object):
         return data
 
     # session methods
-    def flush(self, *args, **kwargs):
-        return object_session(self).flush([self], *args, **kwargs)
+    def commit(self, *args, **kwargs):
+        return object_session(self).commit([self], *args, **kwargs)
 
     def delete(self, *args, **kwargs):
         return object_session(self).delete(self, *args, **kwargs)

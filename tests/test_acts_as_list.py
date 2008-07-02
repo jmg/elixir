@@ -39,22 +39,22 @@ class TestActsAsList(object):
 
     def test_acts_as_list(self):
         # create a person
-        # you must create and flush this _before_ you attach todo's to it
+        # you must create and commit this _before_ you attach todo's to it
         # because of the way that the plugin is implemented
         p = Person(name='Jonathan')
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         # add three todos, in the reverse order that we want them
         p = Person.get(1)
         p.todos.append(ToDo(subject='Three'))
         p.todos.append(ToDo(subject='Two'))
         p.todos.append(ToDo(subject='One'))
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         # move the first item lower
         p = Person.get(1)
         p.todos[0].move_lower()
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         # validate it worked
         p = Person.get(1)
@@ -64,7 +64,7 @@ class TestActsAsList(object):
 
         # move the last item to the top to put things in correct order
         p.todos[2].move_to_top()
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         # validate it worked
         p = Person.get(1)
@@ -75,7 +75,7 @@ class TestActsAsList(object):
         # lets shuffle them again for the sake of testing move_to_bottom
         # and move_to_top
         p.todos[2].move_to_top()
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         p = Person.get(1)
         assert p.todos[0].subject == 'Three'
@@ -83,7 +83,7 @@ class TestActsAsList(object):
         assert p.todos[2].subject == 'Two'
 
         p.todos[1].move_to_bottom()
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         p = Person.get(1)
         assert p.todos[0].subject == 'Three'
@@ -94,7 +94,7 @@ class TestActsAsList(object):
         p = Person.get(1)
         p.todos[0].move_to(3)
         p.todos[2].move_to(1)
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         # validate it worked
         p = Person.get(1)
@@ -107,7 +107,7 @@ class TestActsAsList(object):
 
         # delete the second todo list item
         p.todos[1].delete()
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         # validate that the deletion worked, and sequence numebers
         # were properly managed

@@ -50,7 +50,7 @@ def setup():
     for title, year in titles:
         Record(title=title, artist=artist, year=year, genres=[genre])
 
-    session.flush()
+    session.commit()
     session.clear()
 
 

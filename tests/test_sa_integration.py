@@ -40,7 +40,7 @@ class TestSAIntegration(object):
         b1.a = A(name='a1')
 
         session.save(b1)
-        session.flush()
+        session.commit()
         session.clear()
 
         b = session.query(B).one()
@@ -70,7 +70,7 @@ class TestSAIntegration(object):
 #        b1 = B(name='b1', a=a1)
 #
 #        session.save(b1)
-#        session.flush()
+#        session.commit()
 #        session.clear()
 #
 #        b = B.query.one()

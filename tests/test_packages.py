@@ -30,7 +30,7 @@ class TestPackages(object):
 
         b1 = B(name='b1', as_=[A(name='a1')])
 
-        session.flush()
+        session.commit()
         session.clear()
 
         a = A.query.one()

@@ -27,7 +27,7 @@ class TestSpecialProperties(object):
         t1 = Tag(score1=5.0, score2=3.0)
         t2 = Tag(score1=10.0, score2=2.0)
 
-        session.flush()
+        session.commit()
         session.clear()
 
         for tag in Tag.query.all():
@@ -45,7 +45,7 @@ class TestSpecialProperties(object):
         t1 = Tag(score1=5.0, score2=3.0)
         t2 = Tag(score1=10.0, score2=2.0)
 
-        session.flush()
+        session.commit()
         session.clear()
 
         for tag in Tag.query.all():
@@ -87,7 +87,7 @@ class TestSpecialProperties(object):
 
         c1 = Category(name='dummy', users=[u1, u2])
 
-        session.flush()
+        session.commit()
         session.clear()
 
         category = Category.query.one()
@@ -110,7 +110,7 @@ class TestSpecialProperties(object):
         t1 = Tag(score1=5.0, score2=3.0)
         t1 = Tag(score1=10.0, score2=2.0)
 
-        session.flush()
+        session.commit()
         session.clear()
 
         for tag in Tag.query.all():
@@ -124,7 +124,7 @@ class TestSpecialProperties(object):
         setup_all(True)
 
         A(name='foo')
-        session.flush()
+        session.commit()
 
     def test_synonym(self):
         class Person(Entity):
@@ -154,7 +154,7 @@ class TestSpecialProperties(object):
 
         assert Person.email_values == ['x@y.com', 'x@z.com']
 
-        session.flush()
+        session.commit()
         session.clear()
 
         p = Person.get_by(email='x@z.com')
@@ -183,7 +183,7 @@ class TestSpecialProperties(object):
             password = 'unencrypted'
         )
 
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         p = Person.get_by(name='Alexandre da Silva')
         assert p.primary_email == 'x@y.com'
@@ -192,7 +192,7 @@ class TestSpecialProperties(object):
         assert u.email_address == 'y@z.com'
 
         u.email_address = 'new@z.com'
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         p = Person.get_by(name='Johann Felipe Voigt')
         assert p.primary_email == 'new@z.com'
@@ -207,7 +207,7 @@ class TestSpecialProperties(object):
 
         a1 = A(name='a1')
 
-        session.flush(); session.clear()
+        session.commit(); session.clear()
 
         a = A.query.one()
 

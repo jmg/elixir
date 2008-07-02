@@ -57,7 +57,7 @@ def test_truncate_list():
     t1 = Table1()
     t2 = Table2()
     t1.tbl2s.append(t2)
-    el.session.flush()
+    el.session.commit()
     t1.from_dict(dict(tbl2s=[]))
     assert len(t1.tbl2s) == 0
 
@@ -65,7 +65,7 @@ def test_update_list_item():
     t1 = Table1()
     t2 = Table2()
     t1.tbl2s.append(t2)
-    el.session.flush()
+    el.session.commit()
     t1.from_dict(dict(tbl2s=[{'id':t2.id, 'name':'test4'}]))
     assert len(t1.tbl2s) == 1
     assert t1.tbl2s[0].name == 'test4'
@@ -74,7 +74,7 @@ def test_invalid_update():
     t1 = Table1()
     t2 = Table2()
     t1.tbl2s.append(t2)
-    el.session.flush()
+    el.session.commit()
     try:
         t1.from_dict(dict(tbl2s=[{'id':t2.id+1}]))
         assert False
@@ -94,13 +94,13 @@ def test_to_deep2():
     t1 = Table1(id=52, name='test3')
     t2 = Table2(id=50, name='test4')
     t1.tbl2s.append(t2)
-    el.session.flush()
+    el.session.commit()
     assert t1.to_dict(deep={'tbl2s':{}}) == \
             {'id':52, 'name':'test3', 'tbl2s':[{'id':50, 'name':'test4'}]}
 
 def test_to_deep3():
     t1 = Table1(id=53, name='test2')
     t1.tbl3 = Table3(id=50, name='wobble')
-    el.session.flush()
+    el.session.commit()
     assert t1.to_dict(deep={'tbl3':{}}) == \
             {'id':53, 'name':'test2', 'tbl3':{'id':50,'name':'wobble'}}

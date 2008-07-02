@@ -26,7 +26,7 @@ class TestManyToMany(object):
 
         b1 = B(name='b1', as_=[A(name='a1')])
 
-        session.flush()
+        session.commit()
         session.clear()
 
         a = A.query.one()
@@ -50,7 +50,7 @@ class TestManyToMany(object):
 
         b1 = B(name='b1', as_=[A(name='a1')])
 
-        session.flush()
+        session.commit()
         session.clear()
 
         a = A.query.one()
@@ -82,7 +82,7 @@ class TestManyToMany(object):
 
         b1 = B(name='b1', as_=[A(key1=10, key2='a1')])
 
-        session.flush()
+        session.commit()
         session.clear()
 
         a = A.query.one()
@@ -107,7 +107,7 @@ class TestManyToMany(object):
         a1 = A(name='a1', rel1=[B(name='b2'), b1],
                           rel2=[B(name='b3'), B(name='b4'), b1])
 
-        session.flush()
+        session.commit()
         session.clear()
 
         a1 = A.query.one()
@@ -130,7 +130,7 @@ class TestManyToMany(object):
         homer = Person(name="Homer", friends=[barney])
         barney.friends.append(homer)
 
-        session.flush()
+        session.commit()
         session.clear()
 
         homer = Person.get_by(name="Homer")
@@ -155,7 +155,7 @@ class TestManyToMany(object):
         a2 = A(name='a2', bs=[B(name='b3'), b1])
         a3 = A(name='a3')
 
-        session.flush()
+        session.commit()
         session.clear()
 
         a1 = A.get_by(name='a1')
