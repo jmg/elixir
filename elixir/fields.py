@@ -186,7 +186,7 @@ class Field(Property):
     def create_col(self):
         self.column = Column(self.colname, self.type,
                              *self.args, **self.kwargs)
-        self.entity._descriptor.add_column(self.column)
+        self.add_table_column(self.column)
 
     def create_properties(self):
         if self.deferred:
@@ -195,17 +195,16 @@ class Field(Property):
                 group = self.deferred
             self.property = deferred(self.column, group=group)
         elif self.name != self.colname:
-            # if the property name is different from the column name, we need to
-            # add an explicit property (otherwise nothing is needed as it's done
-            # automatically by SA)
+            # if the property name is different from the column name, we need 
+            # to add an explicit property (otherwise nothing is needed as it's
+            # done automatically by SA)
             self.property = self.column
 
         if self.property:
-            self.entity._descriptor.add_property(self.name, self.property)
+            self.add_mapper_property(self.name, self.property)
 
         if self.synonym:
-            self.entity._descriptor.add_property(self.synonym,
-                                                 synonym(self.name))
+            self.add_mapper_property(self.synonym, synonym(self.name))
 
 
 def has_field_handler(entity, name, *args, **kwargs):

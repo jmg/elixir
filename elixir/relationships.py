@@ -413,7 +413,7 @@ class Relationship(Property):
 
         kwargs.update(self.get_prop_kwargs())
         self.property = relation(self.target, **kwargs)
-        self.entity._descriptor.add_property(self.name, self.property)
+        self.add_mapper_property(self.name, self.property)
 
     def target(self):
         if not self._target:
@@ -570,11 +570,8 @@ class ManyToOne(Relationship):
 
                 # Build the list of column "paths" the foreign key will
                 # point to
-                target_path = "%s.%s" % (target_desc.tablename, pk_col.key)
-                schema = target_desc.table_options.get('schema', None)
-                if schema is not None:
-                    target_path = "%s.%s" % (schema, target_path)
-                fk_refcols.append(target_path)
+                fk_refcols.append("%s.%s" % \
+                                  (target_desc.table_fullname, pk_col.key))
 
                 # Build up the primary join. This is needed when you have
                 # several belongs_to relationships between two objects
@@ -756,7 +753,7 @@ class ManyToMany(Relationship):
             constraints = list()
 
             joins = (self.primaryjoin_clauses, self.secondaryjoin_clauses)
-            for num, desc, fk_name, m2m in (
+            for num, desc, fk_name, rel in (
                     (0, e1_desc, source_fk_name, self),
                     (1, e2_desc, target_fk_name, self.inverse)):
                 fk_colnames = list()
@@ -783,18 +780,15 @@ class ManyToMany(Relationship):
 
                     # Build the list of column "paths" the foreign key will
                     # point to
-                    target_path = "%s.%s" % (desc.tablename, pk_col.key)
-                    schema = desc.table_options.get('schema', None)
-                    if schema is not None:
-                        target_path = "%s.%s" % (schema, target_path)
+                    target_path = "%s.%s" % (desc.table_fullname, pk_col.key)
                     fk_refcols.append(target_path)
 
                     # Build join clauses (in case we have a self-ref)
                     if self.entity is self.target:
                         joins[num].append(col == pk_col)
 
-                onupdate = m2m and m2m.onupdate
-                ondelete = m2m and m2m.ondelete
+                onupdate = rel and rel.onupdate
+                ondelete = rel and rel.ondelete
 
                 constraints.append(
                     ForeignKeyConstraint(fk_colnames, fk_refcols,

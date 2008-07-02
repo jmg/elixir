@@ -156,10 +156,7 @@ class EntityDescriptor(object):
                     # Add columns with foreign keys to the parent's primary
                     # key columns
                     parent_desc = self.parent._descriptor
-                    schema = parent_desc.table_options.get('schema', None)
-                    tablename = parent_desc.tablename
-                    if schema is not None:
-                        tablename = "%s.%s" % (schema, tablename)
+                    tablename = parent_desc.table_fullname
                     for pk_col in parent_desc.primary_keys:
                         colname = options.MULTIINHERITANCECOL_NAMEFORMAT % \
                                   {'entity': self.parent.__name__.lower(),
@@ -533,6 +530,18 @@ class EntityDescriptor(object):
             return self.parent._descriptor.find_relationship(name)
         else:
             return None
+
+    def table_fullname(self):
+        '''
+        Complete name of the table for the related entity.
+        Includes the schema name if there is one specified.
+        '''
+        schema = self.table_options.get('schema', None)
+        if schema is not None:
+            return "%s.%s" % (schema, self.tablename)
+        else:
+            return self.tablename
+    table_fullname = property(table_fullname)
 
     def columns(self):
         #FIXME: this would be more correct but it breaks inheritance, so I'll

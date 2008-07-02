@@ -76,6 +76,13 @@ class EntityBuilder(object):
     def finalize(self):
         pass
 
+    # helper methods
+    def add_mapper_property(self, name, prop):
+        self.entity._descriptor.add_property(name, prop)
+
+    def add_table_column(self, column):
+        self.entity._descriptor.add_column(column)
+
 
 class CounterMeta(type):
     '''
@@ -145,7 +152,7 @@ class GenericProperty(Property):
         else:
             prop_value = self.prop
         prop_value = self.evaluate_property(prop_value)
-        self.entity._descriptor.add_property(self.name, prop_value)
+        self.add_mapper_property(self.name, prop_value)
 
     def evaluate_property(self, prop):
         return prop
