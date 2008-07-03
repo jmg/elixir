@@ -4,9 +4,9 @@ __all__ = [
     'before_update',
     'after_update',
     'before_delete',
-    'after_delete'
+    'after_delete',
+    'on_reconstitute'
 ]
-
 
 def create_decorator(event_name):
     def decorator(func):
@@ -22,6 +22,9 @@ before_update = create_decorator('before_update')
 after_update = create_decorator('after_update')
 before_delete = create_decorator('before_delete')
 after_delete = create_decorator('after_delete')
-
-
-
+try:
+    from sqlalchemy.orm.attributes import on_reconstitute
+except ImportError:
+    def on_reconstitute(func):
+        raise Exception('The on_reconstitute method decorator is only '
+                        'available with SQLAlchemy 0.5 and later')

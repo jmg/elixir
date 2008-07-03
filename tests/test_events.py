@@ -1,6 +1,7 @@
 from elixir import *
 from elixir.events import *
 
+on_reconstitute_called = 0
 
 before_insert_called = 0
 after_insert_called  = 0
@@ -11,12 +12,19 @@ after_delete_called  = 0
 
 before_any_called = 0
 
-
 def setup():
     global Document
 
     class Document(Entity):
         name = Field(String(50))
+
+        try:
+            def post_fetch(self):
+                global on_reconstitute_called
+                on_reconstitute_called += 1
+            post_fetch = on_reconstitute(post_fetch)
+        except:
+            pass
 
         def pre_insert(self):
             global before_insert_called
@@ -73,11 +81,11 @@ class TestEvents(object):
         d = Document(name='My Document')
         session.commit(); session.clear()
 
-        d = Document.query.get(1)
+        d = Document.query.one()
         d.name = 'My Document Updated'
         session.commit(); session.clear()
 
-        d = Document.query.get(1)
+        d = Document.query.one()
         d.delete()
         session.commit(); session.clear()
 
@@ -88,7 +96,16 @@ class TestEvents(object):
         assert before_delete_called == 1
         assert after_delete_called == 1
         assert before_any_called == 3
-
+        
+        on_rec_available = False
+        try:
+            on_reconstitute(lambda:0)
+            on_rec_available = True
+        except:
+            pass
+        
+        if on_rec_available:
+            assert on_reconstitute_called == 2
 
 if __name__ == '__main__':
     setup()
