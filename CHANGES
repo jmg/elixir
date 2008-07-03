@@ -16,6 +16,11 @@ New features:
     class A(Entity):
         pass
     A.name = Field(String(32))
+- Added add_mapper_property and add_table_column helper method in
+  EntityBuilders.
+- Added full_tablename property on EntityDescriptor (includes schema name if
+  any).
+- Added on_reconstitute event/method decorator. Only works with SA 0.5.
 
 Changes:
 - Added support for SQLAlchemy 0.5, and dropped support for version 0.3 and
@@ -23,7 +28,7 @@ Changes:
 - The default session (elixir.session) uses sessionmaker() instead of
   create_session(), which means it has now the following characterisics:
     * autoflush=True
-    * autocommit=False (with SA 0.5 -- equivalent to transactional=True with 
+    * autocommit=False (with SA 0.5 -- equivalent to transactional=True with
       SA 0.4)
     * autoexpire=True (with SA 0.5).
 - removed objectstore
