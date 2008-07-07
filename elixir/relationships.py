@@ -412,6 +412,7 @@ class Relationship(Property):
                 return
 
         kwargs.update(self.get_prop_kwargs())
+
         self.property = relation(self.target, **kwargs)
         self.add_mapper_property(self.name, self.property)
 
@@ -450,7 +451,12 @@ class Relationship(Property):
         return False
 
     def is_inverse(self, other):
-        return other is not self and \
+        # viewonly relationships shouldn't match as inverse of anything (so
+        # that no backref is created -- which doesn't make sense in that case)
+        viewonly = self.kwargs.get('viewonly', False) or \
+                   other.kwargs.get('viewonly', False)
+        return not viewonly and \
+               other is not self and \
                self.match_type_of(other) and \
                self.entity == other.target and \
                other.entity == self.target and \
@@ -611,6 +617,11 @@ class OneToOne(Relationship):
         return isinstance(other, ManyToOne)
 
     def create_keys(self, pk):
+        # When using a viewonly relationship, you are on your own: Elixir
+        # doesn't check that a corresponding ManyToOne relationship exists.
+        if self.kwargs.get('viewonly', False):
+            return
+
         # make sure an inverse relationship exists
         if self.inverse is None:
             raise Exception(
@@ -636,8 +647,11 @@ class OneToOne(Relationship):
             # autoloaded tables
             kwargs['remote_side'] = self.inverse.foreign_key
 
-        if self.inverse.primaryjoin_clauses:
-            kwargs['primaryjoin'] = and_(*self.inverse.primaryjoin_clauses)
+        # viewonly relationships do not have any inverse (and they provide 
+        # their primaryjoin argument manually anyway).
+        if not self.kwargs.get('viewonly', False):
+            if self.inverse.primaryjoin_clauses:
+                kwargs['primaryjoin'] = and_(*self.inverse.primaryjoin_clauses)
 
         kwargs.update(self.kwargs)
 

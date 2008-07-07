@@ -21,6 +21,7 @@ New features:
 - Added full_tablename property on EntityDescriptor (includes schema name if
   any).
 - Added on_reconstitute event/method decorator. Only works with SA 0.5.
+- Added support for viewonly relationships (OneToMany and OneToOne).
 
 Changes:
 - Added support for SQLAlchemy 0.5, and dropped support for version 0.3 and

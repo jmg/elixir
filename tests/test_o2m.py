@@ -3,6 +3,8 @@ test one to many relationships
 """
 
 from elixir import *
+from sqlalchemy import and_
+from sqlalchemy.ext.orderinglist import ordering_list
 
 def setup():
     metadata.bind = 'sqlite:///'
@@ -103,6 +105,39 @@ class TestOneToMany(object):
 
         root = TreeNode.get_by(name='rootnode')
         print root
+
+    def test_viewonly(self):
+        class User(Entity):
+            two_blurbs = OneToMany('Blurb', primaryjoin=lambda:
+                and_(Blurb.user_id == User.id, Blurb.position < 2),
+                viewonly=True
+            )
+            blurbs = OneToMany('Blurb',
+                               collection_class=ordering_list('position'),
+                               order_by='position')
+
+        class Blurb(Entity):
+            user = ManyToOne('User')
+            position = Field(Integer)
+            blurb = Field(Unicode(255))
+
+            def __init__(self, blurb, **kwargs):
+                super(Blurb, self).__init__(blurb=blurb, **kwargs)
+
+            def __repr__(self):
+                return 'Blurb(%r, %r)' % (self.position, self.blurb)
+
+        setup_all(True)
+
+        user = User(blurbs=[Blurb(u'zero'), Blurb(u'one'), Blurb(u'two')])
+
+        session.commit()
+        session.clear()
+
+        user = User.get(1)
+        assert len(user.two_blurbs) == 2
+        assert user.two_blurbs[0].blurb == 'zero'
+        assert user.two_blurbs[1].blurb == 'one'
 
     def test_has_many_syntax(self):
         class Person(Entity):
