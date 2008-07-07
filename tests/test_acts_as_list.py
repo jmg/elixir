@@ -1,43 +1,35 @@
+from sqlalchemy import Table, Column, MetaData
+
 from elixir import *
 from elixir.ext.list import acts_as_list
 
-def setup():
-    global ToDo, Person
-
-    class ToDo(Entity):
-        subject = Field(String(128))
-        owner = ManyToOne('Person')
-
-        def qualify(self):
-            return ToDo.owner_id == self.owner_id
-
-        acts_as_list(qualifier=qualify, column_name='position')
-
-        def __repr__(self):
-            return '<%d:%s>' % (self.position, self.subject)
-
-    class Person(Entity):
-        name = Field(String(64))
-        todos = OneToMany('ToDo', order_by='position')
-
-
-    setup_all()
-    metadata.bind = 'sqlite:///'
-
-
-def teardown():
-    cleanup_all()
-
 
 class TestActsAsList(object):
-    def setup(self):
-        create_all()
 
     def teardown(self):
-        drop_all()
-        session.clear()
+        cleanup_all(True)
 
     def test_acts_as_list(self):
+        class ToDo(Entity):
+            subject = Field(String(128))
+            owner = ManyToOne('Person')
+
+            def qualify(self):
+                return ToDo.owner_id == self.owner_id
+
+            acts_as_list(qualifier=qualify, column_name='position')
+
+            def __repr__(self):
+                return '<%d:%s>' % (self.position, self.subject)
+
+        class Person(Entity):
+            name = Field(String(64))
+            todos = OneToMany('ToDo', order_by='position')
+
+        metadata.bind = 'sqlite:///'
+
+        setup_all(True)
+
         # create a person
         # you must create and commit this _before_ you attach todo's to it
         # because of the way that the plugin is implemented
@@ -73,7 +65,6 @@ class TestActsAsList(object):
         assert p.todos[2].subject == 'Three'
 
         # lets shuffle them again for the sake of testing move_to_bottom
-        # and move_to_top
         p.todos[2].move_to_top()
         session.commit(); session.clear()
 
@@ -116,3 +107,30 @@ class TestActsAsList(object):
         assert p.todos[0].position == 1
         assert p.todos[1].subject == 'Three'
         assert p.todos[1].position == 2
+
+    def test_acts_as_list_autoload(self):
+        # Make autoload test fixture
+        meta = MetaData('sqlite:///')
+
+        preloaded_table = Table('preloaded', meta,
+            Column('name', String(32), primary_key=True),
+            Column('position', Integer))
+
+        meta.create_all()
+
+        class Preloaded(Entity):
+            using_options(tablename='preloaded', autoload=True)
+            acts_as_list()
+
+        metadata.bind = meta.bind
+        setup_all()
+
+        i = Preloaded(name='Foo')
+        session.commit()
+        assert i.name == 'Foo'
+        assert i.position == 1
+
+        j = Preloaded(name='Bar')
+        session.commit()
+        assert j.name == 'Bar'
+        assert j.position == 2

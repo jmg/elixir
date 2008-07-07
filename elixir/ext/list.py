@@ -52,9 +52,9 @@ Example model usage:
         todos = OneToMany('ToDo', order_by='position')
 
 
-The above example can then be used to manage ordered todo lists for people. 
+The above example can then be used to manage ordered todo lists for people.
 Note that you must set the `order_by` property on the `Person.todo` relation in
-order for the relation to respect the ordering. Here is an example of using 
+order for the relation to respect the ordering. Here is an example of using
 this model in practice:
 
 .. sourcecode:: python
@@ -103,8 +103,18 @@ class ListEntityBuilder(object):
         self.column_name = column_name
 
     def create_non_pk_cols(self):
-        self.position_column = Column(self.column_name, Integer)
-        self.entity._descriptor.add_column(self.position_column)
+        if self.entity._descriptor.autoload:
+            for c in self.entity.table.c:
+                if c.name == self.column_name:
+                    self.position_column = c
+            if not hasattr(self, 'position_column'):
+                raise Exception(
+                    "Could not find column '%s' in autoloaded table '%s', "
+                    "needed by entity '%s'." % (self.column_name,
+                        self.entity.table.name, self.entity.__name__))
+        else:
+            self.position_column = Column(self.column_name, Integer)
+            self.entity._descriptor.add_column(self.position_column)
 
     def after_table(self):
         position_column = self.position_column
@@ -162,20 +172,7 @@ class ListEntityBuilder(object):
             ).execute()
 
         def move_to_top(self):
-            # move the items that were above this item down one
-            self.table.update(
-                and_(
-                    position_column <= getattr(self, position_column_name),
-                    qualifier_method(self)
-                ),
-                values = {
-                    position_column: position_column + 1
-                }
-            ).execute()
-
-            # move this item to the first position
-            self.table.update(get_entity_where(self)) \
-                      .execute(**{position_column_name: 1})
+            self.move_to(1)
 
         def move_to(self, position):
             current_position = getattr(self, position_column_name)
@@ -206,6 +203,7 @@ class ListEntityBuilder(object):
                       .execute(**{position_column_name: position})
 
         def move_lower(self):
+            # replace for ex.: p.todos.insert(x + 1, p.todos.pop(x))
             self.move_to(getattr(self, position_column_name) + 1)
 
         def move_higher(self):
