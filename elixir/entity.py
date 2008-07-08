@@ -21,9 +21,9 @@ from elixir.statements import process_mutators
 from elixir import options
 from elixir.properties import Property
 
+DEBUG = False
 
 __doc_all__ = ['Entity', 'EntityMeta']
-
 
 
 class EntityDescriptor(object):
@@ -453,6 +453,8 @@ class EntityDescriptor(object):
                 raise Exception("Column '%s' already exist in table '%s' ! " %
                                 (col.key, table.name))
             table.append_column(col)
+            if DEBUG:
+                print "table.append_column(%s)" % col
 
     def add_constraint(self, constraint):
         self.constraints.append(constraint)
@@ -477,6 +479,8 @@ class EntityDescriptor(object):
         mapper = self.entity.mapper
         if mapper:
             mapper.add_property(name, property)
+            if DEBUG:
+                print "mapper.add_property('%s', %s)" % (name, repr(property))
 
     def add_mapper_extension(self, extension):
         extensions = self.mapper_options.get('extension', [])
@@ -496,14 +500,14 @@ class EntityDescriptor(object):
                             "'%s' entity!" % (key, self.entity.__name__))
         return None
 
-    def get_inverse_relation(self, rel, reverse=False):
+    def get_inverse_relation(self, rel, check_reverse=True):
         '''
         Return the inverse relation of rel, if any, None otherwise.
         '''
 
         matching_rel = None
         for other_rel in self.relationships:
-            if other_rel.is_inverse(rel):
+            if rel.is_inverse(other_rel):
                 if matching_rel is None:
                     matching_rel = other_rel
                 else:
@@ -517,8 +521,8 @@ class EntityDescriptor(object):
         # one relation matching as its own inverse. We don't need the result
         # of the method though. But we do need to be careful not to start an
         # infinite recursive loop.
-        if matching_rel and not reverse:
-            rel.entity._descriptor.get_inverse_relation(matching_rel, True)
+        if matching_rel and check_reverse:
+            rel.entity._descriptor.get_inverse_relation(matching_rel, False)
 
         return matching_rel
 
@@ -920,8 +924,8 @@ class Entity(object):
         return data
 
     # session methods
-    def commit(self, *args, **kwargs):
-        return object_session(self).commit([self], *args, **kwargs)
+    def flush(self, *args, **kwargs):
+        return object_session(self).flush([self], *args, **kwargs)
 
     def delete(self, *args, **kwargs):
         return object_session(self).delete(self, *args, **kwargs)
@@ -950,6 +954,10 @@ class Entity(object):
     def update(self, *args, **kwargs):
         return self._global_session.update(self, *args, **kwargs)
 
+    # only exist in SA < 0.5
+    # IMO, the replacement (session.add) doesn't sound good enough to be added
+    # here. For example: "o = Order(); o.add()" is not very telling. It's
+    # better to leave it as "session.add(o)"
     def save_or_update(self, *args, **kwargs):
         return self._global_session.save_or_update(self, *args, **kwargs)
 

@@ -355,7 +355,6 @@ class Relationship(Property):
         self.of_kind = of_kind
 
         self._target = None
-        self._inverse = None
 
         self.property = None # sqlalchemy property
         self.backref = None  # sqlalchemy backref
@@ -394,15 +393,18 @@ class Relationship(Property):
         if self.property or self.backref:
             return
 
-        kwargs = {}
-        if self.inverse:
+        kwargs = self.get_prop_kwargs()
+
+        # viewonly relationships need to create "standalone" relations (ie
+        # shouldn't be a backref of another relation).
+        if self.inverse and not kwargs.get('viewonly', False):
             # check if the inverse was already processed (and thus has already
             # defined a backref we can use)
             if self.inverse.backref:
-                kwargs['backref'] = self.inverse.backref
+                # let the user override the backref argument
+                if 'backref' not in kwargs:
+                    kwargs['backref'] = self.inverse.backref
             else:
-                kwargs = self.get_prop_kwargs()
-
                 # SQLAlchemy doesn't like when 'secondary' is both defined on
                 # the relation and the backref
                 kwargs.pop('secondary', None)
@@ -410,8 +412,6 @@ class Relationship(Property):
                 # define backref for use by the inverse
                 self.backref = backref(self.name, **kwargs)
                 return
-
-        kwargs.update(self.get_prop_kwargs())
 
         self.property = relation(self.target, **kwargs)
         self.add_mapper_property(self.name, self.property)
@@ -427,7 +427,7 @@ class Relationship(Property):
     target = property(target)
 
     def inverse(self):
-        if not self._inverse:
+        if not hasattr(self, '_inverse'):
             if self.inverse_name:
                 desc = self.target._descriptor
                 inverse = desc.find_relationship(self.inverse_name)
@@ -438,10 +438,12 @@ class Relationship(Property):
                               % (self.inverse_name, self.target.__name__))
                 assert self.match_type_of(inverse)
             else:
-                inverse = self.target._descriptor.get_inverse_relation(self)
+                check_reverse = not self.kwargs.get('viewonly', False)
+                inverse = self.target._descriptor.get_inverse_relation(self,
+                            check_reverse=check_reverse)
 
-            if inverse:
-                self._inverse = inverse
+            self._inverse = inverse
+            if inverse and not self.kwargs.get('viewonly', False):
                 inverse._inverse = self
 
         return self._inverse
@@ -451,11 +453,10 @@ class Relationship(Property):
         return False
 
     def is_inverse(self, other):
-        # viewonly relationships shouldn't match as inverse of anything (so
-        # that no backref is created -- which doesn't make sense in that case)
-        viewonly = self.kwargs.get('viewonly', False) or \
-                   other.kwargs.get('viewonly', False)
-        return not viewonly and \
+        # viewonly relationships are not symmetrical: a viewonly relationship
+        # should have exactly one inverse (a ManyToOne relationship), but that
+        # inverse shouldn't have the viewonly relationship as its inverse.
+        return not other.kwargs.get('viewonly', False) and \
                other is not self and \
                self.match_type_of(other) and \
                self.entity == other.target and \
@@ -613,15 +614,16 @@ class ManyToOne(Relationship):
 class OneToOne(Relationship):
     uselist = False
 
+    def __init__(self, *args, **kwargs):
+        self.filter = kwargs.pop('filter', None)
+        if self.filter is not None:
+            kwargs['viewonly'] = True
+        super(OneToOne, self).__init__(*args, **kwargs)
+
     def match_type_of(self, other):
         return isinstance(other, ManyToOne)
 
     def create_keys(self, pk):
-        # When using a viewonly relationship, you are on your own: Elixir
-        # doesn't check that a corresponding ManyToOne relationship exists.
-        if self.kwargs.get('viewonly', False):
-            return
-
         # make sure an inverse relationship exists
         if self.inverse is None:
             raise Exception(
@@ -647,11 +649,11 @@ class OneToOne(Relationship):
             # autoloaded tables
             kwargs['remote_side'] = self.inverse.foreign_key
 
-        # viewonly relationships do not have any inverse (and they provide 
-        # their primaryjoin argument manually anyway).
-        if not self.kwargs.get('viewonly', False):
-            if self.inverse.primaryjoin_clauses:
-                kwargs['primaryjoin'] = and_(*self.inverse.primaryjoin_clauses)
+        joinclauses = self.inverse.primaryjoin_clauses
+        if self.filter:
+            joinclauses.append(self.filter(self.target.table.c))
+        if joinclauses:
+            kwargs['primaryjoin'] = and_(*joinclauses)
 
         kwargs.update(self.kwargs)
 

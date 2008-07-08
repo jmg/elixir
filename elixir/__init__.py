@@ -164,17 +164,21 @@ def cleanup_all(drop_tables=False, *args, **kwargs):
     '''Clear all mappers, clear the session, and clear all metadatas.
     Optionally drops the tables.
     '''
-    if drop_tables:
-        drop_all(*args, **kwargs)
+    session.rollback()
+    session.clear()
+    session.close()
 
     cleanup_entities(entities)
+
+    sqlalchemy.orm.clear_mappers()
+    entities._entities = {}
+    del entities[:]
+
+    if drop_tables:
+        drop_all(*args, **kwargs)
 
     for md in metadatas:
         md.clear()
     metadatas.clear()
 
-    session.close()
-
-    sqlalchemy.orm.clear_mappers()
-    del entities[:]
 

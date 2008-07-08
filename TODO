@@ -83,16 +83,7 @@ discussed before doing anything.
 - investigate whether it would be possible to do a generic acts_as(xxx)
   instead of the acts_as_taggable Jonathan demonstrated
 
-- implement something like:
-
-    class A(Entity):
-        has_many('b', of_kind='B')
-        has_many('b_filtered', of_kind='B', filter=lambda c: c.extra < 10)
-    class B(Entity):
-        has_field('extra', Integer)
-        belongs_to('a', of_kind='A')
-
-  this is the more or less the same as what is described at:
+- support custom selectable on relationships, as is done at:
 
   http://spyced.blogspot.com/2007/01/why-sqlalchemy-impresses-me.html
   ie relations using any "selectable" instead of the normal object table.

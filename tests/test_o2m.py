@@ -107,11 +107,44 @@ class TestOneToMany(object):
         print root
 
     def test_viewonly(self):
+        # the callable primaryjoin seem to be unstable... sometime it works,
+        # sometime it doesn't... for no apparent reason. I think it's a bug in
+        # the current revision of SQLAlchemy I'm using (4900).
         class User(Entity):
             two_blurbs = OneToMany('Blurb', primaryjoin=lambda:
                 and_(Blurb.user_id == User.id, Blurb.position < 2),
                 viewonly=True
             )
+            blurbs = OneToMany('Blurb',
+                               collection_class=ordering_list('position'),
+                               order_by='position')
+
+        class Blurb(Entity):
+            user = ManyToOne('User')
+            position = Field(Integer)
+            blurb = Field(Unicode(255))
+
+            def __init__(self, blurb, **kwargs):
+                super(Blurb, self).__init__(blurb=blurb, **kwargs)
+
+            def __repr__(self):
+                return 'Blurb(%r, %r)' % (self.position, self.blurb)
+
+        setup_all(True)
+
+        user = User(blurbs=[Blurb(u'zero'), Blurb(u'one'), Blurb(u'two')])
+
+        session.commit()
+        session.clear()
+
+        user = User.get(1)
+        assert len(user.two_blurbs) == 2
+        assert user.two_blurbs[0].blurb == 'zero'
+        assert user.two_blurbs[1].blurb == 'one'
+
+    def test_filtered(self):
+        class User(Entity):
+            two_blurbs = OneToMany('Blurb', filter=lambda c: c.position < 2)
             blurbs = OneToMany('Blurb',
                                collection_class=ordering_list('position'),
                                order_by='position')
