@@ -57,13 +57,18 @@ class EntityBuilder(object):
         pass
 
     def create_tables(self):
-        pass
+        '''
+        Subclasses may override this method to create tables.
+        '''
 
     def after_table(self):
         pass
 
     def create_properties(self):
-        pass
+        '''
+        Subclasses may override this method to add properties to the involved 
+        entity.
+        '''
 
     def before_mapper(self):
         pass

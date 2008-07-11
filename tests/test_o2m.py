@@ -107,9 +107,6 @@ class TestOneToMany(object):
         print root
 
     def test_viewonly(self):
-        # the callable primaryjoin seem to be unstable... sometime it works,
-        # sometime it doesn't... for no apparent reason. I think it's a bug in
-        # the current revision of SQLAlchemy I'm using (4900).
         class User(Entity):
             two_blurbs = OneToMany('Blurb', primaryjoin=lambda:
                 and_(Blurb.user_id == User.id, Blurb.position < 2),

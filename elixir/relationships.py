@@ -379,21 +379,20 @@ class Relationship(Property):
         create foreign keys.
         '''
 
-    def create_tables(self):
-        '''
-        Subclasses (ie. concrete relationships) may override this method to
-        create secondary tables.
-        '''
-
     def create_properties(self):
-        '''
-        Subclasses (ie. concrete relationships) may override this method to
-        add properties to the involved entities.
-        '''
         if self.property or self.backref:
             return
 
         kwargs = self.get_prop_kwargs()
+        if 'order_by' in kwargs:
+            kwargs['order_by'] = \
+                self.target._descriptor.translate_order_by(kwargs['order_by'])
+
+        # transform callable arguments
+        for arg in ('primaryjoin', 'secondaryjoin', 'remote_side'):
+            kwarg = kwargs.get(arg, None)
+            if callable(kwarg):
+                kwargs[arg] = kwarg()
 
         # viewonly relationships need to create "standalone" relations (ie
         # shouldn't be a backref of another relation).
@@ -663,16 +662,6 @@ class OneToOne(Relationship):
 class OneToMany(OneToOne):
     uselist = True
 
-    def get_prop_kwargs(self):
-        kwargs = super(OneToMany, self).get_prop_kwargs()
-
-        if 'order_by' in kwargs:
-            kwargs['order_by'] = \
-                self.target._descriptor.translate_order_by(
-                    kwargs['order_by'])
-
-        return kwargs
-
 
 class ManyToMany(Relationship):
     uselist = True
@@ -856,10 +845,6 @@ class ManyToMany(Relationship):
             kwargs['secondaryjoin'] = and_(*self.secondaryjoin_clauses)
 
         kwargs.update(self.kwargs)
-
-        if 'order_by' in kwargs:
-            kwargs['order_by'] = \
-                self.target._descriptor.translate_order_by(kwargs['order_by'])
 
         return kwargs
 

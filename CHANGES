@@ -16,14 +16,17 @@ New features:
     class A(Entity):
         pass
     A.name = Field(String(32))
-- Added add_mapper_property and add_table_column helper methods in
-  EntityBuilders.
+- Added add_table_column, add_mapper_property and add_mapper_extension helper
+  methods in EntityBuilders.
 - Added full_tablename property on EntityDescriptor (includes schema name if
   any).
 - Added on_reconstitute event/method decorator. Only works with SA 0.5.
 - Added support for viewonly relationships (OneToMany and OneToOne).
 - Added support for filtered OneToMany relationships. Produce viewonly
   relations. See source:elixir/trunk/tests/test_o2m.py for an example.
+- Added support for callables for some arguments on relationships: primaryjoin,
+  secondaryjoin and remote_side. It means those can be evaluated at setup time
+  (when tables and their columns already exist) instead of definition time.
 
 Changes:
 - Added support for SQLAlchemy 0.5, and dropped support for version 0.3 and
@@ -34,7 +37,7 @@ Changes:
     * autocommit=False (with SA 0.5 -- equivalent to transactional=True with
       SA 0.4)
     * autoexpire=True (with SA 0.5).
-- removed objectstore and other SA 0.3 or older support code.
+- removed objectstore and other SA 0.3 (or older) support code.
 
 Bug fixes:
 - Fixed multi-table inheritance when using a non default schema (closes #38)
