@@ -14,7 +14,8 @@ import sqlalchemy
 from sqlalchemy     import Table, Column, Integer, desc, ForeignKey, and_, \
                            ForeignKeyConstraint
 from sqlalchemy.orm import Query, MapperExtension, mapper, object_session, \
-                           EXT_CONTINUE, polymorphic_union, ScopedSession
+                           EXT_CONTINUE, polymorphic_union, ScopedSession, \
+                           ColumnProperty
 
 import elixir
 from elixir.statements import process_mutators
@@ -61,7 +62,9 @@ class EntityDescriptor(object):
         self._columns = list()
         self.constraints = list()
 
-        # properties waiting for a mapper to exist
+        # properties (it is only useful for checking dupe properties at the
+        # moment, and when adding properties before the mapper is created,
+        # which shouldn't happen).
         self.properties = dict()
 
         #
@@ -325,7 +328,9 @@ class EntityDescriptor(object):
 
     def setup_mapper(self):
         '''
-        Initializes and assign an (empty!) mapper to the entity.
+        Initializes and assign a mapper to the entity.
+        At this point the mapper will usually have no property as they are
+        added later.
         '''
         if self.entity.mapper:
             return
@@ -399,7 +404,6 @@ class EntityDescriptor(object):
             args = [self.entity.table]
 
         # do the mapping
-        kwargs['properties'] = self.properties
         if self.session is None:
             self.entity.mapper = mapper(self.entity, *args, **kwargs)
         elif isinstance(self.session, ScopedSession):
@@ -490,7 +494,7 @@ class EntityDescriptor(object):
         self.mapper_options['extension'] = extensions
 
     def get_column(self, key, check_missing=True):
-        "need to support both the case where the table is already setup or not"
+        #TODO: this needs to work whether the table is already setup or not
         #TODO: support SA table/autoloaded entity
         for col in self.columns:
             if col.key == key:
@@ -535,6 +539,9 @@ class EntityDescriptor(object):
         else:
             return None
 
+    #------------------------
+    # some useful properties
+
     def table_fullname(self):
         '''
         Complete name of the table for the related entity.
@@ -575,6 +582,26 @@ class EntityDescriptor(object):
                 return [col for col in self.columns if col.primary_key]
     primary_keys = property(primary_keys)
 
+    def primary_key_properties(self):
+        """
+        Returns the list of (mapper) properties corresponding to the primary
+        key columns of the table of the entity.
+
+        This property caches its value, so it shouldn't be called before the
+        entity is fully set up.
+        """
+        if not hasattr(self, '_pk_props'):
+            col_to_prop = {}
+            mapper = self.entity.mapper
+            for prop in mapper.iterate_properties:
+                if isinstance(prop, ColumnProperty):
+                    for col in prop.columns:
+                        for col in col.proxy_set:
+                            col_to_prop[col] = prop
+            pk_cols = [c for c in mapper.mapped_table.c if c.primary_key]
+            self._pk_props = [col_to_prop[c] for c in pk_cols]
+        return self._pk_props
+    primary_key_properties = property(primary_key_properties)
 
 class TriggerProxy(object):
     """
@@ -643,28 +670,32 @@ class EntityMeta(type):
         # create the entity descriptor
         desc = cls._descriptor = EntityDescriptor(cls)
 
-        # Process attributes (using the assignment syntax), looking for
-        # 'Property' instances and attaching them to this entity.
-        properties = [(name, attr) for name, attr in dict_.iteritems()
-                                   if isinstance(attr, Property)]
-        sorted_props = sorted(properties, key=lambda i: i[1]._counter)
-        for name, prop in sorted_props:
-            prop.attach(cls, name)
-
+        # Determine whether this entity is a *direct* subclass of its base
+        # entity
         entity_base = None
-        for base in bases:
+        for base in cls.__bases__:
             if isinstance(base, EntityMeta):
                 if not is_entity(base):
                     entity_base = base
+
         if entity_base:
-            # Process attributes (using the assignment syntax), looking for
-            # 'Property' instances and attaching them to this entity.
+            # If so, copy the base entity properties ('Property' instances).
+            # We use inspect.getmembers (instead of __dict__) so that we also
+            # get the properties from the parents of the base_class if any.
             base_props = inspect.getmembers(entity_base,
                                             lambda a: isinstance(a, Property))
-            local_props = [(name, copy(attr)) for name, attr in base_props]
-            sorted_props = sorted(local_props, key=lambda i: i[1]._counter)
-            for name, prop in sorted_props:
-                prop.attach(cls, name)
+            base_props = [(name, copy(attr)) for name, attr in base_props]
+        else:
+            base_props = []
+
+        # Process attributes (using the assignment syntax), looking for
+        # 'Property' instances and attaching them to this entity.
+        properties = [(name, attr) for name, attr in cls.__dict__.iteritems()
+                                   if isinstance(attr, Property)]
+        sorted_props = sorted(base_props + properties,
+                              key=lambda i: i[1]._counter)
+        for name, prop in sorted_props:
+            prop.attach(cls, name)
 
         # Process mutators. Needed before _install_autosetup_triggers so that
         # we know of the metadata
@@ -729,9 +760,9 @@ def _install_autosetup_triggers(cls, entity_name=None):
         md.table_iterator = table_iterator
 
     #TODO: we might want to add all columns that will be available as
-    #attributes on the class itself (in SA 0.4). This would be a pretty
+    #attributes on the class itself (in SA 0.4+). This is a pretty
     #rare usecase, as people will normally hit the query attribute before the
-    #column attributes, but still...
+    #column attributes, but I've seen people hitting this problem...
     for name in ('c', 'table', 'mapper', 'query'):
         setattr(cls, name, TriggerAttribute(name))
 
@@ -841,80 +872,81 @@ class Entity(object):
     __metaclass__ = EntityMeta
 
     def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        self.from_dict(kwargs)
 
     def set(self, **kwargs):
         self.from_dict(kwargs)
+
+    def update_or_create(cls, data, surrogate=True):
+        pk_props = cls._descriptor.primary_key_properties
+
+        # if all pk are present and not None
+        if not [1 for p in pk_props if data.get(p.key) is None]:
+            pk_tuple = tuple([data[prop.key] for prop in pk_props])
+            record = cls.query.get(pk_tuple)
+            if record is None:
+                if surrogate:
+                    raise Exception("cannot create surrogate with pk")
+                else:
+                    record = cls()
+        else:
+            if surrogate:
+                record = cls()
+            else:
+                raise Exception("cannot create non surrogate without pk")
+        record.from_dict(data)
+        return record
+    update_or_create = classmethod(update_or_create)
 
     def from_dict(self, data):
         """
         Update a mapped class with data from a JSON-style nested dict/list
         structure.
         """
+        # surrogate can be guessed from autoincrement/sequence but I guess
+        # that's not 100% reliable, so we'll need an override
+
         mapper = sqlalchemy.orm.object_mapper(self)
-        session = sqlalchemy.orm.object_session(self)
 
-        for col in mapper.mapped_table.c:
-            if not col.primary_key and data.has_key(col.name):
-                setattr(self, col.name, data[col.name])
+        for key, value in data.iteritems():
+            if isinstance(value, dict):
+                dbvalue = getattr(self, key)
+                rel_class = mapper.get_property(key).mapper.class_
+                pk_props = rel_class._descriptor.primary_key_properties
 
-        for rel in mapper.iterate_properties:
-            rname = rel.key
-            if isinstance(rel, sqlalchemy.orm.properties.PropertyLoader) \
-                    and data.has_key(rname):
-                dbdata = getattr(self, rname)
-                if rel.uselist:
-                    pkey = [c for c in rel.table.columns if c.primary_key]
-
-                    # Build a lookup dict: {(pk1, pk2): value}
-                    lookup = dict([
-                        (tuple([getattr(o, c.name) for c in pkey]), o)
-                        for o in dbdata])
-                    for row in data[rname]:
-                        # If any primary key columns are missing or None,
-                        # create a new object
-                        if [1 for c in pkey if not row.get(c.name)]:
-                            subobj = rel.mapper.class_()
-                            dbdata.append(subobj)
-                        else:
-                            key = tuple([row[c.name] for c in pkey])
-                            subobj = lookup.pop(key, None)
-
-                            # If the row isn't found, we must fail the request
-                            # in a web scenario, this could be a parameter
-                            # tampering attack
-                            if not subobj:
-                                raise sqlalchemy.exceptions.ArgumentError(
-                                        '%s row not found in database: %s' \
-                                        % (rname, repr(row)))
-                        subobj.from_dict(row)
-
-                    # Make sure the object list attribute doesn't contain any
-                    # old value (which are not present in the new data).
-                    for delobj in lookup.itervalues():
-                        dbdata.remove(delobj)
-                        session.delete(delobj)
+                # If the data doesn't contain any pk, and the relationship
+                # already has a value, update that record.
+                if not [1 for p in pk_props if p.key in data] and \
+                   dbvalue is not None:
+                    dbvalue.from_dict(value)
                 else:
-                    if data[rname] is None:
-                        setattr(self, rname, None)
-                    else:
-                        if not dbdata:
-                            dbdata = rel.mapper.class_()
-                            setattr(self, rname, dbdata)
-                        dbdata.from_dict(data[rname])
+                    record = rel_class.update_or_create(value)
+                    setattr(self, key, record)
+            elif isinstance(value, list) and \
+                 value and isinstance(value[0], dict):
+
+                rel_class = mapper.get_property(key).mapper.class_
+                new_attr_value = []
+                for row in value:
+                    if not isinstance(row, dict):
+                        raise Exception(
+                                'Cannot send mixed (dict/non dict) data '
+                                'to list relationships in from_dict data.')
+                    record = rel_class.update_or_create(row)
+                    new_attr_value.append(record)
+                setattr(self, key, new_attr_value)
+            else:
+                setattr(self, key, value)
 
     def to_dict(self, deep={}, exclude=[]):
         """Generate a JSON-style nested dict/list structure from an object."""
-        columns = []
-        for table in self.mapper.tables:
-            for col in table.c:
-                columns.append(col)
-
-        data = dict([(col.name, getattr(self, col.name))
-                     for col in columns if col.name not in exclude])
+        col_prop_names = [p.key for p in self.mapper.iterate_properties \
+                                      if isinstance(p, ColumnProperty)]
+        data = dict([(name, getattr(self, name))
+                     for name in col_prop_names if name not in exclude])
         for rname, rdeep in deep.iteritems():
             dbdata = getattr(self, rname)
+            #FIXME: use attribute names (ie coltoprop) instead of column names
             fks = self.mapper.get_property(rname).remote_side
             exclude = [c.name for c in fks]
             if isinstance(dbdata, list):
