@@ -47,8 +47,6 @@ class EntityBuilder(object):
     in the correct order (for example, that the table is fully created before
     the mapper that use it is defined).
     '''
-    #XXX: add helper methods: add_property, etc... here?
-    # either in addition to in EntityDescriptor or instead of there.
     def create_pk_cols(self):
         pass
 
