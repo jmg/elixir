@@ -1,10 +1,10 @@
 '''
 A versioning plugin for Elixir.
 
-Entities that are marked as versioned with the `acts_as_versioned` statement 
+Entities that are marked as versioned with the `acts_as_versioned` statement
 will automatically have a history table created and a timestamp and version
-column added to their tables. In addition, versioned entities are provided 
-with four new methods: revert, revert_to, compare_with and get_as_of, and one 
+column added to their tables. In addition, versioned entities are provided
+with four new methods: revert, revert_to, compare_with and get_as_of, and one
 new attribute: versions.  Entities with compound primary keys are supported.
 
 The `versions` attribute will contain a list of previous versions of the
@@ -31,14 +31,14 @@ format (current_value, version_value). Version instances also have a
 `compare_with` method so that two versions can be compared.
 
 Also included in the module is a `after_revert` decorator that can be used to
-decorate methods on the versioned entity that will be called following that 
+decorate methods on the versioned entity that will be called following that
 instance being reverted.
 
-The acts_as_versioned statement also accepts an optional `ignore` argument 
-that consists of a list of strings, specifying names of fields.  Changes in 
+The acts_as_versioned statement also accepts an optional `ignore` argument
+that consists of a list of strings, specifying names of fields.  Changes in
 those fields will not result in a version increment.  In addition, you can
 pass in an optional `check_concurrent` argument, which will use SQLAlchemy's
-built-in optimistic concurrency mechanisms. 
+built-in optimistic concurrency mechanisms.
 
 Note that relationships that are stored in mapping tables will not be included
 as part of the versioning process, and will need to be handled manually. Only
@@ -54,6 +54,7 @@ from sqlalchemy.orm        import mapper, MapperExtension, EXT_CONTINUE, \
 
 from elixir                import Integer, DateTime
 from elixir.statements     import Statement
+from elixir.properties     import EntityBuilder
 
 __all__ = ['acts_as_versioned', 'after_revert']
 __doc_all__ = []
@@ -89,9 +90,10 @@ class VersionedMapperExtension(MapperExtension):
         instance.version = 1
         instance.timestamp = datetime.now()
         return EXT_CONTINUE
-            
+
     def before_update(self, mapper, connection, instance):
-        values = instance.table.select(get_entity_where(instance)).execute().fetchone() 
+        old_values = instance.table.select(get_entity_where(instance)) \
+                                   .execute().fetchone()
 
         # SA might've flagged this for an update even though it didn't change.
         # This occurs when a relation is updated, thus marking this instance
@@ -102,16 +104,17 @@ class VersionedMapperExtension(MapperExtension):
         for key in instance.table.c.keys():
             if key in ignored:
                 continue
-            if getattr(instance, key) != values[key]:
+            if getattr(instance, key) != old_values[key]:
                 # the instance was really updated, so we create a new version
-                colvalues = dict(values.items()) 
-                connection.execute(instance.__class__.__history_table__.insert(), colvalues)
+                dict_values = dict(old_values.items())
+                connection.execute(
+                    instance.__class__.__history_table__.insert(), dict_values)
                 instance.version = instance.version + 1
                 instance.timestamp = datetime.now()
                 break
 
         return EXT_CONTINUE
-        
+
     def before_delete(self, mapper, connection, instance):
         connection.execute(instance.__history_table__.delete(
             get_history_where(instance)
@@ -126,59 +129,59 @@ versioned_mapper_extension = VersionedMapperExtension()
 # the acts_as_versioned statement
 #
 
-class VersionedEntityBuilder(object):
-        
+class VersionedEntityBuilder(EntityBuilder):
+
     def __init__(self, entity, ignore=[], check_concurrent=False):
-        entity._descriptor.add_mapper_extension(versioned_mapper_extension)
         self.entity = entity
+        self.add_mapper_extension(versioned_mapper_extension)
+        #TODO: we should rather check that the version_id_col isn't set 
+        # externally
         self.check_concurrent = check_concurrent
-        
+
         # Changes in these fields will be ignored
+        ignore.extend(['version', 'timestamp'])
         entity.__ignored_fields__ = ignore
-        entity.__ignored_fields__.extend(['version', 'timestamp'])
-        
+
     def create_non_pk_cols(self):
         # add a version column to the entity, along with a timestamp
-        version_col = Column('version', Integer)
-        timestamp_col = Column('timestamp', DateTime)
-        self.entity._descriptor.add_column(version_col)
-        self.entity._descriptor.add_column(timestamp_col)
-        
+        self.add_table_column(Column('version', Integer))
+        self.add_table_column(Column('timestamp', DateTime))
+
         # add a concurrent_version column to the entity, if required
         if self.check_concurrent:
             self.entity._descriptor.version_id_col = 'concurrent_version'
-   
+
     # we copy columns from the main entity table, so we need it to exist first
     def after_table(self):
         entity = self.entity
-        
+
         # look for events
         after_revert_events = []
         for name, func in inspect.getmembers(entity, inspect.ismethod):
             if getattr(func, '_elixir_after_revert', False):
                 after_revert_events.append(func)
-        
+
         # create a history table for the entity
         #TODO: fail more noticeably in case there is a version col
         columns = [
-            column.copy() for column in entity.table.c 
+            column.copy() for column in entity.table.c
             if column.name not in ('version', 'concurrent_version')
         ]
         columns.append(Column('version', Integer, primary_key=True))
-        table = Table(entity.table.name + '_history', entity.table.metadata, 
+        table = Table(entity.table.name + '_history', entity.table.metadata,
             *columns
         )
         entity.__history_table__ = table
-        
+
         # create an object that represents a version of this entity
         class Version(object):
             pass
-            
+
         # map the version class to the history table for this entity
         Version.__name__ = entity.__name__ + 'Version'
         Version.__versioned_entity__ = entity
         mapper(Version, entity.__history_table__)
-                        
+
         # attach utility methods and properties to the entity
         def get_versions(self):
             v = object_session(self).query(Version) \
@@ -189,45 +192,46 @@ class VersionedEntityBuilder(object):
             # Add the current one to the list to get all the versions
             v.append(self)
             return v
-        
+
         def get_as_of(self, dt):
             # if the passed in timestamp is older than our current version's
             # time stamp, then the most recent version is our current version
             if self.timestamp < dt:
                 return self
-            
+
             # otherwise, we need to look to the history table to get our
             # older version
-            query = object_session(self).query(Version)
-            query = query.filter(and_(get_history_where(self), 
-                                      Version.timestamp <= dt))
-            query = query.order_by(desc(Version.timestamp)).limit(1)
+            sess = object_session(self)
+            query = sess.query(Version) \
+                        .filter(and_(get_history_where(self),
+                                     Version.timestamp <= dt)) \
+                        .order_by(desc(Version.timestamp)).limit(1)
             return query.first()
-        
+
         def revert_to(self, to_version):
             if isinstance(to_version, Version):
                 to_version = to_version.version
-                
+
             hist = entity.__history_table__
             old_version = hist.select(and_(
-                get_history_where(self), 
+                get_history_where(self),
                 hist.c.version == to_version
             )).execute().fetchone()
-            
+
             entity.table.update(get_entity_where(self)).execute(
                 dict(old_version.items())
             )
-            
-            hist.delete(and_(get_history_where(self), 
+
+            hist.delete(and_(get_history_where(self),
                              hist.c.version >= to_version)).execute()
             self.expire()
-            for event in after_revert_events: 
+            for event in after_revert_events:
                 event(self)
-        
+
         def revert(self):
             assert self.version > 1
             self.revert_to(self.version - 1)
-            
+
         def compare_with(self, version):
             differences = {}
             for column in self.table.c:
@@ -238,7 +242,7 @@ class VersionedEntityBuilder(object):
                 if this != that:
                     differences[column.name] = (this, that)
             return differences
-        
+
         entity.versions = property(get_versions)
         entity.get_as_of = get_as_of
         entity.revert_to = revert_to

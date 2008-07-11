@@ -77,11 +77,14 @@ class EntityBuilder(object):
         pass
 
     # helper methods
+    def add_table_column(self, column):
+        self.entity._descriptor.add_column(column)
+
     def add_mapper_property(self, name, prop):
         self.entity._descriptor.add_property(name, prop)
 
-    def add_table_column(self, column):
-        self.entity._descriptor.add_column(column)
+    def add_mapper_extension(self, ext):
+        self.entity._descriptor.add_mapper_extension(ext)
 
 
 class CounterMeta(type):
