@@ -1,5 +1,5 @@
 """
-   test collections
+Test collections
 """
 
 from sqlalchemy import Table

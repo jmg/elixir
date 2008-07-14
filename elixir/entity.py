@@ -97,7 +97,7 @@ class EntityDescriptor(object):
         '''
         elixir.metadatas.add(self.metadata)
         if self.collection is not None:
-            self.collection.map_entity(self.entity)
+            self.collection.append(self.entity)
 
         entity = self.entity
         if self.parent:

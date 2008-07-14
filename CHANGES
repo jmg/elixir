@@ -8,6 +8,11 @@ New features:
 - Added experimental (!) support for concrete table inheritance (both
   polymorphic or not). Concrete polymorphic inheritance requires SQLalchemy
   0.4.5 or later.
+- Moved the entity to string mapping and resolving code to the (newly created)
+  EntityCollection class (which stores lists of entities). This allows one to
+  provide a custom mapping method if needed. The default class also overrides
+  the __getattr__ method, providing and handy way to get at your entities.
+  See source:elixir/trunk/tests/test_collections.py#L58
 - Added new "identity" option which can be used to set a custom polymorphic
   identity for an entity. It also accepts a callable so that you can generate
   the identity name automatically from the class itself.
@@ -29,6 +34,12 @@ New features:
   (when tables and their columns already exist) instead of definition time.
 
 Changes:
+- Default "target entity resolving code" changed slightly. It now uses a global
+  collection keyed on the entity name. This means that entities can refer to
+  other entities in a different module simply with the target entity name
+  instead of its full path. The full path is only required when there is an
+  ambiguity (ie when there are two classes with the same name in two different
+  modules). Closes #9.
 - Added support for SQLAlchemy 0.5, and dropped support for version 0.3 and
   earlier.
 - The default session (elixir.session) uses sessionmaker() instead of

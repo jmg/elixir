@@ -1,18 +1,19 @@
 """
-    simple test case
+Test spreading entities accross several modules
 """
 
-from elixir import *
 import sys
 
-def setup(self):
+from elixir import *
+
+def setup():
     metadata.bind = 'sqlite:///'
 
 class TestPackages(object):
     def teardown(self):
         cleanup_all(True)
 
-    def test_packages(self):
+    def test_full_entity_path(self):
         # This is an ugly workaround because when nosetest is run globally (ie
         # either on the tests directory or in the "trunk" directory, it imports
         # all modules, including a and b. Then when any other test calls
@@ -20,6 +21,7 @@ class TestPackages(object):
         # calls cleanup_all(), so when we get here, A and B are already dead
         # and reimporting their modules does nothing because they were already
         # imported.
+
         sys.modules.pop('tests.a', None)
         sys.modules.pop('tests.b', None)
 

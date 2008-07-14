@@ -70,37 +70,25 @@ metadatas = set()
 # default entity collection
 class EntityCollection(list):
     def __init__(self):
-        # _entities is a dict of entities for each frame where there are
-        # entities defined.
+        # _entities is a dict of entities keyed on their name.
         self._entities = {}
-#        self._entity_map = {}
         list.__init__(self)
 
-    def map_entity(self, entity):
-        self.append(entity)
+    def append(self, entity):
+        '''
+        Add an entity to the collection.
+        '''
+        super(EntityCollection, self).append(entity)
 
         key = entity.__name__
-
-#        if key in self._entity_map:
-#            warnings.warn('An entity named `%s` is already registered!' % key)
-
-        # 3 is because map_entity is called by:
-        # EntityDescriptor::setup_options (which is called by)
-        # EntityMeta::__init__
-        # which is called when the entity is defined
-        caller_frame = sys._getframe(3)
-        cid = entity._caller = id(caller_frame)
-        caller_entities = self._entities.setdefault(cid, {})
-        caller_entities[key] = entity
-
-        # Append all entities which are currently visible by the entity. This
-        # will find more entities only if some of them where imported from
-        # another module.
-        for ent in [e for e in caller_frame.f_locals.values()
-                         if isinstance(e, EntityMeta)]:
-            caller_entities[ent.__name__] = ent
-
-#        self._entity_map[key] = entity
+        mapped_entity = self._entities.get(key)
+        if mapped_entity:
+            if isinstance(mapped_entity, list):
+                mapped_entity.append(entity)
+            else:
+                self._entities[key] = [mapped_entity, entity]
+        else:
+            self._entities[key] = entity
 
     def resolve(self, key, entity=None):
         '''
@@ -109,29 +97,26 @@ class EntityCollection(list):
         '''
         path = rsplit(key, '.', 1)
         classname = path.pop()
-        #XXX: use eval()?
-
         if path:
             # Do we have a fully qualified entity name?
             module = sys.modules[path.pop()]
             return getattr(module, classname, None)
         else:
-            # If not, try the list of entities of the "caller" of the
-            # source class. Most of the time, this will be the module
-            # the class is defined in. But it could also be a method
-            # (inner classes).
-            caller_entities = self._entities[entity._caller]
-            return caller_entities[classname]
+            # Otherwise we look in the entities of this collection
+            res = self._entities[key]
+            if isinstance(res, list):
+                raise Exception("%s resolves to several entities, you should "
+                                "use the full path (including the full module "
+                                "name) to that entity.")
+            else:
+                return res
 
     def clear(self):
         self._entities = {}
         del self[:]
 
     def __getattr__(self, key):
-        print "GLOBALS", globals().keys()
-        print "LOCALS", locals().keys()
         return self.resolve(key)
-#        return self._entity_map.get(key)
 
 entities = EntityCollection()
 
