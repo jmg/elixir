@@ -872,10 +872,10 @@ class Entity(object):
     __metaclass__ = EntityMeta
 
     def __init__(self, **kwargs):
-        self.from_dict(kwargs)
-
+        for key, value in kwargs.iteritems(): setattr(self, key, value)
+        
     def set(self, **kwargs):
-        self.from_dict(kwargs)
+        for key, value in kwargs.iteritems(): setattr(self, key, value)
 
     def update_or_create(cls, data, surrogate=True):
         pk_props = cls._descriptor.primary_key_properties
