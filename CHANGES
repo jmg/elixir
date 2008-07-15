@@ -6,7 +6,7 @@ New features:
   simple JSON-like dictionary notation (patch from Paul Johnston,
   closes ticket #40).
 - Added experimental (!) support for concrete table inheritance (both
-  polymorphic or not). Concrete polymorphic inheritance requires SQLalchemy
+  polymorphic or not). Concrete polymorphic inheritance requires SQLAlchemy
   0.4.5 or later.
 - Moved the "entity to string" mapping and resolving code to the (newly
   created) EntityCollection class (which stores lists of entities). This
@@ -43,7 +43,7 @@ Changes:
 - Added support for SQLAlchemy 0.5, and dropped support for version 0.3 and
   earlier.
 - The default session (elixir.session) uses sessionmaker() instead of
-  create_session(), which means it has now the following characterisics:
+  create_session(), which means it has now the following characteristics:
     * autoflush=True
     * autocommit=False (with SA 0.5 -- equivalent to transactional=True with
       SA 0.4)
