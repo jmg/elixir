@@ -1,4 +1,4 @@
-0.6.0
+0.6.0 - 2008-07-18
 
 New features:
 - Added two new methods on the base entity: from_dict and to_dict, which can
