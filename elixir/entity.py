@@ -872,7 +872,7 @@ class Entity(object):
     __metaclass__ = EntityMeta
 
     def __init__(self, **kwargs):
-        for key, value in kwargs.iteritems(): setattr(self, key, value)
+        self.set(**kwargs)
         
     def set(self, **kwargs):
         for key, value in kwargs.iteritems(): setattr(self, key, value)
