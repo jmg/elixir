@@ -41,7 +41,7 @@ from elixir.properties import has_property, GenericProperty, ColumnProperty, \
 from elixir.statements import Statement
 
 
-__version__ = '0.6.0'
+__version__ = '0.6.1'
 
 __all__ = ['Entity', 'EntityMeta', 'EntityCollection', 'entities',
            'Field', 'has_field', 'with_fields',
