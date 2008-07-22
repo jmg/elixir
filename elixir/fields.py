@@ -17,6 +17,7 @@ Here is a quick example of how to use the object-oriented syntax.
         id = Field(Integer, primary_key=True)
         name = Field(String(50), required=True)
         biography = Field(Text)
+        join_date = Field(DateTime, default=datetime.datetime.now)
         photo = Field(Binary, deferred=True)
         _email = Field(String(20), colname='email', synonym='email')
 
