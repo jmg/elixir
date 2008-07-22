@@ -15,7 +15,7 @@ New features:
   created) EntityCollection class (which stores lists of entities). This
   allows one to provide a custom mapping method if needed. The default class
   also overrides the __getattr__ method, providing and handy way to get at your
-  entities. See source:elixir/trunk/tests/test_collections.py#L58
+  entities. See http://elixir.ematia.de/trac/browser/elixir/tags/0.6.0/tests/test_collections#L58
 - Added new "identity" option which can be used to set a custom polymorphic
   identity for an entity. It also accepts a callable so that you can generate
   the identity name automatically from the class itself.
@@ -31,7 +31,8 @@ New features:
 - Added on_reconstitute event/method decorator. Only works with SA 0.5.
 - Added support for viewonly relationships (OneToMany and OneToOne).
 - Added support for filtered OneToMany relationships. Produce viewonly
-  relations. See source:elixir/trunk/tests/test_o2m.py for an example.
+  relations. See http://elixir.ematia.de/trac/browser/elixir/tags/0.6.0/tests/test_o2m.py
+  for an example.
 - Added support for callables for some arguments on relationships: primaryjoin,
   secondaryjoin and remote_side. It means those can be evaluated at setup time
   (when tables and their columns already exist) instead of definition time.
