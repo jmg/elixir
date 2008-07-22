@@ -1,6 +1,6 @@
 How to make a release:
 
-- change version in CHANGES and add release date
+- change version in CHANGES, add release date and link to upgrade notes if any
 - change version in __version__ (elixir/__init__.py)
 - change version in setup.py
 - change version in setup.cfg (trac link)
