@@ -108,6 +108,7 @@ class TestOneToMany(object):
 
     def test_viewonly(self):
         class User(Entity):
+            name = Field(String(50))
             two_blurbs = OneToMany('Blurb', primaryjoin=lambda:
                 and_(Blurb.user_id == User.id, Blurb.position < 2),
                 viewonly=True
@@ -129,7 +130,8 @@ class TestOneToMany(object):
 
         setup_all(True)
 
-        user = User(blurbs=[Blurb(u'zero'), Blurb(u'one'), Blurb(u'two')])
+        user = User(name="u1",
+                    blurbs=[Blurb(u'zero'), Blurb(u'one'), Blurb(u'two')])
 
         session.commit()
         session.clear()
@@ -141,6 +143,7 @@ class TestOneToMany(object):
 
     def test_filtered(self):
         class User(Entity):
+            name = Field(String(50))
             two_blurbs = OneToMany('Blurb', filter=lambda c: c.position < 2)
             blurbs = OneToMany('Blurb',
                                collection_class=ordering_list('position'),
@@ -159,7 +162,8 @@ class TestOneToMany(object):
 
         setup_all(True)
 
-        user = User(blurbs=[Blurb(u'zero'), Blurb(u'one'), Blurb(u'two')])
+        user = User(name="u1",
+                    blurbs=[Blurb(u'zero'), Blurb(u'one'), Blurb(u'two')])
 
         session.commit()
         session.clear()
