@@ -873,9 +873,10 @@ class Entity(object):
 
     def __init__(self, **kwargs):
         self.set(**kwargs)
-        
+
     def set(self, **kwargs):
-        for key, value in kwargs.iteritems(): setattr(self, key, value)
+        for key, value in kwargs.iteritems():
+            setattr(self, key, value)
 
     def update_or_create(cls, data, surrogate=True):
         pk_props = cls._descriptor.primary_key_properties
