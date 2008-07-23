@@ -393,6 +393,7 @@ class EntityDescriptor(object):
                 if self.parent and self.inheritance == 'concrete':
                     kwargs['concrete'] = True
 
+        #TODO: document this!
         if 'primary_key' in kwargs:
             cols = self.entity.table.c
             kwargs['primary_key'] = [getattr(cols, colname) for
