@@ -75,6 +75,30 @@ class TestManyToOne(object):
 
         assert B.query.first().a == A.query.first()
 
+    def test_specified_field(self):
+        class Person(Entity):
+            name = Field(String(30))
+
+        class Animal(Entity):
+            name = Field(String(30))
+            owner_id = Field(Integer, colname='owner')
+            owner = ManyToOne('Person', field=owner_id)
+
+        setup_all(True)
+
+        assert 'owner' in Animal.table.c
+        assert 'owner_id' not in Animal.table.c
+
+        homer = Person(name="Homer")
+        slh = Animal(name="Santa's Little Helper", owner=homer)
+
+        session.commit()
+        session.clear()
+
+        homer = Person.get_by(name="Homer")
+        animals = Animal.query.all()
+        assert animals[0].owner is homer
+
     def test_one_pk(self):
         class A(Entity):
             name = Field(String(40), primary_key=True)

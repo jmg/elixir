@@ -470,10 +470,27 @@ class ManyToOne(Relationship):
     '''
 
     def __init__(self, *args, **kwargs):
+        self._handle_column_args(kwargs)
+        self._handle_constraint_args(kwargs)
+
+        self.foreign_key = list()
+        self.primaryjoin_clauses = list()
+
+        super(ManyToOne, self).__init__(*args, **kwargs)
+
+    def _handle_column_args(self, kwargs):
+        # check that the column arguments don't conflict
+        col_args_specified = 'column_kwargs' in kwargs or 'colname' in kwargs
+        field_specified = 'field' in kwargs
+        assert not (field_specified and col_args_specified), \
+               "ManyToOne can accept the 'field' argument or column " \
+               "arguments ('colname' or 'column_kwargs') but not both!"
+
         self.colname = kwargs.pop('colname', [])
         if self.colname and not isinstance(self.colname, list):
             self.colname = [self.colname]
 
+        # populate column_kwargs
         self.column_kwargs = kwargs.pop('column_kwargs', {})
         if 'required' in kwargs:
             self.column_kwargs['nullable'] = not kwargs.pop('required')
@@ -482,6 +499,11 @@ class ManyToOne(Relationship):
         # by default, columns created will have an index.
         self.column_kwargs.setdefault('index', True)
 
+        self.field = kwargs.pop('field', [])
+        if self.field and not isinstance(self.field, list):
+            self.field = [self.field]
+
+    def _handle_constraint_args(self, kwargs):
         self.constraint_kwargs = kwargs.pop('constraint_kwargs', {})
         if 'use_alter' in kwargs:
             self.constraint_kwargs['use_alter'] = kwargs.pop('use_alter')
@@ -490,11 +512,6 @@ class ManyToOne(Relationship):
             self.constraint_kwargs['ondelete'] = kwargs.pop('ondelete')
         if 'onupdate' in kwargs:
             self.constraint_kwargs['onupdate'] = kwargs.pop('onupdate')
-
-        self.foreign_key = list()
-        self.primaryjoin_clauses = list()
-
-        super(ManyToOne, self).__init__(*args, **kwargs)
 
     def match_type_of(self, other):
         return isinstance(other, (OneToMany, OneToOne))
@@ -533,6 +550,10 @@ class ManyToOne(Relationship):
                         "Couldn't find a foreign key constraint in table "
                         "'%s' using the following columns: %s."
                         % (self.entity.table.name, ', '.join(self.colname)))
+            if self.field:
+                raise NotImplementedError(
+                    "'field' argument not allowed on autoloaded table "
+                    "relationships.")
         else:
             fk_refcols = list()
             fk_colnames = list()
@@ -555,17 +576,20 @@ class ManyToOne(Relationship):
                                    self.entity.__name__))
 
             for key_num, pk_col in enumerate(pks):
-                if self.colname:
-                    colname = self.colname[key_num]
+                if self.field:
+                    col = self.field[key_num].column
                 else:
-                    colname = options.FKCOL_NAMEFORMAT % \
-                              {'relname': self.name,
-                               'key': pk_col.key}
+                    if self.colname:
+                        colname = self.colname[key_num]
+                    else:
+                        colname = options.FKCOL_NAMEFORMAT % \
+                                  {'relname': self.name,
+                                   'key': pk_col.key}
 
-                # We can't add the column to the table directly as the table
-                # might not be created yet.
-                col = Column(colname, pk_col.type, **self.column_kwargs)
-                source_desc.add_column(col)
+                    # We can't add the column to the table directly as the
+                    # table might not be created yet.
+                    col = Column(colname, pk_col.type, **self.column_kwargs)
+                    source_desc.add_column(col)
 
                 # Build the list of local columns which will be part of
                 # the foreign key
