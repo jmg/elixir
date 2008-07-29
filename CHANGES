@@ -5,6 +5,8 @@ New features:
   "supporting column". This means that the columns can be customized without
   resorting to using the ugly "column_kwargs" (patch from Jason R. Coombs,
   closes #39).
+- extra args and kwargs to Synonym and ColumnProperty are forwarded to their
+  underlying constructs
 
 
 0.6.0 - 2008-07-18

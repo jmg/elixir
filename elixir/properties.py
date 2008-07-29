@@ -66,7 +66,7 @@ class EntityBuilder(object):
 
     def create_properties(self):
         '''
-        Subclasses may override this method to add properties to the involved 
+        Subclasses may override this method to add properties to the involved
         entity.
         '''
 
@@ -127,7 +127,9 @@ class Property(EntityBuilder):
         entity._descriptor.builders.append(self)
 
         # delete the original attribute so that it doesn't interfere with
-        # SQLAlchemy.
+        # SQLAlchemy. Note that getattr and delattr are not symmetrical:
+        # getattr look up in parent classes, while delattr must be called on
+        # the exact class holding the attribute.
         if name in entity.__dict__:
             delattr(entity, name)
 
@@ -148,9 +150,11 @@ class GenericProperty(Property):
                              (c.quantity * c.unit_price).label('price')))
     '''
 
-    def __init__(self, prop):
-        super(GenericProperty, self).__init__()
+    def __init__(self, prop, *args, **kwargs):
+        super(GenericProperty, self).__init__(*args, **kwargs)
         self.prop = prop
+        self.args = args
+        self.kwargs = kwargs
 
     def create_properties(self):
         if callable(self.prop):
@@ -161,6 +165,8 @@ class GenericProperty(Property):
         self.add_mapper_property(self.name, prop_value)
 
     def evaluate_property(self, prop):
+        if self.args or self.kwargs:
+            raise Exception('superfluous arguments passed to GenericProperty')
         return prop
 
 
@@ -169,20 +175,27 @@ class ColumnProperty(GenericProperty):
     A specialized form of the GenericProperty to generate SQLAlchemy
     ``column_property``'s.
 
-    It takes a single argument, which is a function (often
-    given as an anonymous lambda) taking one argument and returning the
-    desired (scalar-returning) SQLAlchemy ClauseElement. That function will be
-    called whenever the entity table is completely defined, and will be given
-    the .c attribute of the entity as argument (as a way to access the entity
-    columns). The ColumnProperty will first wrap your ClauseElement in a label
-    with the same name as the property, then wrap that in a column_property.
+    It takes a function (often given as an anonymous lambda) as its first
+    argument. Other arguments and keyword arguments are forwarded to the
+    column_property construct. That first-argument function must accept exactly
+    one argument and must return the desired (scalar-returning) SQLAlchemy
+    ClauseElement.
+
+    The function will be called whenever the entity table is completely
+    defined, and will be given
+    the .c attribute of the table of the entity as argument (as a way to
+    access the entity columns). The ColumnProperty will first wrap your
+    ClauseElement in an
+    "empty" label (ie it will be labelled automatically during queries),
+    then wrap that in a column_property.
 
     .. sourcecode:: python
 
         class OrderLine(Entity):
             quantity = Field(Float)
             unit_price = Field(Numeric)
-            price = ColumnProperty(lambda c: c.quantity * c.unit_price)
+            price = ColumnProperty(lambda c: c.quantity * c.unit_price,
+                                   deferred=True)
 
     Please look at the `corresponding SQLAlchemy
     documentation <http://www.sqlalchemy.org/docs/04/mappers.html
@@ -190,7 +203,7 @@ class ColumnProperty(GenericProperty):
     '''
 
     def evaluate_property(self, prop):
-        return column_property(prop.label(None))
+        return column_property(prop.label(None), *self.args, **self.kwargs)
 
 
 class Synonym(GenericProperty):
@@ -215,7 +228,7 @@ class Synonym(GenericProperty):
     '''
 
     def evaluate_property(self, prop):
-        return synonym(prop)
+        return synonym(prop, *self.args, **self.kwargs)
 
 #class Composite(GenericProperty):
 #    def __init__(self, prop):
