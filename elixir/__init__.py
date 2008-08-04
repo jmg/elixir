@@ -105,9 +105,9 @@ class EntityCollection(list):
             # Otherwise we look in the entities of this collection
             res = self._entities[key]
             if isinstance(res, list):
-                raise Exception("%s resolves to several entities, you should "
+                raise Exception("'%s' resolves to several entities, you should "
                                 "use the full path (including the full module "
-                                "name) to that entity.")
+                                "name) to that entity." % key)
             else:
                 return res
 
