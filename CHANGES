@@ -11,6 +11,10 @@ New features:
 Changes:
 - removed support for the deprecated with_fields syntax
 
+Bug fixes:
+- fixed the "Target resolves to several entities" exception message to actually
+  include the target name.
+
 0.6.0 - 2008-07-18
 
 Please see http://elixir.ematia.de/trac/wiki/Migrate05to06 for detailed
