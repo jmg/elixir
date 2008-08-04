@@ -8,6 +8,8 @@ New features:
 - extra args and kwargs to Synonym and ColumnProperty are forwarded to their
   underlying constructs
 
+Changes:
+- removed support for the deprecated with_fields syntax
 
 0.6.0 - 2008-07-18
 

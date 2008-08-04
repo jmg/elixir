@@ -3,9 +3,6 @@ This module provides support for defining the fields (columns) of your
 entities. Elixir currently supports two syntaxes to do so: the default
 `Attribute-based syntax`_ as well as the has_field_ DSL statement.
 
-Note that the old with_fields_ statement is currently deprecated in favor of
-the `Attribute-based syntax`_.
-
 Attribute-based syntax
 ----------------------
 
@@ -106,29 +103,6 @@ Here is a quick example of how to use ``has_field``.
     class Person(Entity):
         has_field('id', Integer, primary_key=True)
         has_field('name', String(50))
-
-
-with_fields
------------
-The `with_fields` statement is **deprecated** in favor of the `attribute-based
-syntax`_.
-
-It allows you to define all fields of an entity at once.
-Each keyword argument to this statement represents one field, which should
-be a `Field` object. The first argument to a Field object is its type.
-Following it, any number of keyword arguments can be specified for
-additional behavior. The `with_fields` statement supports the same keyword
-arguments than the `has_field` statement.
-
-Here is a quick example of how to use ``with_fields``.
-
-.. sourcecode:: python
-
-    class Person(Entity):
-        with_fields(
-            id = Field(Integer, primary_key=True),
-            name = Field(String(50))
-        )
 '''
 import sys
 
@@ -147,9 +121,6 @@ class Field(Property):
     Represents the definition of a 'field' on an entity.
 
     This class represents a column on the table where the entity is stored.
-    This object is only used with the `with_fields` syntax for defining all
-    fields for an entity at the same time. The `has_field` syntax does not
-    require the manual creation of this object.
     '''
 
     def __init__(self, type, *args, **kwargs):
@@ -196,7 +167,7 @@ class Field(Property):
                 group = self.deferred
             self.property = deferred(self.column, group=group)
         elif self.name != self.colname:
-            # if the property name is different from the column name, we need 
+            # if the property name is different from the column name, we need
             # to add an explicit property (otherwise nothing is needed as it's
             # done automatically by SA)
             self.property = self.column
@@ -218,11 +189,4 @@ def has_field_handler(entity, name, *args, **kwargs):
     field = Field(*args, **kwargs)
     field.attach(entity, name)
 
-
-def with_fields_handler(entity, *args, **fields):
-    for name, field in fields.iteritems():
-        field.attach(entity, name)
-
-
 has_field = ClassMutator(has_field_handler)
-with_fields = ClassMutator(with_fields_handler)

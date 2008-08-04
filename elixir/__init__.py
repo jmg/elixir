@@ -32,7 +32,7 @@ from elixir.options import using_options, using_table_options, \
                            using_mapper_options, options_defaults
 from elixir.entity import Entity, EntityMeta, EntityDescriptor, \
                           setup_entities, cleanup_entities
-from elixir.fields import has_field, with_fields, Field
+from elixir.fields import has_field, Field
 from elixir.relationships import belongs_to, has_one, has_many, \
                                  has_and_belongs_to_many, \
                                  ManyToOne, OneToOne, OneToMany, ManyToMany
@@ -44,7 +44,7 @@ from elixir.statements import Statement
 __version__ = '0.6.1'
 
 __all__ = ['Entity', 'EntityMeta', 'EntityCollection', 'entities',
-           'Field', 'has_field', 'with_fields',
+           'Field', 'has_field',
            'has_property', 'GenericProperty', 'ColumnProperty', 'Synonym',
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many',
            'ManyToOne', 'OneToOne', 'OneToMany', 'ManyToMany',

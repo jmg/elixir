@@ -44,23 +44,3 @@ class TestFields(object):
         p = Person.get_by(firstname="Homer")
 
         assert p.surname == 'Simpson'
-
-    def test_with_fields(self):
-        class Person(Entity):
-            with_fields(
-                firstname = Field(String(30)),
-                surname = Field(String(30))
-            )
-
-        setup_all(True)
-
-        homer = Person(firstname="Homer", surname="Simpson")
-        bart = Person(firstname="Bart", surname="Simpson")
-
-        session.commit()
-        session.clear()
-
-        p = Person.get_by(firstname="Homer")
-
-        assert p.surname == 'Simpson'
-

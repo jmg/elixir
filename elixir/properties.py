@@ -153,6 +153,7 @@ class GenericProperty(Property):
     def __init__(self, prop, *args, **kwargs):
         super(GenericProperty, self).__init__(*args, **kwargs)
         self.prop = prop
+        #XXX: move this to Property?
         self.args = args
         self.kwargs = kwargs
 
