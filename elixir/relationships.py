@@ -101,6 +101,34 @@ ForeignKeyConstraint that is created:
 |                      | might want to pass to the Constraint.                |
 +----------------------+------------------------------------------------------+
 
+In some cases, you may want to declare the foreign key column explicitly,
+instead of letting it be generated automatically.  There are several reasons to
+that: it could be because you want to declare it with precise arguments and
+using column_kwargs makes your code ugly, or because the name of
+your column conflicts with the property name (in which case an error is
+thrown).  In those cases, you can use the ``field`` argument to specify an
+already-declared field to be used for the foreign key column.
+
+For example, for the Pet example above, if you want the database column
+(holding the foreign key) to be called 'owner', one should use the field
+parameter to specify the field manually.
+
+.. sourcecode:: python
+
+    class Pet(Entity):
+        owner_id = Field(Integer, colname='owner')
+        owner = ManyToOne('Person', field=owner_id)
+
++----------------------+------------------------------------------------------+
+| Option Name          | Description                                          |
++======================+======================================================+
+| ``field``            | Specify the previously-declared field to be used for |
+|                      | the foreign key                                      |
+|                      | column. Use of this parameter is mutually exclusive  |
+|                      | with the colname and column_kwargs arguments.        |
++----------------------+------------------------------------------------------+
+
+
 Additionally, Elixir supports the belongs_to_ statement as an alternative,
 DSL-based, syntax to define ManyToOne_ relationships.
 
@@ -590,6 +618,18 @@ class ManyToOne(Relationship):
                     # table might not be created yet.
                     col = Column(colname, pk_col.type, **self.column_kwargs)
                     source_desc.add_column(col)
+
+                    # If the column name was specified, and it is the same as
+                    # this property's name, there is going to be a conflict.
+                    # Don't allow this to happen.
+                    if col.key == self.name:
+                        raise ValueError(
+                                 "ManyToOne named '%s' in '%s' conficts " \
+                                 " with the column of the same name. " \
+                                 "You should probably define the foreign key "\
+                                 "field manually and use the 'field' "\
+                                 "argument on the ManyToOne relationship" \
+                                 % (self.name, self.entity.__name__))
 
                 # Build the list of local columns which will be part of
                 # the foreign key
