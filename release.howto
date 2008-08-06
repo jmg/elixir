@@ -6,6 +6,8 @@ How to make a release:
 - change version in setup.cfg (trac link)
 - commit
 
+- add version to the trac, mark milestone as completed
+
 - make tag in subversion
     "svn copy http://elixir.ematia.de/svn/elixir/trunk
               http://elixir.ematia.de/svn/elixir/tags/%s" % version
