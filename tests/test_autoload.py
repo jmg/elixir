@@ -4,7 +4,7 @@ test autoloaded entities
 
 from sqlalchemy import Table, Column, ForeignKey, MetaData
 from elixir import *
-from elixir import options
+from elixir import options # (not in __all__)
 import elixir
 
 def setup_entity_raise(cls):
