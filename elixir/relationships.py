@@ -463,7 +463,12 @@ class Relationship(Property):
                               "Couldn't find a relationship named '%s' in "
                               "entity '%s' or its parent entities."
                               % (self.inverse_name, self.target.__name__))
-                assert self.match_type_of(inverse)
+                assert self.match_type_of(inverse), \
+                    "Relationships '%s' in entity '%s' and '%s' in entity " \
+                    "'%s' cannot be inverse of each other because their " \
+                    "types do not form a valid combination." % \
+                    (self.name, self.entity.__name__,
+                     self.inverse_name, self.target.__name__)
             else:
                 check_reverse = not self.kwargs.get('viewonly', False)
                 inverse = self.target._descriptor.get_inverse_relation(self,
