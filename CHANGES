@@ -1,19 +1,24 @@
-0.6.1
+0.6.1 - 2008-08-18
 
 New features:
 - Allow ManyToOne relationships to use manually created fields as their
   "supporting column". This means that the columns can be customized without
   resorting to using the ugly "column_kwargs" (patch from Jason R. Coombs,
   closes #39).
-- extra args and kwargs to Synonym and ColumnProperty are forwarded to their
-  underlying constructs
+- Extra args and kwargs to Synonym and ColumnProperty are forwarded to their
+  underlying constructs. This allows for example deferred ColumnProperties.
+- Added a more helpful assertion message when inverse relationship types don't
+  match.
 
 Changes:
-- removed support for the deprecated with_fields syntax
+- Removed support for the deprecated "with_fields" syntax
+- Entity.__init__ calls Entity.set instead of duplicating its functionality
 
 Bug fixes:
-- fixed the "Target resolves to several entities" exception message to actually
+- Fixed the "Target resolves to several entities" exception message to actually
   include the target name.
+- Renamed the on_reconstitute method decorator to reconstructor, to track the
+  corresponding change in SA's trunk.
 
 0.6.0 - 2008-07-18
 
