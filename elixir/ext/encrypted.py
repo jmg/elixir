@@ -13,12 +13,12 @@ Example usage:
 
     from elixir import *
     from elixir.ext.encrypted import acts_as_encrypted
-    
+
     class Person(Entity):
         name = Field(Unicode)
         password = Field(Unicode)
         ssn = Field(Unicode)
-        acts_as_encrypted(for_columns=['password', 'ssn'], 
+        acts_as_encrypted(for_columns=['password', 'ssn'],
                           with_secret='secret')
 
 The above Person entity will automatically encrypt and decrypt the password and
@@ -26,7 +26,7 @@ ssn columns on save, update, and load.  Different secrets can be specified on
 an entity by entity basis, for added security.
 '''
 
-from Crypto.Cipher          import Blowfish 
+from Crypto.Cipher          import Blowfish
 from elixir.statements      import Statement
 from sqlalchemy.orm         import MapperExtension, EXT_CONTINUE
 
@@ -57,10 +57,10 @@ except ImportError:
 # acts_as_encrypted statement
 #
 
-class ActsAsEncrypted(object):    
+class ActsAsEncrypted(object):
 
     def __init__(self, entity, for_fields=[], with_secret='abcdef'):
-        
+
         def perform_encryption(instance, decrypt=False):
             for column_name in for_fields:
                 current_value = getattr(instance, column_name)
@@ -70,34 +70,34 @@ class ActsAsEncrypted(object):
                     else:
                         new_value = encrypt_value(current_value, with_secret)
                     setattr(instance, column_name, new_value)
-        
+
         def perform_decryption(instance):
             perform_encryption(instance, decrypt=True)
-        
-        class EncryptedMapperExtension(MapperExtension):            
-            
+
+        class EncryptedMapperExtension(MapperExtension):
+
             def before_insert(self, mapper, connection, instance):
                 perform_encryption(instance)
                 return EXT_CONTINUE
-            
-            def before_update(self, mapper, connection, instance):       
+
+            def before_update(self, mapper, connection, instance):
                 perform_encryption(instance)
                 return EXT_CONTINUE
-        
+
         if SA05orlater:
-            def on_reconstitute(self, mapper, instance):
+            def reconstruct_instance(self, mapper, instance):
                 perform_decryption(instance)
                 return True
-            EncryptedMapperExtension.on_reconstitute = on_reconstitute
+            EncryptedMapperExtension.reconstruct_instance = reconstruct_instance
         else:
-            def populate_instance(self, mapper, selectcontext, row, instance, 
+            def populate_instance(self, mapper, selectcontext, row, instance,
                                   *args, **kwargs):
-                mapper.populate_instance(selectcontext, instance, row, 
+                mapper.populate_instance(selectcontext, instance, row,
                                          *args, **kwargs)
                 perform_decryption(instance)
                 return True
             EncryptedMapperExtension.populate_instance = populate_instance
-        
+
         # make sure that the entity's mapper has our mapper extension
         entity._descriptor.add_mapper_extension(EncryptedMapperExtension())
 
