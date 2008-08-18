@@ -4,14 +4,14 @@ from elixir.events import *
 from sqlalchemy import Table, Column
 
 stateDict = dict(
-    on_reconstitute_called = 0,
+    reconstructor_called = 0,
     before_insert_called = 0,
     after_insert_called = 0,
     before_update_called = 0,
     after_update_called = 0,
     before_delete_called = 0,
     after_delete_called = 0,
-    before_any_called = 0,
+    before_any_called = 0
 )
 
 
@@ -33,8 +33,8 @@ def setup():
 
         try:
             def post_fetch(self):
-                record_event('on_reconstitute_called')
-            post_fetch = on_reconstitute(post_fetch)
+                record_event('reconstructor_called')
+            post_fetch = reconstructor(post_fetch)
         except:
             pass
 
@@ -96,6 +96,7 @@ class TestEvents(object):
         session.commit(); session.clear()
 
         def checkCount(name, value):
+            print name, value
             dictCount = stateDict[name]
             assert dictCount == value, \
                 'global var count for %s should be %s but is %s' % \
@@ -115,15 +116,15 @@ class TestEvents(object):
         checkCount('after_delete_called', 1)
         checkCount('before_any_called', 3)
 
-        on_rec_available = False
+        reconstructor_available = False
         try:
-            on_reconstitute(lambda:0)
-            on_rec_available = True
+            reconstructor(lambda: 0)
+            reconstructor_available = True
         except:
             pass
 
-        if on_rec_available:
-            checkCount('on_reconstitute_called', 2)
+        if reconstructor_available:
+            checkCount('reconstructor_called', 2)
 
 if __name__ == '__main__':
     setup()
