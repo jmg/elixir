@@ -59,10 +59,10 @@ def setup():
                                 tablename='person_category')
         appreciate = ManyToMany('Person',
                                 tablename='person_person',
-                                local_side='person_id1')
+                                local_colname='person_id1')
         isappreciatedby = ManyToMany('Person',
                                 tablename='person_person',
-                                local_side='person_id2')
+                                local_colname='person_id2')
 
     class Animal(Entity):
         owner = ManyToOne('Person', colname='owner_id')

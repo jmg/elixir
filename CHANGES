@@ -1,3 +1,40 @@
+0.7.0
+
+Please see http://elixir.ematia.de/trac/wiki/Migrate06to07 for detailed
+upgrade notes.
+
+New features:
+- The local_colname and remote_colname arguments on ManyToMany relationships
+  can now also be used to set custom names for the ManyToMany table columns.
+  This effectively replace the column_format on ManyToMany relationships which
+  is now deprecated. Change based on a patch from Diez B. Roggisch.
+- Added (or rather fixed and documented) a "table" argument on ManyToMany
+  relationships to allow using a manually-defined Table (closes #44).
+- Added a "schema" argument on ManyToMany relationship to be able to create the
+  ManyToMany table in a custom schema and not necessarily the same schema as
+  the table of the "source" entity (patch from Diez B. Roggisch).
+
+Changes:
+- Renamed remote_side and local_side ManyToMany arguments to remote_colname and
+  local_colname respectively to not collide with the remote_side argument
+  provided by SA (it doesn't make much sense on ManyToMany relationships but
+  still).
+
+Bug fixes:
+- Changed slightly the algorithm to generate the name of the table for
+  bidirectional self-referential ManyToMany relationships so that it doesn't
+  depend on the order of declaration of each side (closes #19). If you are
+  upgrading an application with existing data from an earlier version of
+  Elixir, you are STRONGLY ADVISED to read the upgrade notes!
+  =================
+  TEMPORARY NOTICE:
+  =================
+  For now it is even worse: the table works but the relationship's meaning is
+  reversed. Will be fixed before 0.7 ships (see ticket #69).
+  =================
+- Added missing documentation for the "filter" argument on OneToMany
+  relationships
+
 0.6.1 - 2008-08-18
 
 New features:

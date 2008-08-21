@@ -184,6 +184,9 @@ DEFAULT_POLYMORPHIC_COL_NAME = "row_type"
 POLYMORPHIC_COL_SIZE = 40
 POLYMORPHIC_COL_TYPE = String(POLYMORPHIC_COL_SIZE)
 
+# debugging/migration constants
+CHECK_TABLENAME_CHANGES = False
+
 #
 options_defaults = dict(
     autosetup=False,

@@ -120,9 +120,33 @@ class TestManyToMany(object):
 
     def test_selfref(self):
         class Person(Entity):
+            using_options(shortnames=True)
             name = Field(String(30))
 
             friends = ManyToMany('Person')
+
+        setup_all(True)
+
+        barney = Person(name="Barney")
+        homer = Person(name="Homer", friends=[barney])
+        barney.friends.append(homer)
+
+        session.commit()
+        session.clear()
+
+        homer = Person.get_by(name="Homer")
+        barney = Person.get_by(name="Barney")
+
+        assert homer in barney.friends
+        assert barney in homer.friends
+
+    def test_bidirectional_selfref(self):
+        class Person(Entity):
+            using_options(shortnames=True)
+            name = Field(String(30))
+
+            friends = ManyToMany('Person')
+            is_friend_of = ManyToMany('Person')
 
         setup_all(True)
 
@@ -169,3 +193,102 @@ class TestManyToMany(object):
         assert b1 in a2.bs
         assert not a3.bs
 
+    def test_local_and_remote_colnames(self):
+        class A(Entity):
+            using_options(shortnames=True)
+            key1 = Field(Integer, primary_key=True, autoincrement=False)
+            key2 = Field(String(40), primary_key=True)
+
+            bs_ = ManyToMany('B', local_colname=['foo', 'bar'],
+                                  remote_colname="baz")
+
+        class B(Entity):
+            using_options(shortnames=True)
+            name = Field(String(60))
+            as_ = ManyToMany('A', remote_colname=['foo', 'bar'],
+                                  local_colname="baz")
+
+        setup_all(True)
+
+        b1 = B(name='b1', as_=[A(key1=10, key2='a1')])
+
+        session.commit()
+        session.clear()
+
+        a = A.query.one()
+        b = B.query.one()
+
+        assert a in b.as_
+        assert b in a.bs_
+
+    def test_manual_table_auto_joins(self):
+        from sqlalchemy import Table, Column, ForeignKey, ForeignKeyConstraint
+
+        a_b = Table('a_b', metadata,
+                    Column('a_key1', None),
+                    Column('a_key2', None),
+                    Column('b_id', None, ForeignKey('b.id')),
+                    ForeignKeyConstraint(['a_key1', 'a_key2'],
+                                         ['a.key1', 'a.key2']))
+
+        class A(Entity):
+            using_options(shortnames=True)
+            key1 = Field(Integer, primary_key=True, autoincrement=False)
+            key2 = Field(String(40), primary_key=True)
+
+            bs_ = ManyToMany('B', table=a_b)
+
+        class B(Entity):
+            using_options(shortnames=True)
+            name = Field(String(60))
+            as_ = ManyToMany('A', table=a_b)
+
+        setup_all(True)
+
+        b1 = B(name='b1', as_=[A(key1=10, key2='a1')])
+
+        session.commit()
+        session.clear()
+
+        a = A.query.one()
+        b = B.query.one()
+
+        assert a in b.as_
+        assert b in a.bs_
+
+    def test_manual_table_manual_joins(self):
+        from sqlalchemy import Table, Column, ForeignKey, \
+                               ForeignKeyConstraint, and_
+
+        a_b = Table('a_b', metadata,
+                    Column('a_key1', Integer),
+                    Column('a_key2', String(40)),
+                    Column('b_id', String(60)))
+
+        class A(Entity):
+            using_options(shortnames=True)
+            key1 = Field(Integer, primary_key=True, autoincrement=False)
+            key2 = Field(String(40), primary_key=True)
+
+            bs_ = ManyToMany('B', table=a_b,
+                             primaryjoin=lambda: and_(A.key1 == a_b.c.a_key1,
+                                                      A.key2 == a_b.c.a_key2),
+                             secondaryjoin=lambda: B.id == a_b.c.b_id,
+                             foreign_keys=[a_b.c.a_key1, a_b.c.a_key2,
+                                 a_b.c.b_id])
+
+        class B(Entity):
+            using_options(shortnames=True)
+            name = Field(String(60))
+
+        setup_all(True)
+
+        a1 = A(key1=10, key2='a1', bs_=[B(name='b1')])
+
+        session.commit()
+        session.clear()
+
+        a = A.query.one()
+        b = B.query.one()
+
+        assert b in a.bs_
