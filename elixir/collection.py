@@ -33,7 +33,6 @@ class EntityCollection(list):
         Resolve a key to an Entity. The optional `entity` argument is the
         "source" entity when resolving relationship targets.
         '''
-        print "resolve", key
         path = rsplit(key, '.', 1)
         classname = path.pop()
         if path:
