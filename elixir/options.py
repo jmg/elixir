@@ -20,7 +20,6 @@ argument onto the statement, as follows:
         name = Field(Unicode(64))
 
         using_options(shortnames=True, order_by='name')
-
 The list of supported arguments are as follows:
 
 +---------------------+-------------------------------------------------------+
@@ -131,7 +130,6 @@ The list of supported arguments are as follows:
 |                     | in the foot when overriding columns.                  |
 +---------------------+-------------------------------------------------------+
 
-
 For examples, please refer to the examples and unit tests.
 
 `using_table_options`
@@ -163,10 +161,23 @@ For further information, please refer to the `SQLAlchemy mapper
 function's documentation
 <http://www.sqlalchemy.org/docs/04/sqlalchemy_orm.html
 #docstrings_sqlalchemy.orm_modfunc_mapper>`_.
+
+`using_options_defaults`
+------------------------
+The 'using_options_defaults' DSL statement allows you to set up some
+default options on a custom base class. These will be used as the default value
+for options of all its subclasses. Note that any option not set within the
+using_options_defaults (nor specifically on a particular Entity) will use the
+global defaults, so you don't have to provide a default value for all options,
+but only those you want to change.
+
 '''
 
-from elixir.statements import ClassMutator
+import sqlalchemy
+import sqlalchemy.orm
 from sqlalchemy import Integer, String
+
+from elixir.statements import ClassMutator
 
 __doc_all__ = ['options_defaults']
 
@@ -184,7 +195,7 @@ DEFAULT_POLYMORPHIC_COL_NAME = "row_type"
 POLYMORPHIC_COL_SIZE = 40
 POLYMORPHIC_COL_TYPE = String(POLYMORPHIC_COL_SIZE)
 
-# debugging/migration constants
+# debugging/migration help
 CHECK_TABLENAME_CHANGES = False
 
 #
@@ -199,17 +210,25 @@ options_defaults = dict(
     auto_primarykey=True,
     version_id_col=False,
     allowcoloverride=False,
+    order_by=None,
     mapper_options=dict(),
-    table_options=dict(),
+    table_options=dict()
 )
-
 
 valid_options = options_defaults.keys() + [
     'metadata',
     'session',
-    'collection',
-    'order_by',
+    'collection'
 ]
+
+
+def using_options_defaults_handler(entity, **kwargs):
+    for kwarg in kwargs:
+        if kwarg not in valid_options:
+            raise Exception("'%s' is not a valid option for Elixir entities."
+                            % kwarg)
+
+    entity.options_defaults = kwargs
 
 
 def using_options_handler(entity, *args, **kwargs):
@@ -230,6 +249,7 @@ def using_mapper_options_handler(entity, *args, **kwargs):
     entity._descriptor.mapper_options.update(kwargs)
 
 
+using_options_defaults = ClassMutator(using_options_defaults_handler)
 using_options = ClassMutator(using_options_handler)
 using_table_options = ClassMutator(using_table_options_handler)
 using_mapper_options = ClassMutator(using_mapper_options_handler)

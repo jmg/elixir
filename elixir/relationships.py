@@ -384,8 +384,7 @@ import options
 from elixir.statements import ClassMutator
 from elixir.fields import Field
 from elixir.properties import Property
-from elixir.entity import EntityDescriptor, EntityMeta
-
+from elixir.entity import EntityDescriptor, EntityMeta, DEBUG
 
 __doc_all__ = []
 
@@ -688,10 +687,10 @@ class ManyToOne(Relationship):
 
         if self.entity.table is self.target.table:
             # this is needed because otherwise SA has no way to know what is
-            # the direction of the relationship since both columns present in 
-            # the primaryjoin belong to the same table. In other words, it is 
-            # necessary to know if this particular relation 
-            # is the many-to-one side, or the one-to-xxx side. The foreignkey 
+            # the direction of the relationship since both columns present in
+            # the primaryjoin belong to the same table. In other words, it is
+            # necessary to know if this particular relation
+            # is the many-to-one side, or the one-to-xxx side. The foreignkey
             # doesn't help in this case.
             kwargs['remote_side'] = \
                 [col for col in self.target.table.primary_key.columns]
@@ -718,8 +717,8 @@ class OneToOne(Relationship):
             # is not viewonly. Those relationships can be used as if the extra
             # filter wasn't present when inserting. This can lead to a
             # confusing behavior (if you insert data which doesn't match the
-            # extra criterion it'll get inserted anyway but you won't see it 
-            # when you query back the attribute after a round-trip to the 
+            # extra criterion it'll get inserted anyway but you won't see it
+            # when you query back the attribute after a round-trip to the
             # database).
             if 'viewonly' not in kwargs:
                 kwargs['viewonly'] = True
@@ -738,8 +737,8 @@ class OneToOne(Relationship):
                       "inheritance you "
                       "might need to specify inverse relationships "
                       "manually by using the 'inverse' argument."
-                      % (self.target.__name__, self.name,
-                         self.entity.__name__))
+                      % (self.target, self.name,
+                         self.entity))
 
     def get_prop_kwargs(self):
         kwargs = {'uselist': self.uselist}
@@ -747,7 +746,7 @@ class OneToOne(Relationship):
         #TODO: for now, we don't break any test if we remove those 2 lines.
         # So, we should either complete the selfref test to prove that they
         # are indeed useful, or remove them. It might be they are indeed
-        # useless because the remote_side is already setup in the other way 
+        # useless because the remote_side is already setup in the other way
         # (ManyToOne).
         if self.entity.table is self.target.table:
             #FIXME: IF this code is of any use, it will probably break for
@@ -953,6 +952,8 @@ class ManyToMany(Relationship):
 
             self.secondary_table = Table(tablename, e1_desc.metadata,
                                          schema=schema, *args)
+            if DEBUG:
+                print self.secondary_table.repr2()
 
     def _reflect_table(self):
         # In the case we have a self-reference, we need to build join clauses

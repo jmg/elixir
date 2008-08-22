@@ -84,10 +84,6 @@ class TestCustomBase(object):
 
             common = Field(String(32))
 
-            def __init__(self, **kwargs):
-                for key, value in kwargs.items():
-                    setattr(self, key, value)
-
         class A(FieldBase):
             name = Field(String(32))
 
@@ -99,3 +95,26 @@ class TestCustomBase(object):
         assert 'name' in A.table.columns.keys()
         assert 'common' in A.table.columns.keys()
         assert 'common' in B.table.columns.keys()
+
+    def test_base_with_options(self):
+        import re
+
+        def camel_to_underscore(entity):
+            return re.sub(r'(.+?)([A-Z])+?', r'\1_\2', entity.__name__).lower()
+
+        class OptionBase(object):
+            __metaclass__ = EntityMeta
+
+            using_options_defaults(tablename=camel_to_underscore)
+
+        class TestA(OptionBase):
+            name = Field(String(32))
+
+        class SuperTestB(OptionBase):
+            pass
+
+        setup_all(True)
+
+        assert TestA.table.name == 'test_a'
+        assert SuperTestB.table.name == 'super_test_b'
+

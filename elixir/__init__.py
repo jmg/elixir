@@ -20,16 +20,14 @@ try:
 except NameError:
     from sets import Set as set
 
-import sys
 import warnings
-
-from py23compat import rsplit
 
 import sqlalchemy
 from sqlalchemy.types import *
 
 from elixir.options import using_options, using_table_options, \
-                           using_mapper_options, options_defaults
+                           using_mapper_options, options_defaults, \
+                           using_options_defaults
 from elixir.entity import Entity, EntityMeta, EntityDescriptor, \
                           setup_entities, cleanup_entities
 from elixir.fields import has_field, Field
@@ -50,7 +48,8 @@ __all__ = ['Entity', 'EntityMeta', 'EntityCollection', 'entities',
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many',
            'ManyToOne', 'OneToOne', 'OneToMany', 'ManyToMany',
            'using_options', 'using_table_options', 'using_mapper_options',
-           'options_defaults', 'metadata', 'session',
+           'options_defaults', 'using_options_defaults',
+           'metadata', 'session',
            'create_all', 'drop_all',
            'setup_all', 'cleanup_all',
            'setup_entities', 'cleanup_entities'] + \

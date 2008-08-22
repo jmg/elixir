@@ -4,6 +4,12 @@ Please see http://elixir.ematia.de/trac/wiki/Migrate06to07 for detailed
 upgrade notes.
 
 New features:
+- Added a new statement 'using_options_defaults' which can be used
+  on a custom base class to set default values for the options of all its 
+  subclasses. For example, this makes it possible to have all classes 
+  inheriting from your custom base class use some custom options without 
+  having to set it indivudually on each entity,
+  nor modify options.options_defaults.
 - The local_colname and remote_colname arguments on ManyToMany relationships
   can now also be used to set custom names for the ManyToMany table columns.
   This effectively replace the column_format on ManyToMany relationships which
@@ -15,12 +21,16 @@ New features:
   the table of the "source" entity (patch from Diez B. Roggisch).
 
 Changes:
+- Moved class instrumentation to a separate function: instrument_class
 - Renamed remote_side and local_side ManyToMany arguments to remote_colname and
   local_colname respectively to not collide with the remote_side argument
   provided by SA (it doesn't make much sense on ManyToMany relationships but
   still).
 
 Bug fixes:
+- default EntityCollection raise an exception instead of returning None when
+  trying to resolve an inexisting Entity from outside of another entity (for
+  example through EntityCollection.__getattr__
 - Changed slightly the algorithm to generate the name of the table for
   bidirectional self-referential ManyToMany relationships so that it doesn't
   depend on the order of declaration of each side (closes #19). If you are

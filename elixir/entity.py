@@ -49,14 +49,19 @@ class EntityDescriptor(object):
         self.children = []
 
         for base in entity.__bases__:
-            if isinstance(base, EntityMeta) and is_entity(base):
-                if self.parent:
-                    raise Exception('%s entity inherits from several entities,'
-                                    ' and this is not supported.'
-                                    % self.entity.__name__)
+            if isinstance(base, EntityMeta):
+                if is_entity(base):
+                    if self.parent:
+                        raise Exception(
+                            '%s entity inherits from several entities, '
+                            'and this is not supported.'
+                            % self.entity.__name__)
+                    else:
+                        self.parent = base
+                        self.base = base._descriptor.base
+                        self.parent._descriptor.children.append(entity)
                 else:
-                    self.parent = base
-                    self.parent._descriptor.children.append(entity)
+                    self.base = base
 
         # columns and constraints waiting for a table to exist
         self._columns = list()
@@ -71,29 +76,34 @@ class EntityDescriptor(object):
         self.relationships = list()
 
         # set default value for options
-        self.order_by = None
         self.table_args = list()
 
-        # set default value for options with an optional module-level default
-        self.metadata = getattr(self.module, '__metadata__', elixir.metadata)
-        self.session = getattr(self.module, '__session__', elixir.session)
-        self.collection = getattr(self.module, '__entity_collection__',
-                                  elixir.entities)
+        # base class options_defaults
+        base_defaults = getattr(self.base, 'options_defaults', {})
+        complete_defaults = options.options_defaults.copy()
+        complete_defaults.update({
+            'metadata': elixir.metadata,
+            'session': elixir.session,
+            'collection': elixir.entities
+        })
 
-        for option in ('autosetup', 'inheritance', 'polymorphic', 'identity',
-                       'autoload', 'tablename', 'shortnames',
-                       'auto_primarykey', 'version_id_col',
-                       'allowcoloverride'):
-            setattr(self, option, options.options_defaults[option])
+        # set default value for other options
+        for key in options.valid_options:
+            value = base_defaults.get(key, complete_defaults[key])
+            if isinstance(value, dict):
+                value = value.copy()
+            setattr(self, key, value)
 
-        for option_dict in ('mapper_options', 'table_options'):
-            setattr(self, option_dict,
-                    options.options_defaults[option_dict].copy())
+        # override options with module-level defaults defined
+        for key in ('metadata', 'session', 'collection'):
+            attr = '__%s__' % key
+            if hasattr(self.module, attr):
+                setattr(self, key, getattr(self.module, attr))
 
     def setup_options(self):
         '''
-        Setup any values that might depend on using_options. For example, the
-        tablename or the metadata.
+        Setup any values that might depend on the "using_options" class
+        mutator. For example, the tablename or the metadata.
         '''
         elixir.metadatas.add(self.metadata)
         if self.collection is not None:
@@ -258,9 +268,10 @@ class EntityDescriptor(object):
                 self.add_column(Column(self.version_id_col, Integer))
 
             args = self.columns + self.constraints + self.table_args
-
         self.entity.table = Table(self.tablename, self.metadata,
                                   *args, **kwargs)
+        if DEBUG:
+            print self.entity.table.repr2()
 
     def setup_reltables(self):
         self.call_builders('create_tables')
@@ -653,6 +664,55 @@ def is_entity(cls):
     return False
 
 
+def instrument_class(cls):
+    """
+    Instrument a class as an Entity. This is usually done automatically through
+    the EntityMeta metaclass.
+    """
+    # create the entity descriptor
+    desc = cls._descriptor = EntityDescriptor(cls)
+
+    # Determine whether this entity is a *direct* subclass of its base entity
+    entity_base = None
+    for base in cls.__bases__:
+        if isinstance(base, EntityMeta):
+            if not is_entity(base):
+                entity_base = base
+
+    if entity_base:
+        # If so, copy the base entity properties ('Property' instances).
+        # We use inspect.getmembers (instead of __dict__) so that we also
+        # get the properties from the parents of the base_class if any.
+        base_props = inspect.getmembers(entity_base,
+                                        lambda a: isinstance(a, Property))
+        base_props = [(name, copy(attr)) for name, attr in base_props]
+    else:
+        base_props = []
+
+    # Process attributes (using the assignment syntax), looking for
+    # 'Property' instances and attaching them to this entity.
+    properties = [(name, attr) for name, attr in cls.__dict__.iteritems()
+                               if isinstance(attr, Property)]
+    sorted_props = sorted(base_props + properties,
+                          key=lambda i: i[1]._counter)
+    for name, prop in sorted_props:
+        prop.attach(cls, name)
+
+    # Process mutators. Needed before _install_autosetup_triggers so that
+    # we know of the metadata
+    process_mutators(cls)
+
+    # setup misc options here (like tablename etc.)
+    desc.setup_options()
+
+    # create trigger proxies
+    # TODO: support entity_name... It makes sense only for autoloaded
+    # tables for now, and would make more sense if we support "external"
+    # tables
+    if desc.autosetup:
+        _install_autosetup_triggers(cls)
+
+
 class EntityMeta(type):
     """
     Entity meta class.
@@ -666,51 +726,11 @@ class EntityMeta(type):
         # be registered in an entity collection, nor to have a table name and
         # so on.
         if not is_entity(cls):
+            if isinstance(cls, EntityMeta):
+                process_mutators(cls)
             return
 
-        # create the entity descriptor
-        desc = cls._descriptor = EntityDescriptor(cls)
-
-        # Determine whether this entity is a *direct* subclass of its base
-        # entity
-        entity_base = None
-        for base in cls.__bases__:
-            if isinstance(base, EntityMeta):
-                if not is_entity(base):
-                    entity_base = base
-
-        if entity_base:
-            # If so, copy the base entity properties ('Property' instances).
-            # We use inspect.getmembers (instead of __dict__) so that we also
-            # get the properties from the parents of the base_class if any.
-            base_props = inspect.getmembers(entity_base,
-                                            lambda a: isinstance(a, Property))
-            base_props = [(name, copy(attr)) for name, attr in base_props]
-        else:
-            base_props = []
-
-        # Process attributes (using the assignment syntax), looking for
-        # 'Property' instances and attaching them to this entity.
-        properties = [(name, attr) for name, attr in cls.__dict__.iteritems()
-                                   if isinstance(attr, Property)]
-        sorted_props = sorted(base_props + properties,
-                              key=lambda i: i[1]._counter)
-        for name, prop in sorted_props:
-            prop.attach(cls, name)
-
-        # Process mutators. Needed before _install_autosetup_triggers so that
-        # we know of the metadata
-        process_mutators(cls)
-
-        # setup misc options here (like tablename etc.)
-        desc.setup_options()
-
-        # create trigger proxies
-        # TODO: support entity_name... It makes sense only for autoloaded
-        # tables for now, and would make more sense if we support "external"
-        # tables
-        if desc.autosetup:
-            _install_autosetup_triggers(cls)
+        instrument_class(cls)
 
     def __call__(cls, *args, **kwargs):
         if cls._descriptor.autosetup and not hasattr(cls, '_setup_done'):
@@ -809,11 +829,18 @@ def setup_entities(entities):
             'before_mapper', 'setup_mapper', 'after_mapper',
             'setup_properties',
             'finalize'):
+#        if DEBUG:
+#            print "=" * 40
+#            print method_name
+#            print "=" * 40
         for entity in entities:
+#            print entity.__name__, "...",
             if hasattr(entity, '_setup_done'):
+#                print "already done"
                 continue
             method = getattr(entity._descriptor, method_name)
             method()
+#            print "ok"
 
 
 def cleanup_entities(entities):
