@@ -3,17 +3,16 @@ This module provides the ``Entity`` base class, as well as its metaclass
 ``EntityMeta``.
 '''
 
-from py23compat import set, rsplit, sorted
+from py23compat import sorted
 
 import sys
 import inspect
-import warnings
 from copy import copy
 
 import sqlalchemy
 from sqlalchemy     import Table, Column, Integer, desc, ForeignKey, and_, \
                            ForeignKeyConstraint
-from sqlalchemy.orm import Query, MapperExtension, mapper, object_session, \
+from sqlalchemy.orm import MapperExtension, mapper, object_session, \
                            EXT_CONTINUE, polymorphic_union, ScopedSession, \
                            ColumnProperty
 
@@ -130,7 +129,7 @@ class EntityDescriptor(object):
             else:
                 #TODO: include module name
                 self.identity = entity.__name__.lower()
-        elif 'polymorphic_identity' in kwargs:
+        elif 'polymorphic_identity' in self.mapper_options:
             raise Exception('You cannot use the "identity" option and the '
                             'polymorphic_identity mapper option at the same '
                             'time.')
@@ -423,7 +422,9 @@ class EntityDescriptor(object):
                                                      *args, **kwargs)
         else:
             raise Exception("Failed to map entity '%s' with its table or "
-                            "selectable" % self.entity.__name__)
+                            "selectable. You can only bind an Entity to a "
+                            "ScopedSession object or None."
+                            % self.entity.__name__)
 
     def after_mapper(self):
         self.call_builders('after_mapper')
@@ -874,30 +875,22 @@ def cleanup_entities(entities):
         desc.constraints = []
         desc.properties = {}
 
-
-class Entity(object):
-    '''
-    The base class for all entities
-
-    All Elixir model objects should inherit from this class. Statements can
-    appear within the body of the definition of an entity to define its
-    fields, relationships, and other options.
-
-    Here is an example:
+class EntityBase(object):
+    """
+    This class holds all methods of the "Entity" base class, but does not act
+    as a base class itself (it does not use the EntityMeta metaclass), but
+    rather as a parent class for Entity. This is meant so that people who want
+    to provide their own base class but don't want to loose or copy-paste all
+    the methods of Entity can do so by inheriting from EntityBase:
 
     .. sourcecode:: python
 
-        class Person(Entity):
-            name = Field(Unicode(128))
-            birthdate = Field(DateTime, default=datetime.now)
+        class MyBase(EntityBase):
+            __metaclass__ = EntityMeta
 
-    Please note, that if you don't specify any primary keys, Elixir will
-    automatically create one called ``id``.
-
-    For further information, please refer to the provided examples or
-    tutorial.
-    '''
-    __metaclass__ = EntityMeta
+            def myCustomMethod(self):
+                # do something great
+    """
 
     def __init__(self, **kwargs):
         self.set(**kwargs)
@@ -1030,4 +1023,30 @@ class Entity(object):
     def get(cls, *args, **kwargs):
         return cls.query.get(*args, **kwargs)
     get = classmethod(get)
+
+
+class Entity(EntityBase):
+    '''
+    The base class for all entities
+
+    All Elixir model objects should inherit from this class. Statements can
+    appear within the body of the definition of an entity to define its
+    fields, relationships, and other options.
+
+    Here is an example:
+
+    .. sourcecode:: python
+
+        class Person(Entity):
+            name = Field(Unicode(128))
+            birthdate = Field(DateTime, default=datetime.now)
+
+    Please note, that if you don't specify any primary keys, Elixir will
+    automatically create one called ``id``.
+
+    For further information, please refer to the provided examples or
+    tutorial.
+    '''
+    __metaclass__ = EntityMeta
+
 
