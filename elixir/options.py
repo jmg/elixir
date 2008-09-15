@@ -173,8 +173,6 @@ but only those you want to change.
 
 '''
 
-import sqlalchemy
-import sqlalchemy.orm
 from sqlalchemy import Integer, String
 
 from elixir.statements import ClassMutator
