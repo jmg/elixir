@@ -5,9 +5,9 @@ upgrade notes.
 
 New features:
 - Added a new statement 'using_options_defaults' which can be used
-  on a custom base class to set default values for the options of all its 
-  subclasses. For example, this makes it possible to have all classes 
-  inheriting from your custom base class use some custom options without 
+  on a custom base class to set default values for the options of all its
+  subclasses. For example, this makes it possible to have all classes
+  inheriting from your custom base class use some custom options without
   having to set it indivudually on each entity,
   nor modify options.options_defaults.
 - The local_colname and remote_colname arguments on ManyToMany relationships
@@ -22,6 +22,10 @@ New features:
 
 Changes:
 - Moved class instrumentation to a separate function: instrument_class
+- Moved all methods of the "Entity" base class, to the "EntityBase" class, so
+  that people who want to provide their own base class but don't want to loose
+  all the methods provided by "Entity" can simply inherit from EntityBase
+  instead of copy-pasting the code for all its methods.
 - Renamed remote_side and local_side ManyToMany arguments to remote_colname and
   local_colname respectively to not collide with the remote_side argument
   provided by SA (it doesn't make much sense on ManyToMany relationships but
@@ -42,6 +46,7 @@ Bug fixes:
   For now it is even worse: the table works but the relationship's meaning is
   reversed. Will be fixed before 0.7 ships (see ticket #69).
   =================
+- Fixed bug which broke the "identity" (Entity) option
 - Added missing documentation for the "filter" argument on OneToMany
   relationships
 
@@ -73,6 +78,7 @@ Please see http://elixir.ematia.de/trac/wiki/Migrate05to06 for detailed
 upgrade notes.
 
 New features:
+- Fields in a custom base class are added to all their children.
 - Added two new methods on the base entity: from_dict and to_dict, which can
   be used to create (or output) a whole hierarchy of instances from (to) a
   simple JSON-like dictionary notation (patch from Paul Johnston,
