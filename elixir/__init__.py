@@ -20,8 +20,6 @@ try:
 except NameError:
     from sets import Set as set
 
-import warnings
-
 import sqlalchemy
 from sqlalchemy.types import *
 
