@@ -173,6 +173,32 @@ class TestOneToMany(object):
         assert user.two_blurbs[0].blurb == 'zero'
         assert user.two_blurbs[1].blurb == 'one'
 
+    def test_inverse_has_non_pk_target(self):
+        class A(Entity):
+            name = Field(String(60), unique=True)
+            bs = OneToMany('B')
+
+        class B(Entity):
+            name = Field(String(60))
+            a = ManyToOne('A', target_column=['name'])
+
+        setup_all(True)
+
+        a1 = A(name='a1')
+        b1 = B(name='b1', a=a1)
+
+        # does it work before a commit? (does the backref work?)
+        assert b1 in a1.bs
+
+        session.commit()
+        session.clear()
+
+        b = B.query.one()
+        a = b.a
+
+        assert b.a.name == 'a1'
+        assert b in a.bs
+
     def test_has_many_syntax(self):
         class Person(Entity):
             has_field('name', String(30))

@@ -87,6 +87,10 @@ which will be directed to the created column:
 | ``column_kwargs``    | A dictionary holding any other keyword argument you  |
 |                      | might want to pass to the Column.                    |
 +----------------------+------------------------------------------------------+
+| ``target_column``    | Name (or list of names) of the target column(s).     |
+|                      | If this argument is not specified, the target entity |
+|                      | primary key column(s) are used.                      |
++----------------------+------------------------------------------------------+
 
 The following optional arguments are also supported to customize the
 ForeignKeyConstraint that is created:
@@ -606,7 +610,6 @@ class ManyToOne(Relationship):
         # - the name of the target table
         target_desc = self.target._descriptor
         #make sure the target has all its pk set up
-#ca craint
         target_desc.create_pk_cols()
 
         if source_desc.autoload:

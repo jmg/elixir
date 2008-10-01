@@ -134,7 +134,7 @@ class VersionedEntityBuilder(EntityBuilder):
     def __init__(self, entity, ignore=[], check_concurrent=False):
         self.entity = entity
         self.add_mapper_extension(versioned_mapper_extension)
-        #TODO: we should rather check that the version_id_col isn't set 
+        #TODO: we should rather check that the version_id_col isn't set
         # externally
         self.check_concurrent = check_concurrent
 
