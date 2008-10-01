@@ -30,6 +30,12 @@ from Crypto.Cipher          import Blowfish
 from elixir.statements      import Statement
 from sqlalchemy.orm         import MapperExtension, EXT_CONTINUE
 
+try:
+    from sqlalchemy.orm import EXT_PASS
+    SA05orlater = False
+except ImportError:
+    SA05orlater = True
+
 __all__ = ['acts_as_encrypted']
 __doc_all__ = []
 
@@ -46,12 +52,6 @@ def decrypt_value(value, secret):
     return Blowfish.new(secret, Blowfish.MODE_CFB) \
                    .decrypt(value.decode('string_escape'))
 
-
-try:
-    from sqlalchemy.orm import EXT_PASS
-    SA05orlater = False
-except ImportError:
-    SA05orlater = True
 
 #
 # acts_as_encrypted statement

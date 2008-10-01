@@ -110,7 +110,6 @@ The generated Elixir Statement has several options available:
 +---------------+-------------------------------------------------------------+
 '''
 from elixir.statements import Statement
-import elixir as el
 import sqlalchemy as sa
 
 __doc_all__ = ['associable']
