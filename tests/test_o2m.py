@@ -180,7 +180,7 @@ class TestOneToMany(object):
 
         class B(Entity):
             name = Field(String(60))
-            a = ManyToOne('A', target_column=['name'])
+            a = ManyToOne('A', target_column='name')
 
         setup_all(True)
 
