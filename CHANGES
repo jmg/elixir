@@ -19,6 +19,8 @@ New features:
 - Added a "schema" argument on ManyToMany relationship to be able to create the
   ManyToMany table in a custom schema and not necessarily the same schema as
   the table of the "source" entity (patch from Diez B. Roggisch).
+- Added a new "target_column" argument on ManyToOne relationships (ticket #26).
+  TODOC
 
 Changes:
 - Moved class instrumentation to a separate function: instrument_class

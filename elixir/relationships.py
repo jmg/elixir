@@ -542,6 +542,11 @@ class ManyToOne(Relationship):
         self.foreign_key = list()
         self.primaryjoin_clauses = list()
 
+        self.target_column = kwargs.pop('target_column', None)
+        if self.target_column is not None and \
+           not isinstance(self.target_column, list):
+            self.target_column = [self.target_column]
+
         super(ManyToOne, self).__init__(*args, **kwargs)
 
     def _handle_column_args(self, kwargs):
@@ -600,7 +605,8 @@ class ManyToOne(Relationship):
         # - the list of primary key columns of the target table (type and name)
         # - the name of the target table
         target_desc = self.target._descriptor
-        #make sure the target has all its pk setup up
+        #make sure the target has all its pk set up
+#ca craint
         target_desc.create_pk_cols()
 
         if source_desc.autoload:
@@ -624,8 +630,19 @@ class ManyToOne(Relationship):
             fk_refcols = list()
             fk_colnames = list()
 
+            if self.target_column is None:
+                target_columns = target_desc.primary_keys
+            else:
+                target_columns = [target_desc.get_column(col)
+                                  for col in self.target_column]
+
+            if not target_columns:
+                raise Exception("No primary key found in target table ('%s') "
+                                "for the '%s' relationship of the '%s' entity."
+                                % (self.target.tablename, self.name,
+                                   self.entity.__name__))
             if self.colname and \
-               len(self.colname) != len(target_desc.primary_keys):
+               len(self.colname) != len(target_columns):
                 raise Exception(
                         "The number of column names provided in the colname "
                         "keyword argument of the '%s' relationship of the "
@@ -634,14 +651,7 @@ class ManyToOne(Relationship):
                         % (self.name, self.entity.__name__,
                            self.target.__name__))
 
-            pks = target_desc.primary_keys
-            if not pks:
-                raise Exception("No primary key found in target table ('%s') "
-                                "for the '%s' relationship of the '%s' entity."
-                                % (self.target.tablename, self.name,
-                                   self.entity.__name__))
-
-            for key_num, pk_col in enumerate(pks):
+            for key_num, target_col in enumerate(target_columns):
                 if self.field:
                     col = self.field[key_num].column
                 else:
@@ -650,11 +660,12 @@ class ManyToOne(Relationship):
                     else:
                         colname = options.FKCOL_NAMEFORMAT % \
                                   {'relname': self.name,
-                                   'key': pk_col.key}
+                                   'key': target_col.key}
 
                     # We can't add the column to the table directly as the
                     # table might not be created yet.
-                    col = Column(colname, pk_col.type, **self.column_kwargs)
+                    col = Column(colname, target_col.type,
+                                 **self.column_kwargs)
                     source_desc.add_column(col)
 
                     # If the column name was specified, and it is the same as
@@ -679,11 +690,11 @@ class ManyToOne(Relationship):
                 # Build the list of column "paths" the foreign key will
                 # point to
                 fk_refcols.append("%s.%s" % \
-                                  (target_desc.table_fullname, pk_col.key))
+                                  (target_desc.table_fullname, target_col.key))
 
                 # Build up the primary join. This is needed when you have
                 # several belongs_to relationships between two objects
-                self.primaryjoin_clauses.append(col == pk_col)
+                self.primaryjoin_clauses.append(col == target_col)
 
             if 'name' not in self.constraint_kwargs:
                 # In some databases (at least MySQL) the constraint name needs

@@ -200,6 +200,30 @@ class TestManyToOne(object):
         assert a1 == b2.a_rel1
         assert a2 == b1.a_rel2
 
+    def test_non_pk_target(self):
+        class A(Entity):
+            name = Field(String(60), unique=True)
+
+        class B(Entity):
+            name = Field(String(60))
+            a = ManyToOne('A', target_column=['id', 'name'])
+# currently fails
+#            c = ManyToOne('C', target_column=['id', 'name'])
+
+#        class C(Entity):
+#            name = Field(String(60), unique=True)
+
+        setup_all(True)
+
+        b1 = B(name='b1', a=A(name='a1'))
+
+        session.commit()
+        session.clear()
+
+        b = B.query.one()
+
+        assert b.a.name == 'a1'
+
     def test_belongs_to_syntax(self):
         class Person(Entity):
             has_field('name', String(30))
