@@ -21,6 +21,8 @@ New features:
   the table of the "source" entity (patch from Diez B. Roggisch).
 - Added a new "target_column" argument on ManyToOne relationships (ticket #26).
   TODOC
+- Added new column_names argument to the acts_as_versioned extension, allowing
+  to specify custom column names (inspired by a patch by Alex Bodnaru).
 
 Changes:
 - Moved class instrumentation to a separate function: instrument_class

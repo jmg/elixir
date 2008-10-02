@@ -87,8 +87,10 @@ def get_history_where(instance):
 
 class VersionedMapperExtension(MapperExtension):
     def before_insert(self, mapper, connection, instance):
-        instance.version = 1
-        instance.timestamp = datetime.now()
+        version_colname, timestamp_colname = \
+            instance.__class__.__versioned_column_names__
+        setattr(instance, version_colname, 1)
+        setattr(instance, timestamp_colname, datetime.now())
         return EXT_CONTINUE
 
     def before_update(self, mapper, connection, instance):
@@ -101,6 +103,8 @@ class VersionedMapperExtension(MapperExtension):
         # to ensure we really should save this version and update the version
         # data.
         ignored = instance.__class__.__ignored_fields__
+        version_colname, timestamp_colname = \
+            instance.__class__.__versioned_column_names__
         for key in instance.table.c.keys():
             if key in ignored:
                 continue
@@ -109,8 +113,9 @@ class VersionedMapperExtension(MapperExtension):
                 dict_values = dict(old_values.items())
                 connection.execute(
                     instance.__class__.__history_table__.insert(), dict_values)
-                instance.version = instance.version + 1
-                instance.timestamp = datetime.now()
+                old_version = getattr(instance, version_colname)
+                setattr(instance, version_colname, old_version + 1)
+                setattr(instance, timestamp_colname, datetime.now())
                 break
 
         return EXT_CONTINUE
@@ -131,7 +136,8 @@ versioned_mapper_extension = VersionedMapperExtension()
 
 class VersionedEntityBuilder(EntityBuilder):
 
-    def __init__(self, entity, ignore=[], check_concurrent=False):
+    def __init__(self, entity, ignore=None, check_concurrent=False,
+                 column_names=None):
         self.entity = entity
         self.add_mapper_extension(versioned_mapper_extension)
         #TODO: we should rather check that the version_id_col isn't set
@@ -139,13 +145,24 @@ class VersionedEntityBuilder(EntityBuilder):
         self.check_concurrent = check_concurrent
 
         # Changes in these fields will be ignored
-        ignore.extend(['version', 'timestamp'])
+        if column_names is None:
+            column_names = ['version', 'timestamp']
+        entity.__versioned_column_names__ = column_names
+        if ignore is None:
+            ignore = []
+        ignore.extend(column_names)
         entity.__ignored_fields__ = ignore
 
     def create_non_pk_cols(self):
         # add a version column to the entity, along with a timestamp
-        self.add_table_column(Column('version', Integer))
-        self.add_table_column(Column('timestamp', DateTime))
+        version_colname, timestamp_colname = \
+            self.entity.__versioned_column_names__
+        #XXX: fail in case the columns already exist?
+        #col_names = [col.name for col in self.entity._descriptor.columns]
+        #if version_colname not in col_names:
+        self.add_table_column(Column(version_colname, Integer))
+        #if timestamp_colname not in col_names:
+        self.add_table_column(Column(timestamp_colname, DateTime))
 
         # add a concurrent_version column to the entity, if required
         if self.check_concurrent:
@@ -154,6 +171,8 @@ class VersionedEntityBuilder(EntityBuilder):
     # we copy columns from the main entity table, so we need it to exist first
     def after_table(self):
         entity = self.entity
+        version_colname, timestamp_colname = \
+            entity.__versioned_column_names__
 
         # look for events
         after_revert_events = []
@@ -162,12 +181,15 @@ class VersionedEntityBuilder(EntityBuilder):
                 after_revert_events.append(func)
 
         # create a history table for the entity
-        #TODO: fail more noticeably in case there is a version col
+        skipped_columns = [version_colname]
+        if self.check_concurrent:
+            skipped_columns.append('concurrent_version')
+
         columns = [
             column.copy() for column in entity.table.c
-            if column.name not in ('version', 'concurrent_version')
+            if column.name not in skipped_columns
         ]
-        columns.append(Column('version', Integer, primary_key=True))
+        columns.append(Column(version_colname, Integer, primary_key=True))
         table = Table(entity.table.name + '_history', entity.table.metadata,
             *columns
         )
@@ -182,11 +204,14 @@ class VersionedEntityBuilder(EntityBuilder):
         Version.__versioned_entity__ = entity
         mapper(Version, entity.__history_table__)
 
+        version_col = getattr(table.c, version_colname)
+        timestamp_col = getattr(table.c, timestamp_colname)
+
         # attach utility methods and properties to the entity
         def get_versions(self):
             v = object_session(self).query(Version) \
                                     .filter(get_history_where(self)) \
-                                    .order_by(Version.version) \
+                                    .order_by(version_col) \
                                     .all()
             # history contains all the previous records.
             # Add the current one to the list to get all the versions
@@ -196,7 +221,7 @@ class VersionedEntityBuilder(EntityBuilder):
         def get_as_of(self, dt):
             # if the passed in timestamp is older than our current version's
             # time stamp, then the most recent version is our current version
-            if self.timestamp < dt:
+            if getattr(self, timestamp_colname) < dt:
                 return self
 
             # otherwise, we need to look to the history table to get our
@@ -204,38 +229,37 @@ class VersionedEntityBuilder(EntityBuilder):
             sess = object_session(self)
             query = sess.query(Version) \
                         .filter(and_(get_history_where(self),
-                                     Version.timestamp <= dt)) \
-                        .order_by(desc(Version.timestamp)).limit(1)
+                                     timestamp_col <= dt)) \
+                        .order_by(desc(timestamp_col)).limit(1)
             return query.first()
 
         def revert_to(self, to_version):
             if isinstance(to_version, Version):
-                to_version = to_version.version
+                to_version = getattr(to_version, version_colname)
 
-            hist = entity.__history_table__
-            old_version = hist.select(and_(
+            old_version = table.select(and_(
                 get_history_where(self),
-                hist.c.version == to_version
+                version_col == to_version
             )).execute().fetchone()
 
             entity.table.update(get_entity_where(self)).execute(
                 dict(old_version.items())
             )
 
-            hist.delete(and_(get_history_where(self),
-                             hist.c.version >= to_version)).execute()
+            table.delete(and_(get_history_where(self),
+                              version_col >= to_version)).execute()
             self.expire()
             for event in after_revert_events:
                 event(self)
 
         def revert(self):
-            assert self.version > 1
-            self.revert_to(self.version - 1)
+            assert getattr(self, version_colname) > 1
+            self.revert_to(getattr(self, version_colname) - 1)
 
         def compare_with(self, version):
             differences = {}
             for column in self.table.c:
-                if column.name in ('version', 'concurrent_version'):
+                if column.name in (version_colname, 'concurrent_version'):
                     continue
                 this = getattr(self, column.name)
                 that = getattr(version, column.name)

@@ -30,7 +30,8 @@ def setup():
         actors = ManyToMany('Actor', inverse='movies',
                             tablename='movie_casting')
         using_options(tablename='movies')
-        acts_as_versioned(ignore=['ignoreme', 'autoupd'])
+        acts_as_versioned(ignore=['ignoreme', 'autoupd'],
+                          column_names=['version_no', 'timestamp_value'])
 
 
     class Actor(Entity):
@@ -67,7 +68,7 @@ class TestVersioning(object):
         time.sleep(1)
 
         movie = Movie.get_by(title='12 Monkeys')
-        assert movie.version == 1
+        assert movie.version_no == 1
         assert movie.title == '12 Monkeys'
         assert movie.director.name == 'Terry Gilliam'
         assert movie.autoupd == 2, movie.autoupd
@@ -97,20 +98,20 @@ class TestVersioning(object):
         middle_version = movie.get_as_of(after_update_one)
         latest_version = movie.get_as_of(after_update_two)
 
-        initial_timestamp = oldest_version.timestamp
+        initial_timestamp = oldest_version.timestamp_value
 
-        assert oldest_version.version == 1
+        assert oldest_version.version_no == 1
         assert oldest_version.description == 'draft description'
         assert oldest_version.ignoreme == 0
         assert oldest_version.autoupd is not None
         assert oldest_version.autoupd > 0
 
-        assert middle_version.version == 2
+        assert middle_version.version_no == 2
         assert middle_version.description == 'description two'
         assert middle_version.autoupd > oldest_version.autoupd
 
-        assert latest_version.version == 3, \
-               'version=%i' % latest_version.version
+        assert latest_version.version_no == 3, \
+               'version=%i' % latest_version.version_no
         assert latest_version.description == 'description three'
         assert latest_version.ignoreme == 1
         assert latest_version.autoupd > middle_version.autoupd
@@ -122,7 +123,7 @@ class TestVersioning(object):
         assert len(movie.versions) == 3
         assert movie.versions[0] == oldest_version
         assert movie.versions[1] == middle_version
-        assert [v.version for v in movie.versions] == [1, 2, 3]
+        assert [v.version_no for v in movie.versions] == [1, 2, 3]
 
         movie.description = 'description four'
 
@@ -130,7 +131,8 @@ class TestVersioning(object):
         session.commit(); session.clear()
 
         movie = Movie.get_by(title='12 Monkeys')
-        assert movie.version == 2, "version=%i, should be 2" % movie.version
+        assert movie.version_no == 2, \
+               "version=%i, should be 2" % movie.version_no
         assert movie.description == 'description two', movie.description
 
         movie.description = "description 3"
@@ -141,12 +143,12 @@ class TestVersioning(object):
         session.commit(); session.clear()
 
         movie = Movie.get_by(title='12 Monkeys')
-        assert movie.version == 4
+        assert movie.version_no == 4
         movie.revert_to(movie.versions[-2])
         movie.description = "description 5"
         session.commit(); session.clear()
 
         movie = Movie.get_by(title='12 Monkeys')
-        assert movie.version == 4
+        assert movie.version_no == 4
         assert movie.versions[-2].description == "description 3"
 
