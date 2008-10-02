@@ -23,6 +23,8 @@ New features:
   TODOC
 - Added new column_names argument to the acts_as_versioned extension, allowing
   to specify custom column names (inspired by a patch by Alex Bodnaru).
+- Added new extension: perform_ddl. It allows to execute one or several DDL
+  statements upon table creation (contributed by Alex Bodnaru).
 
 Changes:
 - Moved class instrumentation to a separate function: instrument_class
