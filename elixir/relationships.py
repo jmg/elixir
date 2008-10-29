@@ -238,9 +238,10 @@ our example, even though we want tags to be usable on several articles, we
 might not be interested in which articles correspond to a particular tag.  In
 that case, we could have omitted the `Tag` side of the relationship.
 
-If the entity containing your ``ManyToMany`` relationship is
-autoloaded, you **must** specify at least one of either the ``remote_colname``
-or ``local_colname`` argument.
+If your ``ManyToMany`` relationship is self-referencial, the entity
+containing it is autoloaded (and you don't intend to specify both the
+primaryjoin and secondaryjoin arguments manually), you must specify at least
+one of either the ``remote_colname`` or ``local_colname`` argument.
 
 In addition to keyword arguments inherited from SQLAlchemy, ``ManyToMany``
 relationships accept the following optional (keyword) arguments:
@@ -454,7 +455,8 @@ class Relationship(Property):
                 self.target._descriptor.translate_order_by(kwargs['order_by'])
 
         # transform callable arguments
-        for arg in ('primaryjoin', 'secondaryjoin', 'remote_side', 'filter'):
+        for arg in ('primaryjoin', 'secondaryjoin', 'remote_side', 'filter',
+                    'foreign_keys'):
             kwarg = kwargs.get(arg, None)
             if callable(kwarg):
                 kwargs[arg] = kwarg()
@@ -832,11 +834,10 @@ class ManyToMany(Relationship):
         return isinstance(other, ManyToMany)
 
     def create_tables(self):
-        # Warning: if the table was specified manually, the join clauses won't
-        # be computed. We might want to autodetect joins based on fk, as for
-        # autoloaded entities
         if self.secondary_table:
-            self._reflect_table()
+            if 'primaryjoin' not in self.kwargs or \
+               'secondaryjoin' not in self.kwargs:
+                self._build_join_clauses()
             return
 
         if self.inverse:
@@ -912,7 +913,9 @@ class ManyToMany(Relationship):
 
             self.secondary_table = Table(tablename, e1_desc.metadata,
                                          autoload=True)
-            self._reflect_table()
+            if 'primaryjoin' not in self.kwargs or \
+               'secondaryjoin' not in self.kwargs:
+                self._build_join_clauses()
         else:
             # We pre-compute the names of the foreign key constraints
             # pointing to the source (local) entity's table and to the
@@ -984,11 +987,14 @@ class ManyToMany(Relationship):
             if DEBUG:
                 print self.secondary_table.repr2()
 
-    def _reflect_table(self):
+    def _build_join_clauses(self):
         # In the case we have a self-reference, we need to build join clauses
         if self.entity is self.target:
-            #CHECKME: maybe we should try even harder by checking if that
-            # information was defined on the inverse relationship)
+            #TODO: we should check if that information was defined on the
+            #inverse relationship. We have two options: either we force the
+            #definition on both sides, or we accept defining on one side only.
+            #In the later case, we still need to make the check as to not
+            #peusdo-randomly fail depending on initialization order.
             if not self.local_colname and not self.remote_colname:
                 raise Exception(
                     "Self-referential ManyToMany "

@@ -56,6 +56,10 @@ Bug fixes:
   reversed. Will be fixed before 0.7 ships (see ticket #69).
   =================
 - Fixed bug which broke the "identity" (Entity) option
+- Fixed documentation about local_side and remote_side arguments being
+  required if the entity containing the relationship is autoloaded, when it is
+  only required if the relationship is self-referencial, and primaryjoin or
+  secondaryjoin as not been specified manually.
 - Added missing documentation for the "filter" argument on OneToMany
   relationships
 
