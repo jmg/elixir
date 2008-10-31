@@ -55,6 +55,9 @@ Bug fixes:
   For now it is even worse: the table works but the relationship's meaning is
   reversed. Will be fixed before 0.7 ships (see ticket #69).
   =================
+- Fixed the case where you specify both "primaryjoin" and "colname" arguments
+  (useless in this case, but harmless) on a ManyToOne relationship of an
+  autoloaded entity.
 - Fixed bug which broke the "identity" (Entity) option
 - Fixed documentation about local_side and remote_side arguments being
   required if the entity containing the relationship is autoloaded, when it is
