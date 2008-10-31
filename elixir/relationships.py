@@ -615,18 +615,21 @@ class ManyToOne(Relationship):
         target_desc.create_pk_cols()
 
         if source_desc.autoload:
-            #TODO: test if this works when colname is a list
-
+            #TODO: allow target_column to be used as an alternative to
+            # specifying primaryjoin, to be consistent with non-autoloaded
+            # tables
             if self.colname:
-                self.primaryjoin_clauses = \
-                    _get_join_clauses(self.entity.table,
-                                      self.colname, None,
-                                      self.target.table)[0]
-                if not self.primaryjoin_clauses:
-                    raise Exception(
-                        "Couldn't find a foreign key constraint in table "
-                        "'%s' using the following columns: %s."
-                        % (self.entity.table.name, ', '.join(self.colname)))
+                if 'primaryjoin' not in self.kwargs:
+                    self.primaryjoin_clauses = \
+                        _get_join_clauses(self.entity.table,
+                                          self.colname, None,
+                                          self.target.table)[0]
+                    if not self.primaryjoin_clauses:
+                        colnames = ', '.join(self.colname)
+                        raise Exception(
+                            "Couldn't find a foreign key constraint in table "
+                            "'%s' using the following columns: %s."
+                            % (self.entity.table.name, colnames))
             if self.field:
                 raise NotImplementedError(
                     "'field' argument not allowed on autoloaded table "
