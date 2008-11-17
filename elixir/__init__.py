@@ -26,7 +26,7 @@ from sqlalchemy.types import *
 from elixir.options import using_options, using_table_options, \
                            using_mapper_options, options_defaults, \
                            using_options_defaults
-from elixir.entity import Entity, EntityMeta, EntityDescriptor, \
+from elixir.entity import Entity, EntityBase, EntityMeta, EntityDescriptor, \
                           setup_entities, cleanup_entities
 from elixir.fields import has_field, Field
 from elixir.relationships import belongs_to, has_one, has_many, \
@@ -40,7 +40,8 @@ from elixir.collection import EntityCollection
 
 __version__ = '0.7.0'
 
-__all__ = ['Entity', 'EntityMeta', 'EntityCollection', 'entities',
+__all__ = ['Entity', 'EntityBase', 'EntityMeta', 'EntityCollection',
+           'entities',
            'Field', 'has_field',
            'has_property', 'GenericProperty', 'ColumnProperty', 'Synonym',
            'belongs_to', 'has_one', 'has_many', 'has_and_belongs_to_many',
