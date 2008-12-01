@@ -423,7 +423,8 @@ class EntityDescriptor(object):
         else:
             raise Exception("Failed to map entity '%s' with its table or "
                             "selectable. You can only bind an Entity to a "
-                            "ScopedSession object or None."
+                            "ScopedSession object or None for manual session "
+                            "management."
                             % self.entity.__name__)
 
     def after_mapper(self):

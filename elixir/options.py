@@ -108,10 +108,11 @@ The list of supported arguments are as follows:
 |                     | ``elixir.session``.                                   |
 |                     | This option takes a ``ScopedSession`` object or       |
 |                     | ``None``. In the later case your entity will be       |
-|                     | mapped using a                                        |
-|                     | non-contextual mapper. This option can also be set    |
-|                     | for all entities of a module by setting the           |
-|                     | ``__session__`` attribute of that module.             |
+|                     | mapped using a non-contextual mapper which requires   |
+|                     | manual session management, as seen in pure SQLAlchemy.|
+|                     | This option can also be set for all entities of a     |
+|                     | module by setting the ``__session__`` attribute of    |
+|                     | that module.                                          |
 +---------------------+-------------------------------------------------------+
 | ``autosetup``       | Specify whether that entity will contain automatic    |
 |                     | setup triggers. That is if this entity will be        |
