@@ -297,11 +297,22 @@ class EntityDescriptor(object):
 
         # create a list of callbacks for each event
         methods = {}
-        for name, method in self.entity.__dict__.items():
-            if hasattr(method, '_elixir_events'):
-                for event in method._elixir_events:
+        entity = self.entity
+
+        # Note that we don't use inspect.getmembers because of
+        # http://bugs.python.org/issue1785
+        # See also http://elixir.ematia.de/trac/changeset/262
+
+        # dir returns the attributes of the class and *all its parents* listed
+        # alphabetically.
+        for key in dir(entity):
+            try:
+                value = getattr(entity, key)
+                for event in getattr(value, '_elixir_events', []):
                     event_methods = methods.setdefault(event, [])
-                    event_methods.append(method)
+                    event_methods.append(value)
+            except AttributeError:
+                pass
         if not methods:
             return
 

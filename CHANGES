@@ -65,6 +65,10 @@ Bug fixes:
   secondaryjoin as not been specified manually.
 - Added missing documentation for the "filter" argument on OneToMany
   relationships
+- Fixed the act_as_list extension's move_to_bottom method to work on MySQL
+  (closes #34).
+- Fixed event methods not being called when they are defined on a parent class.
+  (introduced in r262).
 
 0.6.1 - 2008-08-18
 
