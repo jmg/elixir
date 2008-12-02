@@ -91,7 +91,7 @@ def get_entity_where(instance):
     clauses = []
     for column in instance.table.primary_key.columns:
         instance_value = getattr(instance, column.name)
-        clauses.append(column==instance_value)
+        clauses.append(column == instance_value)
     return and_(*clauses)
 
 
@@ -132,8 +132,17 @@ class ListEntityBuilder(object):
                 select([literal(1).label('value')])
             )
             a = s.alias()
-            #XXX: two func.max?
+            # we use a second func.max to get the maximum between 1 and the
+            # real max position if any exist
             setattr(self, position_column_name, select([func.max(a.c.value)]))
+
+            # Note that this method could be rewritten more simply like below,
+            # but because this extension is going to be deprecated anyway,
+            # I don't want to risk breaking something I don't want to maintain.
+#            setattr(self, position_column_name, select(
+#                [func.coalesce(func.max(position_column), 0) + 1],
+#                qualifier_method(self)
+#            ))
         _init_position = before_insert(_init_position)
 
         def _shift_items(self):
@@ -161,13 +170,15 @@ class ListEntityBuilder(object):
             ).execute()
 
             # move this item to the max position
+            # MySQL does not support the correlated subquery, so we need to
+            # execute the query (through scalar()). See ticket #34.
             self.table.update(
                 get_entity_where(self),
                 values={
                     position_column : select(
                         [func.max(position_column) + 1],
                         qualifier_method(self)
-                    )
+                    ).scalar()
                 }
             ).execute()
 
