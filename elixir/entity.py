@@ -7,6 +7,8 @@ from py23compat import sorted
 
 import sys
 import inspect
+import types
+
 from copy import copy
 
 import sqlalchemy
@@ -308,9 +310,10 @@ class EntityDescriptor(object):
         for key in dir(entity):
             try:
                 value = getattr(entity, key)
-                for event in getattr(value, '_elixir_events', []):
-                    event_methods = methods.setdefault(event, [])
-                    event_methods.append(value)
+                if isinstance(value, types.MethodType):
+                    for event in getattr(value, '_elixir_events', []):
+                        event_methods = methods.setdefault(event, [])
+                        event_methods.append(value)
             except AttributeError:
                 pass
         if not methods:
