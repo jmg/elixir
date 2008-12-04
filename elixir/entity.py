@@ -840,6 +840,13 @@ def setup_entities(entities):
     '''Setup all entities in the list passed as argument'''
 
     for entity in entities:
+        # delete all Elixir properties so that it doesn't interfere with
+        # SQLAlchemy. At this point they should have be converted to
+        # builders.
+        for name, attr in entity.__dict__.items():
+            if isinstance(attr, Property):
+                delattr(entity, name)
+
         if entity._descriptor.autosetup:
             _cleanup_autosetup_triggers(entity)
 

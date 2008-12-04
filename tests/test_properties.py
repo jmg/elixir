@@ -14,6 +14,16 @@ class TestSpecialProperties(object):
     def teardown(self):
         cleanup_all(True)
 
+    def test_lifecycle(self):
+        class A(Entity):
+            name = Field(String(20))
+
+        assert isinstance(A.name, Field)
+
+        setup_all()
+
+        assert not isinstance(A.name, Field)
+
     def test_generic_property(self):
         class Tag(Entity):
             score1 = Field(Float)

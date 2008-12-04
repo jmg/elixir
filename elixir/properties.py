@@ -126,13 +126,6 @@ class Property(EntityBuilder):
         # register this property as a builder
         entity._descriptor.builders.append(self)
 
-        # delete the original attribute so that it doesn't interfere with
-        # SQLAlchemy. Note that getattr and delattr are not symmetrical:
-        # getattr look up in parent classes, while delattr must be called on
-        # the exact class holding the attribute.
-        if name in entity.__dict__:
-            delattr(entity, name)
-
     def __repr__(self):
         return "Property(%s, %s)" % (self.name, self.entity)
 
