@@ -39,6 +39,9 @@ Changes:
   local_colname respectively to not collide with the remote_side argument
   provided by SA (it doesn't make much sense on ManyToMany relationships but
   still).
+- Delete Elixir properties in the setup phase rather than as soon as they are
+  attached to their class. It makes it possible to access them or refer to them
+  after the class is defined (but before setup).
 
 Bug fixes:
 - default EntityCollection raise an exception instead of returning None when
