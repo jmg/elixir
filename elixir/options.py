@@ -210,8 +210,8 @@ options_defaults = dict(
     version_id_col=False,
     allowcoloverride=False,
     order_by=None,
-    mapper_options=dict(),
-    table_options=dict()
+    mapper_options={},
+    table_options={}
 )
 
 valid_options = options_defaults.keys() + [

@@ -413,12 +413,11 @@ class Relationship(Property):
     Base class for relationships.
     '''
 
-    def __init__(self, of_kind, *args, **kwargs):
+    def __init__(self, of_kind, inverse=None, *args, **kwargs):
         super(Relationship, self).__init__()
 
-        self.inverse_name = kwargs.pop('inverse', None)
-
         self.of_kind = of_kind
+        self.inverse_name = inverse
 
         self._target = None
 
@@ -541,54 +540,60 @@ class ManyToOne(Relationship):
 
     '''
 
-    def __init__(self, *args, **kwargs):
-        self._handle_column_args(kwargs)
-        self._handle_constraint_args(kwargs)
+    def __init__(self, of_kind,
+                 column_kwargs=None,
+                 colname=None, required=None, primary_key=None,
+                 field=None,
+                 constraint_kwargs=None,
+                 use_alter=None, ondelete=None, onupdate=None,
+                 target_column=None,
+                 *args, **kwargs):
 
-        self.foreign_key = list()
-        self.primaryjoin_clauses = list()
+        # 1) handle column-related args
 
-        self.target_column = kwargs.pop('target_column', None)
-        if self.target_column is not None and \
-           not isinstance(self.target_column, list):
-            self.target_column = [self.target_column]
-
-        super(ManyToOne, self).__init__(*args, **kwargs)
-
-    def _handle_column_args(self, kwargs):
         # check that the column arguments don't conflict
-        col_args_specified = 'column_kwargs' in kwargs or 'colname' in kwargs
-        field_specified = 'field' in kwargs
-        assert not (field_specified and col_args_specified), \
+        assert not (field and (column_kwargs or colname)), \
                "ManyToOne can accept the 'field' argument or column " \
                "arguments ('colname' or 'column_kwargs') but not both!"
 
-        self.colname = kwargs.pop('colname', [])
-        if self.colname and not isinstance(self.colname, list):
-            self.colname = [self.colname]
+        if colname and not isinstance(colname, list):
+            colname = [colname]
+        self.colname = colname or []
 
-        # populate column_kwargs
-        self.column_kwargs = kwargs.pop('column_kwargs', {})
-        if 'required' in kwargs:
-            self.column_kwargs['nullable'] = not kwargs.pop('required')
-        if 'primary_key' in kwargs:
-            self.column_kwargs['primary_key'] = kwargs.pop('primary_key')
-        # by default, columns created will have an index.
-        self.column_kwargs.setdefault('index', True)
+        column_kwargs = column_kwargs or {}
+        # kwargs go by default to the relation(), so we need to manually
+        # extract those targeting the Column
+        if required is not None:
+            column_kwargs['nullable'] = not required
+        if primary_key is not None:
+            column_kwargs['primary_key'] = primary_key
+        # by default, created columns will have an index.
+        column_kwargs.setdefault('index', True)
+        self.column_kwargs = column_kwargs
 
-        self.field = kwargs.pop('field', [])
-        if self.field and not isinstance(self.field, list):
-            self.field = [self.field]
+        if field and not isinstance(field, list):
+            field = [field]
+        self.field = field or []
 
-    def _handle_constraint_args(self, kwargs):
-        self.constraint_kwargs = kwargs.pop('constraint_kwargs', {})
-        if 'use_alter' in kwargs:
-            self.constraint_kwargs['use_alter'] = kwargs.pop('use_alter')
+        # 2) handle constraint kwargs
+        constraint_kwargs = constraint_kwargs or {}
+        if use_alter is not None:
+            constraint_kwargs['use_alter'] = use_alter
+        if ondelete is not None:
+            constraint_kwargs['ondelete'] = ondelete
+        if onupdate is not None:
+            constraint_kwargs['onupdate'] = onupdate
+        self.constraint_kwargs = constraint_kwargs
 
-        if 'ondelete' in kwargs:
-            self.constraint_kwargs['ondelete'] = kwargs.pop('ondelete')
-        if 'onupdate' in kwargs:
-            self.constraint_kwargs['onupdate'] = kwargs.pop('onupdate')
+        # 3) misc arguments
+        if target_column and not isinstance(target_column, list):
+            target_column = [target_column]
+        self.target_column = target_column
+
+        self.foreign_key = []
+        self.primaryjoin_clauses = []
+
+        super(ManyToOne, self).__init__(of_kind, *args, **kwargs)
 
     def match_type_of(self, other):
         return isinstance(other, (OneToMany, OneToOne))
@@ -635,8 +640,8 @@ class ManyToOne(Relationship):
                     "'field' argument not allowed on autoloaded table "
                     "relationships.")
         else:
-            fk_refcols = list()
-            fk_colnames = list()
+            fk_refcols = []
+            fk_colnames = []
 
             if self.target_column is None:
                 target_columns = target_desc.primary_keys
@@ -740,9 +745,9 @@ class ManyToOne(Relationship):
 class OneToOne(Relationship):
     uselist = False
 
-    def __init__(self, *args, **kwargs):
-        self.filter = kwargs.pop('filter', None)
-        if self.filter is not None:
+    def __init__(self, of_kind, filter=None, *args, **kwargs):
+        self.filter = filter
+        if filter is not None:
             # We set viewonly to True by default for filtered relationship,
             # unless manually overridden.
             # This is not strictly necessary, as SQLAlchemy allows non viewonly
@@ -756,7 +761,7 @@ class OneToOne(Relationship):
             # database).
             if 'viewonly' not in kwargs:
                 kwargs['viewonly'] = True
-        super(OneToOne, self).__init__(*args, **kwargs)
+        super(OneToOne, self).__init__(of_kind, *args, **kwargs)
 
     def match_type_of(self, other):
         return isinstance(other, ManyToOne)
@@ -805,33 +810,40 @@ class OneToMany(OneToOne):
 class ManyToMany(Relationship):
     uselist = True
 
-    def __init__(self, *args, **kwargs):
-        self.user_tablename = kwargs.pop('tablename', None)
-        self.local_colname = kwargs.pop('local_colname', [])
-        if self.local_colname and not isinstance(self.local_colname, list):
-            self.local_colname = [self.local_colname]
-        self.remote_colname = kwargs.pop('remote_colname', [])
-        if self.remote_colname and not isinstance(self.remote_colname, list):
-            self.remote_colname = [self.remote_colname]
-        self.ondelete = kwargs.pop('ondelete', None)
-        self.onupdate = kwargs.pop('onupdate', None)
-        if 'column_format' in kwargs:
+    def __init__(self, of_kind, tablename=None,
+                 local_colname=None, remote_colname=None,
+                 ondelete=None, onupdate=None,
+                 table=None, schema=None,
+                 column_format=None,
+                 *args, **kwargs):
+        self.user_tablename = tablename
+
+        if local_colname and not isinstance(local_colname, list):
+            local_colname = [local_colname]
+        self.local_colname = local_colname or []
+        if remote_colname and not isinstance(remote_colname, list):
+            remote_colname = [remote_colname]
+        self.remote_colname = remote_colname or []
+
+        self.ondelete = ondelete
+        self.onupdate = onupdate
+
+        self.secondary_table = table
+        self.schema = schema
+
+        if column_format:
             warnings.warn("The 'column_format' argument on ManyToMany "
                 "relationships is deprecated. Please use the 'local_colname' "
                 "and/or 'remote_colname' arguments if you want custom "
                 "column names for this table only, or modify "
                 "options.M2MCOL_NAMEFORMAT if you want a custom format for "
                 "all ManyToMany tables", DeprecationWarning, stacklevel=3)
-        self.column_format = kwargs.pop('column_format',
-                                        options.M2MCOL_NAMEFORMAT)
+        self.column_format = column_format or options.M2MCOL_NAMEFORMAT
 
-        self.secondary_table = kwargs.pop('table', None)
-        self.schema = kwargs.pop('schema', None)
+        self.primaryjoin_clauses = []
+        self.secondaryjoin_clauses = []
 
-        self.primaryjoin_clauses = list()
-        self.secondaryjoin_clauses = list()
-
-        super(ManyToMany, self).__init__(*args, **kwargs)
+        super(ManyToMany, self).__init__(of_kind, *args, **kwargs)
 
     def match_type_of(self, other):
         return isinstance(other, ManyToMany)
@@ -932,16 +944,16 @@ class ManyToMany(Relationship):
             else:
                 target_fk_name = "%s_inverse_fk" % source_part
 
-            columns = list()
-            constraints = list()
+            columns = []
+            constraints = []
 
             joins = (self.primaryjoin_clauses, self.secondaryjoin_clauses)
             for num, desc, fk_name, rel, colnames in (
               (0, e1_desc, source_fk_name, self, self.local_colname),
               (1, e2_desc, target_fk_name, self.inverse, self.remote_colname)):
 
-                fk_colnames = list()
-                fk_refcols = list()
+                fk_colnames = []
+                fk_refcols = []
 
                 if colnames:
                     assert len(colnames) == len(desc.primary_keys)
@@ -1086,17 +1098,16 @@ def _get_join_clauses(local_table, local_cols1, local_cols2, target_table):
 
 
 def rel_mutator_handler(target):
-    def handler(entity, name, *args, **kwargs):
-        if 'through' in kwargs and 'via' in kwargs:
+    def handler(entity, name, of_kind=None, through=None, via=None,
+                *args, **kwargs):
+        if through and via:
             setattr(entity, name,
-                    association_proxy(kwargs.pop('through'),
-                                      kwargs.pop('via'),
-                                      **kwargs))
+                    association_proxy(through, via, **kwargs))
             return
-        elif 'through' in kwargs or 'via' in kwargs:
+        elif through or via:
             raise Exception("'through' and 'via' relationship keyword "
                             "arguments should be used in combination.")
-        rel = target(kwargs.pop('of_kind'), *args, **kwargs)
+        rel = target(of_kind, *args, **kwargs)
         rel.attach(entity, name)
     return handler
 

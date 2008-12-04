@@ -65,19 +65,19 @@ class EntityDescriptor(object):
                     self.base = base
 
         # columns and constraints waiting for a table to exist
-        self._columns = list()
-        self.constraints = list()
+        self._columns = []
+        self.constraints = []
 
         # properties (it is only useful for checking dupe properties at the
         # moment, and when adding properties before the mapper is created,
         # which shouldn't happen).
-        self.properties = dict()
+        self.properties = {}
 
         #
-        self.relationships = list()
+        self.relationships = []
 
         # set default value for options
-        self.table_args = list()
+        self.table_args = []
 
         # base class options_defaults
         base_defaults = getattr(self.base, 'options_defaults', {})
@@ -342,7 +342,7 @@ class EntityDescriptor(object):
         if isinstance(order_by, basestring):
             order_by = [order_by]
 
-        order = list()
+        order = []
         for colname in order_by:
             col = self.get_column(colname.strip('-'))
             if colname.startswith('-'):
@@ -372,7 +372,8 @@ class EntityDescriptor(object):
 
         if self.inheritance in ('single', 'concrete', 'multi'):
             if self.parent and \
-               not (self.inheritance == 'concrete' and not self.polymorphic):
+               (self.inheritance != 'concrete' or self.polymorphic):
+                # non-polymorphic concrete doesn't need this
                 kwargs['inherits'] = self.parent.mapper
 
             if self.inheritance == 'multi' and self.parent:
@@ -387,11 +388,15 @@ class EntityDescriptor(object):
                         keys = [(self.identity, self.entity.table)]
                         keys.extend([(child._descriptor.identity, child.table)
                                      for child in self._get_children()])
-                        #XXX: we might need to change the alias name so that
-                        # children (which are parent themselves) don't end up
-                        # with the same alias than their parent?
+                        # Having the same alias name for an entity and one of
+                        # its child (which is a parent itself) shouldn't cause
+                        # any problem because the join shouldn't be used at
+                        # the same time. But in reality, some versions of SA
+                        # do misbehave on this. Since it doesn't hurt to have
+                        # different names anyway, here they go.
                         pjoin = polymorphic_union(
-                                    dict(keys), self.polymorphic, 'pjoin')
+                                    dict(keys), self.polymorphic,
+                                    'pjoin_%s' % self.identity)
 
                         kwargs['with_polymorphic'] = ('*', pjoin)
                         kwargs['polymorphic_on'] = \
