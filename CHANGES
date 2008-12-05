@@ -74,6 +74,8 @@ Bug fixes:
   (introduced in r262).
 - Added workaround for an odd mod_python behavior (class.__module__ returns a
   weird name which is not in sys.modules).
+- Fixed filter argument on OneToMany relationship leaking the filter to the
+  unfiltered relationship.
 
 0.6.1 - 2008-08-18
 

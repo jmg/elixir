@@ -454,7 +454,7 @@ class Relationship(Property):
                 self.target._descriptor.translate_order_by(kwargs['order_by'])
 
         # transform callable arguments
-        for arg in ('primaryjoin', 'secondaryjoin', 'remote_side', 'filter',
+        for arg in ('primaryjoin', 'secondaryjoin', 'remote_side',
                     'foreign_keys'):
             kwarg = kwargs.get(arg, None)
             if callable(kwarg):
@@ -748,7 +748,7 @@ class OneToOne(Relationship):
     def __init__(self, of_kind, filter=None, *args, **kwargs):
         self.filter = filter
         if filter is not None:
-            # We set viewonly to True by default for filtered relationship,
+            # We set viewonly to True by default for filtered relationships,
             # unless manually overridden.
             # This is not strictly necessary, as SQLAlchemy allows non viewonly
             # relationships with a custom join/filter. The example at:
@@ -792,9 +792,14 @@ class OneToOne(Relationship):
             # autoloaded tables
             kwargs['remote_side'] = self.inverse.foreign_key
 
+        # Contrary to ManyToMany relationships, we need to specify the join
+        # clauses even if this relationship is not self-referencial because
+        # there could be several ManyToOne from the target class to us.
         joinclauses = self.inverse.primaryjoin_clauses
         if self.filter:
-            joinclauses.append(self.filter(self.target.table.c))
+            # We need to make a copy of the joinclauses, to not add the filter
+            # on the backref
+            joinclauses = joinclauses[:] + [self.filter(self.target.table.c)]
         if joinclauses:
             kwargs['primaryjoin'] = and_(*joinclauses)
 
@@ -815,6 +820,7 @@ class ManyToMany(Relationship):
                  ondelete=None, onupdate=None,
                  table=None, schema=None,
                  column_format=None,
+                 filter=None,
                  *args, **kwargs):
         self.user_tablename = tablename
 
@@ -828,7 +834,7 @@ class ManyToMany(Relationship):
         self.ondelete = ondelete
         self.onupdate = onupdate
 
-        self.secondary_table = table
+        self.table = table
         self.schema = schema
 
         if column_format:
@@ -840,24 +846,37 @@ class ManyToMany(Relationship):
                 "all ManyToMany tables", DeprecationWarning, stacklevel=3)
         self.column_format = column_format or options.M2MCOL_NAMEFORMAT
 
+        self.filter = filter
+        if filter is not None:
+            # We set viewonly to True by default for filtered relationships,
+            # unless manually overridden.
+            if 'viewonly' not in kwargs:
+                kwargs['viewonly'] = True
+
         self.primaryjoin_clauses = []
         self.secondaryjoin_clauses = []
 
         super(ManyToMany, self).__init__(of_kind, *args, **kwargs)
 
+    def get_table(self):
+        warnings.warn("The secondary_table attribute on ManyToMany objects is"
+                      "deprecated", DeprecationWarning, stacklevel=2)
+        return self.table
+    secondary_table = property(get_table)
+
     def match_type_of(self, other):
         return isinstance(other, ManyToMany)
 
     def create_tables(self):
-        if self.secondary_table:
+        if self.table:
             if 'primaryjoin' not in self.kwargs or \
                'secondaryjoin' not in self.kwargs:
                 self._build_join_clauses()
             return
 
         if self.inverse:
-            if self.inverse.secondary_table:
-                self.secondary_table = self.inverse.secondary_table
+            if self.inverse.table:
+                self.table = self.inverse.table
                 self.primaryjoin_clauses = self.inverse.secondaryjoin_clauses
                 self.secondaryjoin_clauses = self.inverse.primaryjoin_clauses
                 return
@@ -926,8 +945,7 @@ class ManyToMany(Relationship):
                     % (self.entity.__name__, self.name,
                        self.target.__name__))
 
-            self.secondary_table = Table(tablename, e1_desc.metadata,
-                                         autoload=True)
+            self.table = Table(tablename, e1_desc.metadata, autoload=True)
             if 'primaryjoin' not in self.kwargs or \
                'secondaryjoin' not in self.kwargs:
                 self._build_join_clauses()
@@ -997,10 +1015,10 @@ class ManyToMany(Relationship):
 
             args = columns + constraints
 
-            self.secondary_table = Table(tablename, e1_desc.metadata,
-                                         schema=schema, *args)
+            self.table = Table(tablename, e1_desc.metadata,
+                               schema=schema, *args)
             if DEBUG:
-                print self.secondary_table.repr2()
+                print self.table.repr2()
 
     def _build_join_clauses(self):
         # In the case we have a self-reference, we need to build join clauses
@@ -1020,17 +1038,24 @@ class ManyToMany(Relationship):
                     % (self.name, self.entity.__name__))
 
             self.primaryjoin_clauses, self.secondaryjoin_clauses = \
-                _get_join_clauses(self.secondary_table,
+                _get_join_clauses(self.table,
                                   self.local_colname, self.remote_colname,
                                   self.entity.table)
 
     def get_prop_kwargs(self):
-        kwargs = {'secondary': self.secondary_table,
+        kwargs = {'secondary': self.table,
                   'uselist': self.uselist}
 
-        if self.target is self.entity:
+        if self.filter:
+            # we need to make a copy of the joinclauses
+            secondaryjoin_clauses = self.secondaryjoin_clauses[:] + \
+                                    [self.filter(self.target.table.c)]
+        else:
+            secondaryjoin_clauses = self.secondaryjoin_clauses
+
+        if self.target is self.entity or self.filter:
             kwargs['primaryjoin'] = and_(*self.primaryjoin_clauses)
-            kwargs['secondaryjoin'] = and_(*self.secondaryjoin_clauses)
+            kwargs['secondaryjoin'] = and_(*secondaryjoin_clauses)
 
         kwargs.update(self.kwargs)
 
