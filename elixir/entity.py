@@ -38,7 +38,8 @@ class EntityDescriptor(object):
         entity.mapper = None
 
         self.entity = entity
-        self.module = sys.modules[entity.__module__]
+        # entity.__module__ is not always reliable (eg in mod_python)
+        self.module = sys.modules.get(entity.__module__)
 
         self.has_pk = False
         self._pk_col_done = False

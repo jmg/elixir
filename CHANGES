@@ -72,6 +72,8 @@ Bug fixes:
   (closes #34).
 - Fixed event methods not being called when they are defined on a parent class.
   (introduced in r262).
+- Added workaround for an odd mod_python behavior (class.__module__ returns a
+  weird name which is not in sys.modules).
 
 0.6.1 - 2008-08-18
 
