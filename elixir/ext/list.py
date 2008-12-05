@@ -1,4 +1,13 @@
 '''
+This extension is DEPRECATED. Please use the orderinglist SQLAlchemy
+extension instead.
+For details:
+http://www.sqlalchemy.org/docs/04/plugins.html#plugins_orderinglist
+http://www.sqlalchemy.org/docs/04/sqlalchemy_ext_orderinglist.html
+
+For an Elixir example:
+http://elixir.ematia.de/trac/browser/elixir/trunk/tests/test_o2m.py#L167
+
 An ordered-list plugin for Elixir to help you make an entity be able to be
 managed in a list-like way. Much inspiration comes from the Ruby on Rails
 acts_as_list plugin, which is currently more full-featured than this plugin.
@@ -82,6 +91,7 @@ For more examples, refer to the unit tests for this plugin.
 from elixir.statements import Statement
 from elixir.events import before_insert, before_delete
 from sqlalchemy import Column, Integer, select, func, literal, and_
+import warnings
 
 __all__ = ['acts_as_list']
 __doc_all__ = []
@@ -98,6 +108,9 @@ def get_entity_where(instance):
 class ListEntityBuilder(object):
 
     def __init__(self, entity, qualifier=None, column_name='position'):
+        warnings.warn("The act_as_list extension is deprecated. Please use "
+                      "SQLAlchemy's orderinglist extension instead",
+                      DeprecationWarning, stacklevel=6)
         self.entity = entity
         self.qualifier_method = qualifier
         self.column_name = column_name

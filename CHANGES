@@ -42,6 +42,8 @@ Changes:
 - Delete Elixir properties in the setup phase rather than as soon as they are
   attached to their class. It makes it possible to access them or refer to them
   after the class is defined (but before setup).
+- Deprecated act_as_list extension in favor of SQLAlchemy's orderinglist
+  extension (closes #53).
 
 Bug fixes:
 - default EntityCollection raise an exception instead of returning None when
