@@ -109,42 +109,64 @@ class TestOneToMany(object):
     def test_viewonly(self):
         class User(Entity):
             name = Field(String(50))
-            two_blurbs = OneToMany('Blurb', primaryjoin=lambda:
-                and_(Blurb.user_id == User.id, Blurb.position < 2),
+            boston_addresses = OneToMany('Address', primaryjoin=lambda:
+                and_(Address.user_id == User.id, Address.city == u'Boston'),
                 viewonly=True
             )
-            blurbs = OneToMany('Blurb',
-                               collection_class=ordering_list('position'),
-                               order_by='position')
+            addresses = OneToMany('Address')
 
-        class Blurb(Entity):
+        class Address(Entity):
             user = ManyToOne('User')
-            position = Field(Integer)
-            blurb = Field(Unicode(255))
-
-            def __init__(self, blurb, **kwargs):
-                super(Blurb, self).__init__(blurb=blurb, **kwargs)
-
-            def __repr__(self):
-                return 'Blurb(%r, %r)' % (self.position, self.blurb)
+            street = Field(Unicode(255))
+            city = Field(Unicode(255))
 
         setup_all(True)
 
         user = User(name="u1",
-                    blurbs=[Blurb(u'zero'), Blurb(u'one'), Blurb(u'two')])
+                    addresses=[Address(street=u"Queen Astrid Avenue, 32",
+                                       city=u"Brussels"),
+                               Address(street=u"Cambridge Street, 5",
+                                       city=u"Boston")])
 
         session.commit()
         session.clear()
 
         user = User.get(1)
-        assert len(user.two_blurbs) == 2
-        assert user.two_blurbs[0].blurb == 'zero'
-        assert user.two_blurbs[1].blurb == 'one'
+        assert len(user.addresses) == 2
+        assert len(user.boston_addresses) == 1
+        assert "Cambridge" in user.boston_addresses[0].street
 
-    def test_filtered(self):
+    def test_filter_func(self):
         class User(Entity):
             name = Field(String(50))
-            two_blurbs = OneToMany('Blurb', filter=lambda c: c.position < 2)
+            boston_addresses = OneToMany('Address', filter=lambda c:
+                                         c.city == u'Boston')
+            addresses = OneToMany('Address')
+
+        class Address(Entity):
+            user = ManyToOne('User')
+            street = Field(Unicode(255))
+            city = Field(Unicode(255))
+
+        setup_all(True)
+
+        user = User(name="u1",
+                    addresses=[Address(street=u"Queen Astrid Avenue, 32",
+                                       city=u"Brussels"),
+                               Address(street=u"Cambridge Street, 5",
+                                       city=u"Boston")])
+
+        session.commit()
+        session.clear()
+
+        user = User.get(1)
+        assert len(user.addresses) == 2
+        assert len(user.boston_addresses) == 1
+        assert "Cambridge" in user.boston_addresses[0].street
+
+    def test_ordering_list(self):
+        class User(Entity):
+            name = Field(String(50))
             blurbs = OneToMany('Blurb',
                                collection_class=ordering_list('position'),
                                order_by='position')
@@ -152,26 +174,25 @@ class TestOneToMany(object):
         class Blurb(Entity):
             user = ManyToOne('User')
             position = Field(Integer)
-            blurb = Field(Unicode(255))
-
-            def __init__(self, blurb, **kwargs):
-                super(Blurb, self).__init__(blurb=blurb, **kwargs)
-
-            def __repr__(self):
-                return 'Blurb(%r, %r)' % (self.position, self.blurb)
+            text = Field(Unicode(255))
 
         setup_all(True)
 
         user = User(name="u1",
-                    blurbs=[Blurb(u'zero'), Blurb(u'one'), Blurb(u'two')])
+                    blurbs=[Blurb(text=u'zero'),
+                            Blurb(text=u'one'),
+                            Blurb(text=u'two')])
 
         session.commit()
         session.clear()
 
         user = User.get(1)
-        assert len(user.two_blurbs) == 2
-        assert user.two_blurbs[0].blurb == 'zero'
-        assert user.two_blurbs[1].blurb == 'one'
+        assert len(user.blurbs) == 3
+        user.blurbs.insert(1, Blurb(text=u'new one'))
+        assert user.blurbs[2].text == "one"
+        assert user.blurbs[2].position == 2
+        assert user.blurbs[3].text == "two"
+        assert user.blurbs[3].position == 3
 
     def test_inverse_has_non_pk_target(self):
         class A(Entity):

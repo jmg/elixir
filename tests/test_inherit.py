@@ -39,11 +39,14 @@ def do_tst(inheritance, polymorphic, expected_res):
 
     setup_all(True)
 
-    A(data1='a1')
-    B(data1='b1', data2='b2')
-    C(data1='c1', data2='c2', data3='c3')
-    D(data1='d1', data4='d4')
-    E(data1='e1')
+    e1 = E(data1='e1')
+    a1 = A(data1='a1')
+    b1 = B(data1='b1', data2='b2', some_e=e1)
+    if polymorphic:
+        c1 = C(data1='c1', data2='c2', data3='c3', some_e=e1)
+    else:
+        c1 = C(data1='c1', data2='c2', data3='c3')
+    d1 = D(data1='d1', data4='d4')
 
     session.commit()
     session.clear()
@@ -173,10 +176,6 @@ class TestInheritance(object):
         })
 
 #    def test_polymorphic_concrete_inheritance(self):
-        # to get this test to work, I need to duplicate parent relationships in
-        # the children. The problem is that the properties are setup post
-        # mapper setup, so I'll need to add some logic into the add_property
-        # method which I'm reluctant to do.
 #        do_tst('concrete', True, {
 #            'A': ('A', 'B', 'C', 'D', 'E'),
 #            'B': ('B', 'C'),
