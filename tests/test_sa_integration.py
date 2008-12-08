@@ -6,14 +6,14 @@ from sqlalchemy.orm import *
 from sqlalchemy import *
 from elixir import *
 
-def setup():
-    metadata.bind = 'sqlite:///'
+class TestSQLAlchemyToElixir(object):
+    def setup(self):
+        metadata.bind = "sqlite:///"
 
-class TestSAIntegration(object):
     def teardown(self):
         cleanup_all(True)
 
-    def test_sa_to_elixir(self):
+    def test_simple(self):
         class A(Entity):
             name = Field(String(60))
 
@@ -47,10 +47,82 @@ class TestSAIntegration(object):
 
         assert b.a.name == 'a1'
 
-#    def test_elxir_to_sa(self):
+
+class TestElixirToSQLAlchemy(object):
+    def setup(self):
+        metadata.bind = "sqlite:///"
+
+    def teardown(self):
+        cleanup_all(True)
+
+    def test_m2o(self):
+        a_table = Table('a', metadata,
+            Column('id', Integer, primary_key=True),
+            Column('name', String(60)),
+        )
+        a_table.create()
+
+        class A(object):
+            pass
+
+        mapper(A, a_table)
+
+        class B(Entity):
+            name = Field(String(60))
+            a = ManyToOne(A)
+
+        setup_all(True)
+
+        a1 = A()
+        a1.name = 'a1'
+        b1 = B(name='b1', a=a1)
+
+        session.save(b1)
+        session.commit()
+        session.clear()
+
+        b = B.query.one()
+
+        assert b.a.name == 'a1'
+
+    def test_m2o_non_pk_target(self):
+        a_table = Table('a', metadata,
+            Column('id', Integer, primary_key=True),
+            Column('name', String(60), unique=True)
+        )
+        a_table.create()
+
+        class A(object):
+            pass
+
+        mapper(A, a_table)
+
+        class B(Entity):
+            name = Field(String(60))
+            a = ManyToOne(A, target_column=['name'])
+# currently fails
+#            c = ManyToOne('C', target_column=['id', 'name'])
+
+#        class C(Entity):
+#            name = Field(String(60), unique=True)
+
+        setup_all(True)
+
+        a1 = A()
+        a1.name = 'a1'
+        b1 = B(name='b1', a=a1)
+
+        session.commit()
+        session.clear()
+
+        b = B.query.one()
+
+        assert b.a.name == 'a1'
+
+#    def test_m2m(self):
 #        a_table = Table('a', metadata,
 #            Column('id', Integer, primary_key=True),
-#            Column('name', String(60)),
+#            Column('name', String(60), unique=True)
 #        )
 #        a_table.create()
 #
@@ -61,20 +133,18 @@ class TestSAIntegration(object):
 #
 #        class B(Entity):
 #            name = Field(String(60))
-#            a = ManyToOne('A')
+#            many_a = ManyToMany(A)
 #
 #        setup_all(True)
 #
 #        a1 = A()
 #        a1.name = 'a1'
-#        b1 = B(name='b1', a=a1)
+#        b1 = B(name='b1', many_a=[a1])
 #
-#        session.save(b1)
 #        session.commit()
 #        session.clear()
 #
 #        b = B.query.one()
 #
-#        assert b.a.name == 'a1'
-
+#        assert b.many_a[0].name == 'a1'
 

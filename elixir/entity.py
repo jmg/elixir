@@ -8,15 +8,17 @@ from py23compat import sorted
 import sys
 import inspect
 import types
+import warnings
 
 from copy import copy
 
 import sqlalchemy
-from sqlalchemy     import Table, Column, Integer, desc, ForeignKey, and_, \
-                           ForeignKeyConstraint
+from sqlalchemy import Table, Column, Integer, desc, ForeignKey, and_, \
+                       ForeignKeyConstraint
 from sqlalchemy.orm import MapperExtension, mapper, object_session, \
                            EXT_CONTINUE, polymorphic_union, ScopedSession, \
                            ColumnProperty
+from sqlalchemy.sql import ColumnCollection
 
 import elixir
 from elixir.statements import process_mutators
@@ -66,7 +68,7 @@ class EntityDescriptor(object):
                     self.base = base
 
         # columns and constraints waiting for a table to exist
-        self._columns = []
+        self._columns = ColumnCollection()
         self.constraints = []
 
         # properties (it is only useful for checking dupe properties at the
@@ -269,7 +271,7 @@ class EntityDescriptor(object):
                     self.version_id_col = options.DEFAULT_VERSION_ID_COL_NAME
                 self.add_column(Column(self.version_id_col, Integer))
 
-            args = self.columns + self.constraints + self.table_args
+            args = list(self.columns) + self.constraints + self.table_args
         self.entity.table = Table(self.tablename, self.metadata,
                                   *args, **kwargs)
         if DEBUG:
@@ -472,10 +474,13 @@ class EntityDescriptor(object):
         if check_duplicate is None:
             check_duplicate = not self.allowcoloverride
 
-        if check_duplicate and self.get_column(col.key, False) is not None:
-            raise Exception("Column '%s' already exist in '%s' ! " %
-                            (col.key, self.entity.__name__))
-        self._columns.append(col)
+        if col.key in self._columns:
+            if check_duplicate:
+                raise Exception("Column '%s' already exist in '%s' ! " %
+                                (col.key, self.entity.__name__))
+            else:
+                del self._columns[col.key]
+        self._columns.add(col)
 
         if col.primary_key:
             self.has_pk = True
@@ -509,7 +514,8 @@ class EntityDescriptor(object):
 
 #FIXME: something like this is needed to propagate the relationships from
 # parent entities to their children in a concrete inheritance scenario. But
-# this doesn't work because of the backref matching code.
+# this doesn't work because of the backref matching code. In most case
+# (test_concrete.py) it doesn't even happen at all.
 #        if self.children and self.inheritance == 'concrete':
 #            for child in self.children:
 #                child._descriptor.add_property(name, property)
@@ -530,13 +536,13 @@ class EntityDescriptor(object):
     def get_column(self, key, check_missing=True):
         #TODO: this needs to work whether the table is already setup or not
         #TODO: support SA table/autoloaded entity
-        for col in self.columns:
-            if col.key == key:
-                return col
-        if check_missing:
-            raise Exception("No column named '%s' found in the table of the "
-                            "'%s' entity!" % (key, self.entity.__name__))
-        return None
+        try:
+            return self.columns[key]
+        except KeyError:
+            if check_missing:
+                raise Exception("No column named '%s' found in the table of "
+                                "the '%s' entity!"
+                                % (key, self.entity.__name__))
 
     def get_inverse_relation(self, rel, check_reverse=True):
         '''
@@ -616,6 +622,13 @@ class EntityDescriptor(object):
                 return [col for col in self.columns if col.primary_key]
     primary_keys = property(primary_keys)
 
+    def table(self):
+        if self.entity.table:
+            return self.entity.table
+        else:
+            return FakeTable(self)
+    table = property(table)
+
     def primary_key_properties(self):
         """
         Returns the list of (mapper) properties corresponding to the primary
@@ -636,6 +649,36 @@ class EntityDescriptor(object):
             self._pk_props = [col_to_prop[c] for c in pk_cols]
         return self._pk_props
     primary_key_properties = property(primary_key_properties)
+
+class FakePK(object):
+    def __init__(self, descriptor):
+        self.descriptor = descriptor
+
+    def columns(self):
+        return self.descriptor.primary_keys
+    columns = property(columns)
+
+class FakeTable(object):
+    def __init__(self, descriptor):
+        self.descriptor = descriptor
+        self.primary_key = FakePK(descriptor)
+
+    def columns(self):
+        return self.descriptor.columns
+    columns = property(columns)
+
+    def fullname(self):
+        '''
+        Complete name of the table for the related entity.
+        Includes the schema name if there is one specified.
+        '''
+        schema = self.descriptor.table_options.get('schema', None)
+        if schema is not None:
+            return "%s.%s" % (schema, self.descriptor.tablename)
+        else:
+            return self.descriptor.tablename
+    fullname = property(fullname)
+
 
 class TriggerProxy(object):
     """
@@ -899,7 +942,7 @@ def cleanup_entities(entities):
 
         desc._pk_col_done = False
         desc.has_pk = False
-        desc._columns = []
+        desc._columns = ColumnCollection()
         desc.constraints = []
         desc.properties = {}
 

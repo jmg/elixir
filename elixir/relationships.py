@@ -398,7 +398,7 @@ ManyToMany_ relationships.
 import warnings
 
 from sqlalchemy import ForeignKeyConstraint, Column, Table, and_
-from sqlalchemy.orm import relation, backref
+from sqlalchemy.orm import relation, backref, class_mapper
 from sqlalchemy.ext.associationproxy import association_proxy
 
 import options
@@ -483,11 +483,11 @@ class Relationship(Property):
 
     def target(self):
         if not self._target:
-            if isinstance(self.of_kind, EntityMeta):
-                self._target = self.of_kind
-            else:
+            if isinstance(self.of_kind, basestring):
                 collection = self.entity._descriptor.collection
                 self._target = collection.resolve(self.of_kind, self.entity)
+            else:
+                self._target = self.of_kind
         return self._target
     target = property(target)
 
@@ -509,9 +509,11 @@ class Relationship(Property):
                      self.inverse_name, self.target.__name__)
             else:
                 check_reverse = not self.kwargs.get('viewonly', False)
-                inverse = self.target._descriptor.get_inverse_relation(self,
-                            check_reverse=check_reverse)
-
+                if isinstance(self.target, EntityMeta):
+                    inverse = self.target._descriptor.get_inverse_relation(
+                        self, check_reverse=check_reverse)
+                else:
+                    inverse = None
             self._inverse = inverse
             if inverse and not self.kwargs.get('viewonly', False):
                 inverse._inverse = self
@@ -598,6 +600,13 @@ class ManyToOne(Relationship):
     def match_type_of(self, other):
         return isinstance(other, (OneToMany, OneToOne))
 
+    def target_table(self):
+        if isinstance(self.target, EntityMeta):
+            return self.target._descriptor.table
+        else:
+            return class_mapper(self.target).local_table
+    target_table = property(target_table)
+
     def create_keys(self, pk):
         '''
         Find all primary keys on the target and create foreign keys on the
@@ -614,10 +623,15 @@ class ManyToOne(Relationship):
         #TODO: make this work if target is a pure SA-mapped class
         # for that, I need:
         # - the list of primary key columns of the target table (type and name)
+        # - a way to get to a column from its name
         # - the name of the target table
-        target_desc = self.target._descriptor
-        #make sure the target has all its pk set up
-        target_desc.create_pk_cols()
+        #XXX: use a fake table object on pure Elixir case and always introspect
+        #the table as if it was pure SA???
+        if isinstance(self.target, EntityMeta):
+            # make sure the target has all its pk set up
+            self.target._descriptor.create_pk_cols()
+
+        target_table = self.target_table
 
         if source_desc.autoload:
             #TODO: allow target_column to be used as an alternative to
@@ -628,7 +642,7 @@ class ManyToOne(Relationship):
                     self.primaryjoin_clauses = \
                         _get_join_clauses(self.entity.table,
                                           self.colname, None,
-                                          self.target.table)[0]
+                                          target_table)[0]
                     if not self.primaryjoin_clauses:
                         colnames = ', '.join(self.colname)
                         raise Exception(
@@ -644,15 +658,15 @@ class ManyToOne(Relationship):
             fk_colnames = []
 
             if self.target_column is None:
-                target_columns = target_desc.primary_keys
+                target_columns = target_table.primary_key.columns
             else:
-                target_columns = [target_desc.get_column(col)
+                target_columns = [target_table.columns[col]
                                   for col in self.target_column]
 
             if not target_columns:
                 raise Exception("No primary key found in target table ('%s') "
                                 "for the '%s' relationship of the '%s' entity."
-                                % (self.target.tablename, self.name,
+                                % (target_table.name, self.name,
                                    self.entity.__name__))
             if self.colname and \
                len(self.colname) != len(target_columns):
@@ -686,11 +700,11 @@ class ManyToOne(Relationship):
                     # Don't allow this to happen.
                     if col.key == self.name:
                         raise ValueError(
-                                 "ManyToOne named '%s' in '%s' conficts " \
-                                 " with the column of the same name. " \
-                                 "You should probably define the foreign key "\
-                                 "field manually and use the 'field' "\
-                                 "argument on the ManyToOne relationship" \
+                                 "ManyToOne named '%s' in '%s' conficts "
+                                 " with the column of the same name. "
+                                 "You should probably define the foreign key "
+                                 "field manually and use the 'field' "
+                                 "argument on the ManyToOne relationship"
                                  % (self.name, self.entity.__name__))
 
                 # Build the list of local columns which will be part of
@@ -703,10 +717,10 @@ class ManyToOne(Relationship):
                 # Build the list of column "paths" the foreign key will
                 # point to
                 fk_refcols.append("%s.%s" % \
-                                  (target_desc.table_fullname, target_col.key))
+                                  (target_table.fullname, target_col.key))
 
                 # Build up the primary join. This is needed when you have
-                # several belongs_to relationships between two objects
+                # several ManyToOne relationships between two objects
                 self.primaryjoin_clauses.append(col == target_col)
 
             if 'name' not in self.constraint_kwargs:
@@ -724,7 +738,7 @@ class ManyToOne(Relationship):
     def get_prop_kwargs(self):
         kwargs = {'uselist': False}
 
-        if self.entity.table is self.target.table:
+        if self.entity.table is self.target_table:
             # this is needed because otherwise SA has no way to know what is
             # the direction of the relationship since both columns present in
             # the primaryjoin belong to the same table. In other words, it is
@@ -732,7 +746,7 @@ class ManyToOne(Relationship):
             # is the many-to-one side, or the one-to-xxx side. The foreignkey
             # doesn't help in this case.
             kwargs['remote_side'] = \
-                [col for col in self.target.table.primary_key.columns]
+                [col for col in self.target_table.primary_key.columns]
 
         if self.primaryjoin_clauses:
             kwargs['primaryjoin'] = and_(*self.primaryjoin_clauses)
@@ -881,6 +895,8 @@ class ManyToMany(Relationship):
                 self.secondaryjoin_clauses = self.inverse.primaryjoin_clauses
                 return
 
+        #needs: table_options['schema'], autoload, tablename, primary_keys,
+        #entity.__name__, table_fullname
         e1_desc = self.entity._descriptor
         e2_desc = self.target._descriptor
 
