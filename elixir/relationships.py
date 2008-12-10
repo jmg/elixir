@@ -620,17 +620,11 @@ class ManyToOne(Relationship):
             return
 
         source_desc = self.entity._descriptor
-        #TODO: make this work if target is a pure SA-mapped class
-        # for that, I need:
-        # - the list of primary key columns of the target table (type and name)
-        # - a way to get to a column from its name
-        # - the name of the target table
-        #XXX: use a fake table object on pure Elixir case and always introspect
-        #the table as if it was pure SA???
         if isinstance(self.target, EntityMeta):
             # make sure the target has all its pk set up
             self.target._descriptor.create_pk_cols()
-
+        #XXX: another option, instead of the FakeTable, would be to create an
+        # EntityDescriptor for the SA class.
         target_table = self.target_table
 
         if source_desc.autoload:
