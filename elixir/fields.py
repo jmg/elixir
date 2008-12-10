@@ -13,6 +13,7 @@ Here is a quick example of how to use the object-oriented syntax.
     class Person(Entity):
         id = Field(Integer, primary_key=True)
         name = Field(String(50), required=True)
+        ssn = Field(String(50), unique=True)
         biography = Field(Text)
         join_date = Field(DateTime, default=datetime.datetime.now)
         photo = Field(Binary, deferred=True)
