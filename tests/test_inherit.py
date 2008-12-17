@@ -128,11 +128,8 @@ class TestInheritance(object):
         setup_all(True)
 
     def test_inverse_matching_on_parent(self):
-        options_defaults['inheritance'] = 'multi'
-
         class Person(Entity):
             using_options(inheritance='multi')
-
             name = Field(UnicodeText)
 
         class Parent(Person):
@@ -142,11 +139,41 @@ class TestInheritance(object):
 
         class Child(Person):
             using_options(inheritance='multi')
-
             parents = ManyToMany('Parent', tablename='child_parent',
                                  inverse='childs')
 
         setup_all()
+
+    def test_multitable_polymorphic_load(self):
+        class A(Entity):
+            using_options(inheritance='multi')
+            # we want to load children's specific data along the parent (A)
+            # data when querying the parent. If we don't specify this, the
+            # children data is loaded lazily
+            using_mapper_options(with_polymorphic='*')
+            name = Field(String(50))
+
+        class B(A):
+            using_options(inheritance='multi')
+            data = Field(String(50))
+            some_c = ManyToOne('C')
+
+        class C(A):
+            using_options(inheritance='multi')
+
+            data = Field(String(50))
+            many_b = OneToMany('B')
+        setup_all(True)
+        a1 = A(name='a1')
+        c1 = C(name='c1', data="c")
+        b1 = B(name='b1', data="b", some_c=c1)
+
+        session.commit()
+        session.clear()
+
+        for a in A.query.all():
+            if isinstance(a, (B, C)):
+                assert 'data' in a.__dict__
 
     def test_singletable_inheritance(self):
         do_tst('single', False, {

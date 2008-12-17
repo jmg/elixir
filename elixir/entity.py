@@ -233,7 +233,7 @@ class EntityDescriptor(object):
                     # re-add the entity columns to the parent entity so that
                     # they are added to the parent's table (whether the
                     # parent's table is already setup or not).
-                    for col in self.columns:
+                    for col in self._columns:
                         self.parent._descriptor.add_column(col)
                     for constraint in self.constraints:
                         self.parent._descriptor.add_constraint(constraint)
@@ -366,7 +366,7 @@ class EntityDescriptor(object):
         # inheritance scenario as demonstrated in
         # sqlalchemy/test/orm/inheritance/concrete.py
         # this should be added along other
-        kwargs = self.mapper_options
+        kwargs = {}
         if self.order_by:
             kwargs['order_by'] = self.translate_order_by(self.order_by)
 
@@ -378,12 +378,6 @@ class EntityDescriptor(object):
                (self.inheritance != 'concrete' or self.polymorphic):
                 # non-polymorphic concrete doesn't need this
                 kwargs['inherits'] = self.parent.mapper
-
-            if self.inheritance == 'multi' and self.parent:
-                col_pairs = zip(self.primary_keys,
-                                self.parent._descriptor.primary_keys)
-                kwargs['inherit_condition'] = \
-                    and_(*[pc == c for c, pc in col_pairs])
 
             if self.polymorphic:
                 if self.children:
@@ -408,33 +402,26 @@ class EntityDescriptor(object):
                         kwargs['polymorphic_on'] = \
                             self.get_column(self.polymorphic)
 
-                    #TODO: this is an optimization, and it breaks the multi
-                    # table polymorphic inheritance test with a relation.
-                    # So I turn it off for now. We might want to provide an
-                    # option to turn it on.
-#                    if self.inheritance == 'multi':
-#                        children = self._get_children()
-#                        join = self.entity.table
-#                        for child in children:
-#                            join = join.outerjoin(child.table)
-#                        kwargs['select_table'] = join
-
                 if self.children or self.parent:
                     kwargs['polymorphic_identity'] = self.identity
 
                 if self.parent and self.inheritance == 'concrete':
                     kwargs['concrete'] = True
 
+        if self.parent and self.inheritance == 'single':
+            args = []
+        else:
+            args = [self.entity.table]
+
+        # let user-defined kwargs override Elixir-generated ones, though that's
+        # not very usefull since most of them expect Column instances.
+        kwargs.update(self.mapper_options)
+
         #TODO: document this!
         if 'primary_key' in kwargs:
             cols = self.entity.table.c
             kwargs['primary_key'] = [getattr(cols, colname) for
                 colname in kwargs['primary_key']]
-
-        if self.parent and self.inheritance == 'single':
-            args = []
-        else:
-            args = [self.entity.table]
 
         # do the mapping
         if self.session is None:
@@ -595,10 +582,7 @@ class EntityDescriptor(object):
     table_fullname = property(table_fullname)
 
     def columns(self):
-        #FIXME: this would be more correct but it breaks inheritance, so I'll
-        # use the old test for now.
-#        if self.entity.table:
-        if self.autoload:
+        if self.entity.table:
             return self.entity.table.columns
         else:
             #FIXME: depending on the type of inheritance, we should also
@@ -1088,10 +1072,20 @@ class EntityBase(object):
 
     # query methods
     def get_by(cls, *args, **kwargs):
+        """
+        Returns the first instance of this class matching the given criteria.
+        This is equivalent to:
+        session.query(MyClass).filter_by(...).first()
+        """
         return cls.query.filter_by(*args, **kwargs).first()
     get_by = classmethod(get_by)
 
     def get(cls, *args, **kwargs):
+        """
+        Return the instance of this class based on the given identifier,
+        or None if not found. This is equivalent to:
+        session.query(MyClass).get(...)
+        """
         return cls.query.get(*args, **kwargs)
     get = classmethod(get)
 
