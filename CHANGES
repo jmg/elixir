@@ -44,6 +44,8 @@ Changes:
   after the class is defined (but before setup).
 - Deprecated act_as_list extension in favor of SQLAlchemy's orderinglist
   extension (closes #53).
+- Made manually defined mapper options take precedence over Elixir-generated
+  ones. Not very useful yet since most are expecting Column objects.
 
 Bug fixes:
 - default EntityCollection raise an exception instead of returning None when
