@@ -43,6 +43,8 @@ class EntityDescriptor(object):
         # entity.__module__ is not always reliable (eg in mod_python)
         self.module = sys.modules.get(entity.__module__)
 
+        # used for multi-table inheritance
+        self.join_condition = None
         self.has_pk = False
         self._pk_col_done = False
 
@@ -174,6 +176,7 @@ class EntityDescriptor(object):
                     # key columns
                     parent_desc = self.parent._descriptor
                     tablename = parent_desc.table_fullname
+                    join_clauses = []
                     for pk_col in parent_desc.primary_keys:
                         colname = options.MULTIINHERITANCECOL_NAMEFORMAT % \
                                   {'entity': self.parent.__name__.lower(),
@@ -187,6 +190,8 @@ class EntityDescriptor(object):
                         col = Column(colname, pk_col.type, fk,
                                      primary_key=True)
                         self.add_column(col)
+                        join_clauses.append(col == pk_col)
+                    self.join_condition = and_(*join_clauses)
                 elif self.inheritance == 'concrete':
                     # Copy primary key columns from the parent.
                     for col in self.parent._descriptor.columns:
@@ -378,6 +383,9 @@ class EntityDescriptor(object):
                (self.inheritance != 'concrete' or self.polymorphic):
                 # non-polymorphic concrete doesn't need this
                 kwargs['inherits'] = self.parent.mapper
+
+            if self.inheritance == 'multi' and self.parent:
+                kwargs['inherit_condition'] = self.join_condition
 
             if self.polymorphic:
                 if self.children:

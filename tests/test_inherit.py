@@ -157,6 +157,7 @@ class TestInheritance(object):
             using_options(inheritance='multi')
             data = Field(String(50))
             some_c = ManyToOne('C')
+            some_a = ManyToOne('A')
 
         class C(A):
             using_options(inheritance='multi')
@@ -173,6 +174,10 @@ class TestInheritance(object):
 
         for a in A.query.all():
             if isinstance(a, (B, C)):
+                # On SA 0.4.x, this test works whether with_polymorphic is
+                # specified or not, because in 0.4.x, without with_polymorphic,
+                # it issues as many queries as necessary to load all data,
+                # while in 0.5, columns are "deferred".
                 assert 'data' in a.__dict__
 
     def test_singletable_inheritance(self):
