@@ -7,10 +7,10 @@ from elixir.py23compat import rsplit
 
 # default entity collection
 class EntityCollection(list):
-    def __init__(self):
+    def __init__(self, *args):
         # _entities is a dict of entities keyed on their name.
         self._entities = {}
-        list.__init__(self)
+        list.__init__(self, *args)
 
     def append(self, entity):
         '''
@@ -18,15 +18,8 @@ class EntityCollection(list):
         '''
         super(EntityCollection, self).append(entity)
 
-        key = entity.__name__
-        mapped_entity = self._entities.get(key)
-        if mapped_entity:
-            if isinstance(mapped_entity, list):
-                mapped_entity.append(entity)
-            else:
-                self._entities[key] = [mapped_entity, entity]
-        else:
-            self._entities[key] = entity
+        existing_entities = self._entities.setdefault(entity.__name__, [])
+        existing_entities.append(entity)
 
     def resolve(self, key, entity=None):
         '''
@@ -50,12 +43,12 @@ class EntityCollection(list):
                     raise Exception("This collection does not contain any "
                                     "entity corresponding to the key '%s'!"
                                     % key)
-            elif isinstance(res, list):
-                raise Exception("'%s' resolves to several entities, you should "
-                                "use the full path (including the full module "
-                                "name) to that entity." % key)
+            elif len(res) > 1:
+                raise Exception("'%s' resolves to several entities, you should"
+                                " use the full path (including the full module"
+                                " name) to that entity." % key)
             else:
-                return res
+                return res[0]
 
     def clear(self):
         self._entities = {}
