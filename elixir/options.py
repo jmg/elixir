@@ -82,7 +82,8 @@ The list of supported arguments are as follows:
 +---------------------+-------------------------------------------------------+
 | ``shortnames``      | Specify whether or not the automatically generated    |
 |                     | table names include the full module-path              |
-|                     | to the entity. Defaults to ``True``.                  |
+|                     | to the entity. If ``shortnames`` is ``True``, only    |
+|                     | the entity name is used. Defaults to ``False``.       |
 +---------------------+-------------------------------------------------------+
 | ``auto_primarykey`` | If given as string, it will represent the             |
 |                     | auto-primary-key's column name.  If this option       |
