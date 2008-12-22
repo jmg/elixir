@@ -7,10 +7,16 @@ from elixir.py23compat import rsplit
 
 # default entity collection
 class EntityCollection(list):
-    def __init__(self):
+    def __init__(self, entities=None):
         # _entities is a dict of entities keyed on their name.
         self._entities = {}
         list.__init__(self)
+        if entities is not None:
+            self.extend(entities)
+
+    def extend(self, entities):
+        for e in entities:
+            self.append(e)
 
     def append(self, entity):
         '''
