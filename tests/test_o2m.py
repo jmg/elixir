@@ -3,7 +3,7 @@ test one to many relationships
 """
 
 from elixir import *
-from sqlalchemy import and_
+from sqlalchemy import and_, ForeignKey
 from sqlalchemy.ext.orderinglist import ordering_list
 
 def setup():
@@ -194,6 +194,26 @@ class TestOneToMany(object):
         assert user.blurbs[3].text == "two"
         assert user.blurbs[3].position == 3
 
+#    def test_manual_join_no_inverse(self):
+#        class A(Entity):
+#            name = Field(String(60))
+#            bs = OneToMany('B')
+#
+#        class B(Entity):
+#            name = Field(String(60))
+#            a_id = Field(Integer, ForeignKey('a.id'))
+#
+#        setup_all(True)
+#
+#        a1 = A(name='a1', bs=[B(name='b1')])
+#
+#        session.commit()
+#        session.clear()
+#
+#        b = B.query.one()
+#
+#        assert b.a_id == 1
+#
     def test_inverse_has_non_pk_target(self):
         class A(Entity):
             name = Field(String(60), unique=True)
