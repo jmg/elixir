@@ -18,7 +18,7 @@ Example usage:
         name = Field(Unicode)
         password = Field(Unicode)
         ssn = Field(Unicode)
-        acts_as_encrypted(for_columns=['password', 'ssn'],
+        acts_as_encrypted(for_fields=['password', 'ssn'],
                           with_secret='secret')
 
 The above Person entity will automatically encrypt and decrypt the password and
