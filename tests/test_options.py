@@ -12,7 +12,7 @@ class TestOptions(object):
         metadata.bind = 'sqlite:///'
 
     def teardown(self):
-        cleanup_all()
+        cleanup_all(True)
 
     # this test is a rip-off SQLAlchemy's activemapper's update test
     def test_version_id_col(self):
@@ -21,8 +21,7 @@ class TestOptions(object):
 
             using_options(version_id_col=True)
 
-        setup_all()
-        Person.table.create()
+        setup_all(True)
 
         p1 = Person(name='Daniel')
         session.commit()

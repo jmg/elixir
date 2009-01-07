@@ -17,8 +17,6 @@ def setup():
 
 class TestNestedClass(object):
     def test_nestedclass(self):
-
-        print "GLOBALS", globals().keys()
         assert 'name' in Thing.table.columns.keys()
         assert 'type' in Thing.table.columns.keys()
         assert 'other' in Thing.table.columns.keys()

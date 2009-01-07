@@ -4,7 +4,6 @@ test autoloaded entities
 
 from sqlalchemy import Table, Column, ForeignKey, MetaData
 from elixir import *
-from elixir import options # (not in __all__)
 import elixir
 
 def setup_entity_raise(cls):
@@ -146,10 +145,6 @@ class TestAutoload(object):
         c = Category.get_by(name="Simpson")
         grampa = Person.get_by(name="Abe")
 
-        print "Persons in the '%s' category: %s." % (
-                c.name,
-                ", ".join([p.name for p in c.persons]))
-
         assert len(c.persons) == 4
         assert c in grampa.categories
 
@@ -166,7 +161,9 @@ class TestAutoload(object):
         assert barney in homer.appreciate
         assert homer in barney.isappreciatedby
 
+    # ----------------
     # overrides tests
+    # ----------------
 
     def test_override_pk_fails(self):
         class Person(Entity):
@@ -233,7 +230,7 @@ class TestAutoload(object):
 
         table = Table('father', local_meta,
             Column('id', Integer, primary_key=True),
-            Column('row_type', options.POLYMORPHIC_COL_TYPE))
+            Column('row_type', elixir.options.POLYMORPHIC_COL_TYPE))
 
         local_meta.create_all()
 

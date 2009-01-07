@@ -67,7 +67,7 @@ class TestCollections(object):
     def test_setup_after_cleanup(self):
         class A(Entity):
             name = Field(String(30))
-            using_options(autosetup=False, tablename='a')
+            using_options(tablename='a')
 
         setup_all()
 

@@ -65,10 +65,6 @@ class TestOrderBy(object):
     def test_mapper_order_by(self):
         records = Record.query.all()
 
-        print "-year, +title"
-        for record in records:
-            print record
-
         assert records[0].year == 2005
         assert records[2].year >= records[5].year
         assert records[3].year >= records[4].year
@@ -76,10 +72,6 @@ class TestOrderBy(object):
 
     def test_o2m_order_by(self):
         records = Artist.get_by(name="Dream Theater").records
-
-        print "+year, -title"
-        for record in records:
-            print record
 
         assert records[0].year == 1989
         assert records[2].year <= records[5].year
@@ -89,10 +81,6 @@ class TestOrderBy(object):
 
     def test_m2m_order_by(self):
         records = Genre.get_by(name="Progressive metal").records
-
-        print "-title"
-        for record in records:
-            print record
 
         assert records[0].year == 1989
         assert records[2].title >= records[5].title

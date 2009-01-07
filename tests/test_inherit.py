@@ -1,5 +1,5 @@
 """
-    simple test case
+test inheritance
 """
 
 from elixir import *

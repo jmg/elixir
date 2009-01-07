@@ -1,8 +1,10 @@
 from elixir import *
 from elixir.ext.perform_ddl import perform_ddl, preload_data
 
+
 def setup():
     metadata.bind = "sqlite:///"
+
 
 class TestPerformDDL(object):
     def teardown(self):
@@ -36,6 +38,9 @@ class TestPerformDDL(object):
         assert Movie.query.count() == 3
 
 class TestPreloadData(object):
+    def teardown(self):
+        cleanup_all(True)
+
     def test_several(self):
         class Movie(Entity):
             title = Field(Unicode(30), primary_key=True)
