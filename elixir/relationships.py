@@ -868,7 +868,8 @@ class ManyToMany(Relationship):
 
     def get_table(self):
         warnings.warn("The secondary_table attribute on ManyToMany objects is "
-                      "deprecated", DeprecationWarning, stacklevel=2)
+                      "deprecated. You should rather use the table attribute.",
+                      DeprecationWarning, stacklevel=2)
         return self.table
     secondary_table = property(get_table)
 
