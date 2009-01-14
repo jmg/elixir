@@ -151,7 +151,7 @@ class GenericProperty(Property):
         self.kwargs = kwargs
 
     def create_properties(self):
-        if callable(self.prop):
+        if hasattr(self.prop, '__call__'):
             prop_value = self.prop(self.entity.table.c)
         else:
             prop_value = self.prop

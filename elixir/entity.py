@@ -127,7 +127,7 @@ class EntityDescriptor(object):
                 modulename = entity.__module__.replace('.', '_')
                 tablename = "%s_%s" % (modulename, entity.__name__)
                 self.tablename = tablename.lower()
-        elif callable(self.tablename):
+        elif hasattr(self.tablename, '__call__'):
             self.tablename = self.tablename(entity)
 
         if not self.identity:
@@ -140,7 +140,7 @@ class EntityDescriptor(object):
             raise Exception('You cannot use the "identity" option and the '
                             'polymorphic_identity mapper option at the same '
                             'time.')
-        elif callable(self.identity):
+        elif hasattr(self.identity, '__call__'):
             self.identity = self.identity(entity)
 
         if self.polymorphic:

@@ -457,7 +457,7 @@ class Relationship(Property):
         for arg in ('primaryjoin', 'secondaryjoin', 'remote_side',
                     'foreign_keys'):
             kwarg = kwargs.get(arg, None)
-            if callable(kwarg):
+            if hasattr(kwarg, '__call__'):
                 kwargs[arg] = kwarg()
 
         # viewonly relationships need to create "standalone" relations (ie

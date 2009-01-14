@@ -64,8 +64,8 @@ class TestManyToOne(object):
 
         setup_all(True)
 
-        assert A.table.primary_key.columns.has_key('id')
-        assert B.table.columns.has_key('a_id')
+        assert 'id' in A.table.primary_key.columns
+        assert 'a_id' in B.table.columns
 
         a = A()
         session.commit()
@@ -111,9 +111,9 @@ class TestManyToOne(object):
 
         setup_all()
 
-        assert A.table.primary_key.columns.has_key('name')
-        assert B.table.primary_key.columns.has_key('a_name')
-        assert C.table.primary_key.columns.has_key('b_a_name')
+        assert 'name' in A.table.primary_key.columns
+        assert 'a_name' in B.table.primary_key.columns
+        assert 'b_a_name' in C.table.primary_key.columns
 
     def test_m2o_is_only_pk(self):
         class A(Entity):
@@ -124,9 +124,9 @@ class TestManyToOne(object):
 
         setup_all()
 
-        assert A.table.primary_key.columns.has_key('id')
-        assert B.table.primary_key.columns.has_key('a_id')
-        assert not B.table.primary_key.columns.has_key('id')
+        assert 'id' in A.table.primary_key.columns
+        assert 'a_id' in B.table.primary_key.columns
+        assert 'id' not in B.table.primary_key.columns
 
     def test_multi_pk_in_target(self):
         class A(Entity):
@@ -143,17 +143,17 @@ class TestManyToOne(object):
 
         setup_all()
 
-        assert A.table.primary_key.columns.has_key('key1')
-        assert A.table.primary_key.columns.has_key('key2')
+        assert 'key1' in A.table.primary_key.columns
+        assert 'key2' in A.table.primary_key.columns
 
-        assert B.table.primary_key.columns.has_key('num')
-        assert B.table.primary_key.columns.has_key('a_key1')
-        assert B.table.primary_key.columns.has_key('a_key2')
+        assert 'num' in B.table.primary_key.columns
+        assert 'a_key1' in B.table.primary_key.columns
+        assert 'a_key2' in B.table.primary_key.columns
 
-        assert C.table.primary_key.columns.has_key('num')
-        assert C.table.primary_key.columns.has_key('b_num')
-        assert C.table.primary_key.columns.has_key('b_a_key1')
-        assert C.table.primary_key.columns.has_key('b_a_key2')
+        assert 'num' in C.table.primary_key.columns
+        assert 'b_num' in C.table.primary_key.columns
+        assert 'b_a_key1' in C.table.primary_key.columns
+        assert 'b_a_key2' in C.table.primary_key.columns
 
     def test_cycle_but_use_alter(self):
         class A(Entity):
@@ -167,10 +167,10 @@ class TestManyToOne(object):
 
         setup_all()
 
-        assert B.table.primary_key.columns.has_key('a_id')
-        assert C.table.primary_key.columns.has_key('b_a_id')
-        assert A.table.primary_key.columns.has_key('id')
-        assert A.table.columns.has_key('c_b_a_id')
+        assert 'a_id' in B.table.primary_key.columns
+        assert 'b_a_id' in C.table.primary_key.columns
+        assert 'id' in A.table.primary_key.columns
+        assert 'c_b_a_id' in A.table.columns
 
     def test_multi(self):
         class A(Entity):

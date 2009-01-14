@@ -66,7 +66,7 @@ class PerformDDLEntityBuilder(EntityBuilder):
 
     def after_table(self):
         statement = self.statement
-        if callable(statement):
+        if hasattr(statement, '__call__'):
             statement = statement()
         if not isinstance(statement, list):
             statement = [statement]
@@ -93,7 +93,7 @@ class PreloadDataEntityBuilder(EntityBuilder):
             if columns is None:
                 columns = all_columns
             data = self.data
-            if callable(data):
+            if hasattr(data, '__call__'):
                 data = data()
             insert = schema_item.insert()
             connection.execute(insert,
