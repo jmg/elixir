@@ -24,11 +24,17 @@ Example usage:
 The above Person entity will automatically encrypt and decrypt the password and
 ssn columns on save, update, and load.  Different secrets can be specified on
 an entity by entity basis, for added security.
+
+**Important note**: instance attributes are encrypted in-place. This means that
+if one of the encrypted attributes of an instance is accessed after the
+instance has been flushed to the database (and thus encrypted), the value for
+that attribute will be crypted in the in-memory object in addition to the
+database row.
 '''
 
-from Crypto.Cipher          import Blowfish
-from elixir.statements      import Statement
-from sqlalchemy.orm         import MapperExtension, EXT_CONTINUE
+from Crypto.Cipher import Blowfish
+from elixir.statements import Statement
+from sqlalchemy.orm import MapperExtension, EXT_CONTINUE, EXT_STOP
 
 try:
     from sqlalchemy.orm import EXT_PASS
@@ -61,18 +67,28 @@ class ActsAsEncrypted(object):
 
     def __init__(self, entity, for_fields=[], with_secret='abcdef'):
 
-        def perform_encryption(instance, decrypt=False):
+        def perform_encryption(instance, encrypt=True):
+            encrypted = getattr(instance, '_elixir_encrypted', None)
+            if encrypted is encrypt:
+                # skipping encryption or decryption, as it is already done
+                return
+            else:
+                # marking instance as already encrypted/decrypted
+                instance._elixir_encrypted = encrypt
+
+            if encrypt:
+                func = encrypt_value
+            else:
+                func = decrypt_value
+
             for column_name in for_fields:
                 current_value = getattr(instance, column_name)
                 if current_value:
-                    if decrypt:
-                        new_value = decrypt_value(current_value, with_secret)
-                    else:
-                        new_value = encrypt_value(current_value, with_secret)
-                    setattr(instance, column_name, new_value)
+                    setattr(instance, column_name,
+                            func(current_value, with_secret))
 
         def perform_decryption(instance):
-            perform_encryption(instance, decrypt=True)
+            perform_encryption(instance, encrypt=False)
 
         class EncryptedMapperExtension(MapperExtension):
 
@@ -84,19 +100,21 @@ class ActsAsEncrypted(object):
                 perform_encryption(instance)
                 return EXT_CONTINUE
 
-        if SA05orlater:
-            def reconstruct_instance(self, mapper, instance):
-                perform_decryption(instance)
-                return True
-            EncryptedMapperExtension.reconstruct_instance = reconstruct_instance
-        else:
-            def populate_instance(self, mapper, selectcontext, row, instance,
-                                  *args, **kwargs):
-                mapper.populate_instance(selectcontext, instance, row,
-                                         *args, **kwargs)
-                perform_decryption(instance)
-                return True
-            EncryptedMapperExtension.populate_instance = populate_instance
+            if SA05orlater:
+                def reconstruct_instance(self, mapper, instance):
+                    perform_decryption(instance)
+                    # no special return value is required for
+                    # reconstruct_instance, but you never know...
+                    return EXT_CONTINUE
+            else:
+                def populate_instance(self, mapper, selectcontext, row,
+                                      instance, *args, **kwargs):
+                    mapper.populate_instance(selectcontext, instance, row,
+                                             *args, **kwargs)
+                    perform_decryption(instance)
+                    # EXT_STOP because we already did populate the instance and
+                    # the normal processing should not happen
+                    return EXT_STOP
 
         # make sure that the entity's mapper has our mapper extension
         entity._descriptor.add_mapper_extension(EncryptedMapperExtension())
