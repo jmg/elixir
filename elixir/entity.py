@@ -1034,7 +1034,9 @@ class EntityBase(object):
             #FIXME: use attribute names (ie coltoprop) instead of column names
             fks = self.mapper.get_property(rname).remote_side
             exclude = [c.name for c in fks]
-            if isinstance(dbdata, list):
+            if dbdata is None:
+                data[rname] = None
+            elif isinstance(dbdata, list):
                 data[rname] = [o.to_dict(rdeep, exclude) for o in dbdata]
             else:
                 data[rname] = dbdata.to_dict(rdeep, exclude)

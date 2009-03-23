@@ -8,7 +8,7 @@ New features:
   on a custom base class to set default values for the options of all its
   subclasses. For example, this makes it possible to have all classes
   inheriting from your custom base class use some custom options without
-  having to set it individually on each entity, nor modify 
+  having to set it individually on each entity, nor modify
   options.options_defaults.
 - The local_colname and remote_colname arguments on ManyToMany relationships
   can now also be used to set custom names for the ManyToMany table columns.
@@ -80,6 +80,8 @@ Bug fixes:
   weird name which is not in sys.modules).
 - Fixed filter argument on OneToMany relationship leaking the filter to the
   unfiltered relationship.
+- Fixed using to_dict with a ManyToOne relationship in the "deep" set and that
+  relationship being None in the entity being converted.
 
 0.6.1 - 2008-08-18
 
