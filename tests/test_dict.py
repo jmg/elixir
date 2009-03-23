@@ -107,6 +107,7 @@ class TestDeepSet(object):
         t1 = Table1(t1id=1, name='test1')
         t2 = Table2(t2id=1, name='test2', tbl1=t1)
         session.flush()
+
         assert t2.to_dict(deep={'tbl1': {}}) == \
                {'t2id': 1, 'name': 'test2', 'tbl1_t1id': 1,
                 'tbl1': {'name': 'test1'}}
@@ -117,12 +118,12 @@ class TestDeepSet(object):
         assert t2.to_dict(deep={'tbl1': {}}) == \
                {'t2id': 1, 'name': 'test2', 'tbl1_t1id': None, 'tbl1': None}
 
-    def test_to_deep(self):
+    def test_to_deep_o2m_empty(self):
         t1 = Table1(t1id=51, name='test2')
         assert t1.to_dict(deep={'tbl2s': {}}) == \
                 {'t1id': 51, 'name': 'test2', 'tbl2s': []}
 
-    def test_to_deep2(self):
+    def test_to_deep_o2m(self):
         t1 = Table1(t1id=52, name='test3')
         t2 = Table2(t2id=50, name='test4')
         t1.tbl2s.append(t2)
@@ -132,7 +133,7 @@ class TestDeepSet(object):
                  'name': 'test3',
                  'tbl2s': [{'t2id': 50, 'name': 'test4'}]}
 
-    def test_to_deep3(self):
+    def test_to_deep_o2o(self):
         t1 = Table1(t1id=53, name='test2')
         t1.tbl3 = Table3(t3id=50, name='wobble')
         session.commit()
@@ -140,6 +141,19 @@ class TestDeepSet(object):
                 {'t1id': 53,
                  'name': 'test2',
                  'tbl3': {'t3id': 50, 'name': 'wobble'}}
+
+    def test_to_deep_nested(self):
+        t3 = Table3(t3id=1, name='test3')
+        t1 = Table1(t1id=1, name='test1', tbl3=t3)
+        t2 = Table2(t2id=1, name='test2', tbl1=t1)
+        session.flush()
+        assert t2.to_dict(deep={'tbl1': {'tbl3': {}}}) == \
+               {'t2id': 1,
+                'name': 'test2',
+                'tbl1_t1id': 1,
+                'tbl1': {'name': 'test1',
+                         'tbl3': {'t3id': 1,
+                                  'name': 'test3'}}}
 
 class TestSetOnAliasedColumn(object):
     def setup(self):
