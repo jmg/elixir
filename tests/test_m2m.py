@@ -59,13 +59,9 @@ class TestManyToMany(object):
         assert a in b.as_
         assert b in a.bs_
 
-        found_a = False
-        found_b = False
-        for column in A.mapper.get_property('bs_').secondary.columns:
-            if column.name == 'a_id': found_a = True
-            elif column.name == 'b_id': found_b = True
-        assert found_a
-        assert found_b
+        m2m_cols = A.bs_.property.secondary.columns
+        assert 'a_id' in m2m_cols
+        assert 'b_id' in m2m_cols
 
     def test_multi_pk_in_target(self):
         class A(Entity):
