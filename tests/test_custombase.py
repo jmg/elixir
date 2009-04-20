@@ -96,6 +96,29 @@ class TestCustomBase(object):
         assert 'common' in A.table.columns.keys()
         assert 'common' in B.table.columns.keys()
 
+    def test_base_with_fields_in_parent(self):
+        class BaseParent(object):
+            common1 = Field(String(32))
+
+        class FieldBase(BaseParent):
+            __metaclass__ = EntityMeta
+
+            common2 = Field(String(32))
+
+        class A(FieldBase):
+            name = Field(String(32))
+
+        class B(FieldBase):
+            pass
+
+        setup_all(True)
+
+        assert 'name' in A.table.columns.keys()
+        assert 'common1' in A.table.columns.keys()
+        assert 'common1' in B.table.columns.keys()
+        assert 'common2' in A.table.columns.keys()
+        assert 'common2' in B.table.columns.keys()
+
     def test_base_with_options(self):
         import re
 
