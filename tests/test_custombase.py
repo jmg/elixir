@@ -113,11 +113,11 @@ class TestCustomBase(object):
 
         setup_all(True)
 
-        assert 'name' in A.table.columns.keys()
-        assert 'common1' in A.table.columns.keys()
-        assert 'common1' in B.table.columns.keys()
-        assert 'common2' in A.table.columns.keys()
-        assert 'common2' in B.table.columns.keys()
+        assert 'name' in A.table.columns
+        assert 'common1' in A.table.columns
+        assert 'common1' in B.table.columns
+        assert 'common2' in A.table.columns
+        assert 'common2' in B.table.columns
 
     def test_base_with_options(self):
         import re
