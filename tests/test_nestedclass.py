@@ -17,14 +17,14 @@ def setup():
 
 class TestNestedClass(object):
     def test_nestedclass(self):
-        assert 'name' in Thing.table.columns.keys()
-        assert 'type' in Thing.table.columns.keys()
-        assert 'other' in Thing.table.columns.keys()
-        assert 'ping' not in Thing.table.columns.keys()
-        assert 'pong' not in Thing.table.columns.keys()
+        assert 'name' in Thing.table.columns
+        assert 'type' in Thing.table.columns
+        assert 'other' in Thing.table.columns
+        assert 'ping' not in Thing.table.columns
+        assert 'pong' not in Thing.table.columns
 
-        assert 'name' not in Thing.Stuff.table.columns.keys()
-        assert 'type' not in Thing.Stuff.table.columns.keys()
-        assert 'other' not in Thing.Stuff.table.columns.keys()
-        assert 'ping' in Thing.Stuff.table.columns.keys()
-        assert 'pong' in Thing.Stuff.table.columns.keys()
+        assert 'name' not in Thing.Stuff.table.columns
+        assert 'type' not in Thing.Stuff.table.columns
+        assert 'other' not in Thing.Stuff.table.columns
+        assert 'ping' in Thing.Stuff.table.columns
+        assert 'pong' in Thing.Stuff.table.columns

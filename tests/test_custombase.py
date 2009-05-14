@@ -92,9 +92,9 @@ class TestCustomBase(object):
 
         setup_all(True)
 
-        assert 'name' in A.table.columns.keys()
-        assert 'common' in A.table.columns.keys()
-        assert 'common' in B.table.columns.keys()
+        assert 'name' in A.table.columns
+        assert 'common' in A.table.columns
+        assert 'common' in B.table.columns
 
     def test_base_with_fields_in_parent(self):
         class BaseParent(object):
