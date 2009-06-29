@@ -18,6 +18,8 @@ TurboEntity project but does not intend to replace SQLAlchemy's core features,
 and instead focuses on providing a simpler syntax for defining model objects
 when you do not need the full expressiveness of SQLAlchemy's manual mapper
 definitions.
+
+SVN version: <http://elixir.ematia.de/svn/elixir/trunk#egg=Elixir-dev>
 """,
       author="Gaetan de Menten, Daniel Haus and Jonathan LaCour",
       author_email="sqlelixir@googlegroups.com",
