@@ -173,11 +173,15 @@ relationships accept the following optional (keyword) arguments:
 | Option Name        | Description                                            |
 +====================+========================================================+
 | ``order_by``       | Specify which field(s) should be used to sort the      |
-|                    | results given by accessing the relation field. You can |
-|                    | either use a string or a list of strings, each         |
-|                    | corresponding to the name of a field in the target     |
-|                    | entity. These field names can optionally be prefixed   |
-|                    | by a minus (for descending order).                     |
+|                    | results given by accessing the relation field.         |
+|                    | Note that this sort order is only applied when loading |
+|                    | objects from the database. Objects appended to the     |
+|                    | collection afterwards are not re-sorted in-memory on   |
+|                    | the fly.                                               |
+|                    | This argument accepts either a string or a list of     |
+|                    | strings, each corresponding to the name of a field in  |
+|                    | the target entity. These field names can optionally be |
+|                    | prefixed by a minus (for descending order).            |
 +--------------------+--------------------------------------------------------+
 | ``filter``         | Specify a filter criterion (as a clause element) for   |
 |                    | this relationship. This criterion will be and_'ed with |
@@ -278,11 +282,15 @@ relationships accept the following optional (keyword) arguments:
 |                    | relationship, and use the one given instead.           |
 +--------------------+--------------------------------------------------------+
 | ``order_by``       | Specify which field(s) should be used to sort the      |
-|                    | results given by accessing the relation field. You can |
-|                    | either use a string or a list of strings, each         |
-|                    | corresponding to the name of a field in the target     |
-|                    | entity. These field names can optionally be prefixed   |
-|                    | by a minus (for descending order).                     |
+|                    | results given by accessing the relation field.         |
+|                    | Note that this sort order is only applied when loading |
+|                    | objects from the database. Objects appended to the     |
+|                    | collection afterwards are not re-sorted in-memory on   |
+|                    | the fly.                                               |
+|                    | This argument accepts either a string or a list of     |
+|                    | strings, each corresponding to the name of a field in  |
+|                    | the target entity. These field names can optionally be |
+|                    | prefixed by a minus (for descending order).            |
 +----------------------+------------------------------------------------------+
 | ``ondelete``       | Value for the foreign key constraint ondelete clause.  |
 |                    | May be one of: ``cascade``, ``restrict``,              |
