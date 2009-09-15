@@ -39,7 +39,7 @@ class TestSQLAlchemyToElixir(object):
         b1.name = 'b1'
         b1.a = A(name='a1')
 
-        session.save(b1)
+        session.add(b1)
         session.commit()
         session.clear()
 
@@ -77,7 +77,7 @@ class TestElixirToSQLAlchemy(object):
         a1.name = 'a1'
         b1 = B(name='b1', a=a1)
 
-        session.save(b1)
+        session.add(b1)
         session.commit()
         session.clear()
 

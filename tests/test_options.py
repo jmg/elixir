@@ -128,14 +128,15 @@ class TestSessionOptions(object):
         homer = Person(firstname="Homer", surname='Simpson')
         bart = Person(firstname="Bart", surname='Simpson')
 
-        session.save(homer)
-        session.save(bart)
+        session.add(homer)
+        session.add(bart)
         session.commit()
 
         bart.delete()
         session.commit()
 
-        assert session.query(Person).filter_by(firstname='Homer').one() is homer
+        assert session.query(Person).filter_by(firstname='Homer').one() is \
+               homer
         assert session.query(Person).count() == 1
 
     def test_scoped_session(self):
