@@ -167,6 +167,7 @@ class TestSpecialProperties(object):
         session.commit()
         session.clear()
 
+        # test the synonym itself (ie querying)
         p = Person.get_by(email='x@z.com')
 
         assert p.name == 'Mr. X'
