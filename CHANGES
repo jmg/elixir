@@ -1,4 +1,4 @@
-0.7.0
+0.7.0 - 2009-09-xx
 
 Please see http://elixir.ematia.de/trac/wiki/Migrate06to07 for detailed
 upgrade notes. If you are upgrading an application with existing data from an
@@ -23,8 +23,11 @@ New features:
 - Added a new "target_column" argument on ManyToOne relationships so that you
   can target unique but non-primary key columns. At the moment, this only works
   if the target column is declared before the ManyToOne (see ticket #26).
-- Added new column_names argument to the acts_as_versioned extension, allowing
-  to specify custom column names (inspired by a patch by Alex Bodnaru).
+- Added new "column_names" argument to the acts_as_versioned extension,
+  allowing to specify custom column names (inspired by a patch by
+  Alex Bodnaru).
+- Made M2MCOL_NAMEFORMAT option accept a callable, so that more complex naming
+  generation can be used if so desired.
 - Added two new extensions (contributed by Alex Bodnaru)
   - "perform_ddl" allows to execute one or several DDL statements upon table
     creation.
@@ -50,8 +53,8 @@ Changes:
   ones. Not very useful yet since most are expecting Column objects.
 
 Bug fixes:
-- Changed the pattern used to generate column names for all ManyToMany
-  relationships so that the meaning of bidirectional
+- Changed the pattern used by default to generate column names for (all)
+  ManyToMany relationships so that the meaning of bidirectional
   self-referential relationships does not depend on the order of declaration
   of each side (closes #69). See upgrade notes for details.
 - Changed slightly the pattern used to generate the name of the table for
