@@ -1,7 +1,8 @@
 0.7.0
 
 Please see http://elixir.ematia.de/trac/wiki/Migrate06to07 for detailed
-upgrade notes.
+upgrade notes. If you are upgrading an application with existing data from an
+earlier version of Elixir, you are VERY STRONGLY ADVISED to read them!
 
 New features:
 - Added a new statement 'using_options_defaults' which can be used
@@ -19,8 +20,9 @@ New features:
 - Added a "schema" argument on ManyToMany relationship to be able to create the
   ManyToMany table in a custom schema and not necessarily the same schema as
   the table of the "source" entity (patch from Diez B. Roggisch).
-- Added a new "target_column" argument on ManyToOne relationships (ticket #26).
-  TODOC
+- Added a new "target_column" argument on ManyToOne relationships so that you
+  can target unique but non-primary key columns. At the moment, this only works
+  if the target column is declared before the ManyToOne (see ticket #26).
 - Added new column_names argument to the acts_as_versioned extension, allowing
   to specify custom column names (inspired by a patch by Alex Bodnaru).
 - Added two new extensions (contributed by Alex Bodnaru)
@@ -48,20 +50,17 @@ Changes:
   ones. Not very useful yet since most are expecting Column objects.
 
 Bug fixes:
+- Changed the pattern used to generate column names for all ManyToMany
+  relationships so that the meaning of bidirectional
+  self-referential relationships does not depend on the order of declaration
+  of each side (closes #69). See upgrade notes for details.
+- Changed slightly the pattern used to generate the name of the table for
+  bidirectional self-referential ManyToMany relationships so that it doesn't
+  depend on the order of declaration of each side (closes #19).
+  See upgrade notes for details.
 - default EntityCollection raise an exception instead of returning None when
   trying to resolve an inexisting Entity from outside of another entity (for
   example through EntityCollection.__getattr__
-- Changed slightly the algorithm to generate the name of the table for
-  bidirectional self-referential ManyToMany relationships so that it doesn't
-  depend on the order of declaration of each side (closes #19). If you are
-  upgrading an application with existing data from an earlier version of
-  Elixir, you are STRONGLY ADVISED to read the upgrade notes!
-  =================
-  TEMPORARY NOTICE:
-  =================
-  For now it is even worse: the table works but the relationship's meaning is
-  reversed. Will be fixed before 0.7 ships (see ticket #69).
-  =================
 - Fixed the case where you specify both "primaryjoin" and "colname" arguments
   (useless in this case, but harmless) on a ManyToOne relationship of an
   autoloaded entity.
@@ -71,11 +70,11 @@ Bug fixes:
   only required if the relationship is self-referencial, and primaryjoin or
   secondaryjoin as not been specified manually.
 - Added missing documentation for the "filter" argument on OneToMany
-  relationships
+  relationships.
 - Fixed the act_as_list extension's move_to_bottom method to work on MySQL
   (closes #34).
 - Fixed event methods not being called when they are defined on a parent class.
-  (introduced in r262).
+  (introduced in release 0.5.0).
 - Added workaround for an odd mod_python behavior (class.__module__ returns a
   weird name which is not in sys.modules).
 - Fixed filter argument on OneToMany relationship leaking the filter to the

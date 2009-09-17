@@ -183,7 +183,9 @@ __doc_all__ = ['options_defaults']
 
 # format constants
 FKCOL_NAMEFORMAT = "%(relname)s_%(key)s"
-M2MCOL_NAMEFORMAT = "%(tablename)s_%(key)s"
+OLD_M2MCOL_NAMEFORMAT = "%(tablename)s_%(key)s%(numifself)s"
+NEW_M2MCOL_NAMEFORMAT = "%(relname)s_%(key)s"
+M2MCOL_NAMEFORMAT = NEW_M2MCOL_NAMEFORMAT
 CONSTRAINT_NAMEFORMAT = "%(tablename)s_%(colnames)s_fk"
 MULTIINHERITANCECOL_NAMEFORMAT = "%(entity)s_%(key)s"
 
@@ -196,7 +198,7 @@ POLYMORPHIC_COL_SIZE = 40
 POLYMORPHIC_COL_TYPE = String(POLYMORPHIC_COL_SIZE)
 
 # debugging/migration help
-CHECK_TABLENAME_CHANGES = False
+MIGRATION_TO_07_AID = False
 
 #
 options_defaults = dict(

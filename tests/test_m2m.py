@@ -3,6 +3,7 @@ test many to many relationships
 """
 
 from elixir import *
+import elixir
 
 #-----------
 
@@ -23,7 +24,18 @@ class TestManyToMany(object):
             as_ = ManyToMany('A')
 
         setup_all(True)
+        A.mapper.compile()
 
+        # check m2m table was generated correctly
+        m2m_table = A.bs_.property.secondary
+        assert m2m_table.name in metadata.tables
+
+        # check column names
+        m2m_cols = m2m_table.columns
+        assert 'bs__id' in m2m_cols
+        assert 'as__id' in m2m_cols
+
+        # check the relationships work as expected
         b1 = B(name='b1', as_=[A(name='a1')])
 
         session.commit()
@@ -35,7 +47,60 @@ class TestManyToMany(object):
         assert a in b.as_
         assert b in a.bs_
 
-    def test_column_format(self):
+    def test_custom_global_column_nameformat(self):
+        # this needs to be done before declaring the classes
+        elixir.options.M2MCOL_NAMEFORMAT = elixir.options.OLD_M2MCOL_NAMEFORMAT
+
+        class A(Entity):
+            bs_ = ManyToMany('B')
+
+        class B(Entity):
+            as_ = ManyToMany('A')
+
+        setup_all(True)
+
+        # revert to original format
+        elixir.options.M2MCOL_NAMEFORMAT = elixir.options.NEW_M2MCOL_NAMEFORMAT
+
+        # check m2m table was generated correctly
+        A.mapper.compile()
+        m2m_table = A.bs_.property.secondary
+        assert m2m_table.name in metadata.tables
+
+        # check column names
+        m2m_cols = m2m_table.columns
+        assert '%s_id' % A.table.name in m2m_cols
+        assert '%s_id' % B.table.name in m2m_cols
+
+    def test_alternate_column_formatter(self):
+        # this needs to be done before declaring the classes
+        elixir.options.M2MCOL_NAMEFORMAT = \
+            elixir.relationships.alternate_m2m_column_formatter
+
+        class A(Entity):
+            as_ = ManyToMany('A')
+            bs_ = ManyToMany('B')
+
+        class B(Entity):
+            as_ = ManyToMany('A')
+
+        setup_all(True)
+        A.mapper.compile()
+
+        # revert to original format
+        elixir.options.M2MCOL_NAMEFORMAT = elixir.options.NEW_M2MCOL_NAMEFORMAT
+
+        # check m2m table column names were generated correctly
+        m2m_cols = A.bs_.property.secondary.columns
+        assert '%s_id' % A.table.name in m2m_cols
+        assert '%s_id' % B.table.name in m2m_cols
+
+        # check selfref m2m table column names were generated correctly
+        m2m_cols = A.as_.property.secondary.columns
+        assert 'as__id' in m2m_cols
+        assert 'inverse_id' in m2m_cols
+
+    def test_manual_column_format(self):
         class A(Entity):
             using_options(tablename='aye')
             name = Field(String(60))
@@ -48,6 +113,13 @@ class TestManyToMany(object):
 
         setup_all(True)
 
+        # check column names were generated correctly
+        A.mapper.compile()
+        m2m_cols = A.bs_.property.secondary.columns
+        assert 'a_id' in m2m_cols
+        assert 'b_id' in m2m_cols
+
+        # check the relationships work as expected
         b1 = B(name='b1', as_=[A(name='a1')])
 
         session.commit()
@@ -58,10 +130,6 @@ class TestManyToMany(object):
 
         assert a in b.as_
         assert b in a.bs_
-
-        m2m_cols = A.bs_.property.secondary.columns
-        assert 'a_id' in m2m_cols
-        assert 'b_id' in m2m_cols
 
     def test_multi_pk_in_target(self):
         class A(Entity):
@@ -136,6 +204,10 @@ class TestManyToMany(object):
         assert homer in barney.friends
         assert barney in homer.friends
 
+        m2m_cols = Person.friends.property.secondary.columns
+        assert 'friends_id' in m2m_cols
+        assert 'inverse_id' in m2m_cols
+
     def test_bidirectional_selfref(self):
         class Person(Entity):
             using_options(shortnames=True)
@@ -158,6 +230,10 @@ class TestManyToMany(object):
 
         assert homer in barney.friends
         assert barney in homer.friends
+
+        m2m_cols = Person.friends.property.secondary.columns
+        assert 'friends_id' in m2m_cols
+        assert 'is_friend_of_id' in m2m_cols
 
     def test_has_and_belongs_to_many(self):
         class A(Entity):
