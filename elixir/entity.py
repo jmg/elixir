@@ -26,6 +26,11 @@ from elixir import options
 from elixir.properties import Property
 
 DEBUG = False
+try:
+    from sqlalchemy.orm import EXT_PASS
+    SA05orlater = False
+except ImportError:
+    SA05orlater = True
 
 __doc_all__ = ['Entity', 'EntityMeta']
 
@@ -219,7 +224,7 @@ class EntityDescriptor(object):
         Create a SQLAlchemy table-object with all columns that have been
         defined up to this point.
         '''
-        if self.entity.table:
+        if self.entity.table is not None:
             return
 
         if self.autoload != only_autoloaded:
@@ -255,11 +260,11 @@ class EntityDescriptor(object):
                             self.add_column(col.copy())
 
                     #FIXME: use the public equivalent of _get_colspec when
-                    #available
+                    # available (e.target_fullname)
                     for con in self.parent._descriptor.constraints:
                         self.add_constraint(
                             ForeignKeyConstraint(
-                                [c.key for c in con.columns],
+                                [e.parent.key for e in con.elements],
                                 [e._get_colspec() for e in con.elements],
                                 name=con.name, #TODO: modify it
                                 onupdate=con.onupdate, ondelete=con.ondelete,
@@ -486,7 +491,7 @@ class EntityDescriptor(object):
         # happen, we'll get an infinite loop. So we just make sure we don't
         # get one in any case.
         table = type.__getattribute__(self.entity, 'table')
-        if table:
+        if table is not None:
             if check_duplicate and col.key in table.columns.keys():
                 raise Exception("Column '%s' already exist in table '%s' ! " %
                                 (col.key, table.name))
@@ -498,7 +503,7 @@ class EntityDescriptor(object):
         self.constraints.append(constraint)
 
         table = self.entity.table
-        if table:
+        if table is not None:
             table.append_constraint(constraint)
 
     def add_property(self, name, property, check_duplicate=True):
@@ -590,7 +595,7 @@ class EntityDescriptor(object):
     table_fullname = property(table_fullname)
 
     def columns(self):
-        if self.entity.table:
+        if self.entity.table is not None:
             return self.entity.table.columns
         else:
             #FIXME: depending on the type of inheritance, we should also
@@ -615,7 +620,7 @@ class EntityDescriptor(object):
     primary_keys = property(primary_keys)
 
     def table(self):
-        if self.entity.table:
+        if self.entity.table is not None:
             return self.entity.table
         else:
             return FakeTable(self)
@@ -826,16 +831,23 @@ def _install_autosetup_triggers(cls, entity_name=None):
     # see:
     # - table_iterator method in MetaData class in sqlalchemy/schema.py
     # - visit_metadata method in sqlalchemy/ansisql.py
-    original_table_iterator = md.table_iterator
-    if not hasattr(original_table_iterator,
-                   '_non_elixir_patched_iterator'):
-        def table_iterator(*args, **kwargs):
-            elixir.setup_all()
-            return original_table_iterator(*args, **kwargs)
-        table_iterator.__doc__ = original_table_iterator.__doc__
-        table_iterator._non_elixir_patched_iterator = \
-            original_table_iterator
-        md.table_iterator = table_iterator
+    if SA05orlater:
+        warnings.warn(
+            "The automatic setup via metadata.create_all() through "
+            "the autosetup option doesn't work with SQLAlchemy 0.5 and later!")
+    else:
+        # SA 0.6 does not use table_iterator anymore (it was already deprecated
+        # since SA 0.5.0)
+        original_table_iterator = md.table_iterator
+        if not hasattr(original_table_iterator,
+                       '_non_elixir_patched_iterator'):
+            def table_iterator(*args, **kwargs):
+                elixir.setup_all()
+                return original_table_iterator(*args, **kwargs)
+            table_iterator.__doc__ = original_table_iterator.__doc__
+            table_iterator._non_elixir_patched_iterator = \
+                original_table_iterator
+            md.table_iterator = table_iterator
 
     #TODO: we might want to add all columns that will be available as
     #attributes on the class itself (in SA 0.4+). This is a pretty
@@ -865,9 +877,10 @@ def _cleanup_autosetup_triggers(cls):
     md.tables.pop(cls._table_key, None)
 
     # restore original table iterator if not done already
-    if hasattr(md.table_iterator, '_non_elixir_patched_iterator'):
-        md.table_iterator = \
-            md.table_iterator._non_elixir_patched_iterator
+    if not SA05orlater:
+        if hasattr(md.table_iterator, '_non_elixir_patched_iterator'):
+            md.table_iterator = \
+                md.table_iterator._non_elixir_patched_iterator
 
     del cls._has_triggers
 
