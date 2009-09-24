@@ -9,7 +9,7 @@ import elixir
 
 class TestManyToMany(object):
     def setup(self):
-        metadata.bind = 'sqlite:///'
+        metadata.bind = 'sqlite://'
 
     def teardown(self):
         cleanup_all(True)
@@ -99,6 +99,13 @@ class TestManyToMany(object):
         m2m_cols = A.as_.property.secondary.columns
         assert 'as__id' in m2m_cols
         assert 'inverse_id' in m2m_cols
+
+    #TODO: add an upgrade test
+    #def test_upgrade(self):
+#        elixir.options.M2MCOL_NAMEFORMAT = elixir.options.OLD_M2MCOL_NAMEFORMAT
+#        elixir.options.MIGRATION_TO_07_AID = True
+#        metadata.bind = 'sqlite://'
+#        elixir.options.M2MCOL_NAMEFORMAT = elixir.options.NEW_M2MCOL_NAMEFORMAT    #    assert False
 
     def test_manual_column_format(self):
         class A(Entity):
