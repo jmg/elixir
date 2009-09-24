@@ -171,7 +171,7 @@ class Field(Property):
             # done automatically by SA)
             self.property = self.column
 
-        if self.property:
+        if self.property is not None:
             self.add_mapper_property(self.name, self.property)
 
         if self.synonym:

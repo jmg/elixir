@@ -53,6 +53,7 @@ Changes:
   ones. Not very useful yet since most are expecting Column objects.
 
 Bug fixes:
+- Fixed Elixir to work with the future SQLAlchemy 0.6 (trunk as of 6377).
 - Changed the pattern used by default to generate column names for (all)
   ManyToMany relationships so that the meaning of bidirectional
   self-referential relationships does not depend on the order of declaration

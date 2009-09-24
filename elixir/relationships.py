@@ -869,7 +869,7 @@ class ManyToMany(Relationship):
             self.column_format = lambda data: format % data
         if options.MIGRATION_TO_07_AID:
             self.column_format = \
-                migration_aid_column_formatter(self.column_format)
+                migration_aid_m2m_column_formatter(self.column_format)
 
         self.filter = filter
         if filter is not None:
@@ -894,14 +894,14 @@ class ManyToMany(Relationship):
         return isinstance(other, ManyToMany)
 
     def create_tables(self):
-        if self.table:
+        if self.table is not None:
             if 'primaryjoin' not in self.kwargs or \
                'secondaryjoin' not in self.kwargs:
                 self._build_join_clauses()
             return
 
         if self.inverse:
-            if self.inverse.table:
+            if self.inverse.table is not None:
                 self.table = self.inverse.table
                 self.primaryjoin_clauses = self.inverse.secondaryjoin_clauses
                 self.secondaryjoin_clauses = self.inverse.primaryjoin_clauses
@@ -1004,14 +1004,18 @@ class ManyToMany(Relationship):
                 if colnames:
                     assert len(colnames) == len(desc.primary_keys)
                 else:
+                    #FIXME: desc is not the target desc. Do I need to fix to
+                    # code or the doc? in fact the relname corresponds to the
+                    # relationship going from the entity to the M2M, so the new
+                    # naming scheme might not really make sense
                     data = {# relationship info
                             'relname': rel and rel.name or 'inverse',
                             'selfref': e1_desc is e2_desc,
                             'num': num,
                             'numifself': e1_desc is e2_desc and str(num + 1)
                                                             or '',
-                            # target info
-                            'target': desc.entity,
+                            # source (not target!) info
+                            'source': desc.entity,
                             'entity': desc.entity.__name__.lower(),
                             'tablename': desc.tablename
                            }
@@ -1112,13 +1116,14 @@ def migration_aid_m2m_column_formatter(formatter):
         old_name = options.OLD_M2MCOL_NAMEFORMAT % data
         if new_name != old_name:
             complete_data = data.copy()
-            #TODO: use explicit num and selfref variables
             complete_data.update(old_name=old_name,
                                  new_name=new_name,
                                  dir=data['num'] is 0 and 'local' or 'remote')
             # Specifying a stacklevel is useless in this case as the name
             # generation is triggered by setup_all(), not by the declaration
             # of the offending relationship.
+            #FIXME: entity is probably wrong here since it refers to the target
+            #entity.
             warnings.warn("The generated column name for the '%(relname)s' "
                           "relationship on the '%(entity)s' entity changed "
                           "from '%(old_name)s' to '%(new_name)s'. "
