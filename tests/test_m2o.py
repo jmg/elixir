@@ -5,7 +5,7 @@ test many to one relationships
 from elixir import *
 
 def setup():
-    metadata.bind = 'sqlite:///'
+    metadata.bind = 'sqlite://'
 
 class TestManyToOne(object):
     def teardown(self):

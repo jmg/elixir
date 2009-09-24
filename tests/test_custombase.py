@@ -5,7 +5,7 @@ test having entities using a custom base class
 from elixir import *
 
 def setup():
-    metadata.bind = 'sqlite:///'
+    metadata.bind = 'sqlite://'
 
     global MyBase
 

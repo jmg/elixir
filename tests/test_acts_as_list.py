@@ -26,7 +26,7 @@ class TestActsAsList(object):
             name = Field(String(64))
             todos = OneToMany('ToDo', order_by='position')
 
-        metadata.bind = 'sqlite:///'
+        metadata.bind = 'sqlite://'
 
         setup_all(True)
 
@@ -110,7 +110,7 @@ class TestActsAsList(object):
 
     def test_acts_as_list_autoload(self):
         # Make autoload test fixture
-        meta = MetaData('sqlite:///')
+        meta = MetaData('sqlite://')
 
         preloaded_table = Table('preloaded', meta,
             Column('name', String(32), primary_key=True),

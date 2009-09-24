@@ -5,7 +5,7 @@ test the different syntaxes to define fields
 from elixir import *
 
 def setup():
-    metadata.bind = 'sqlite:///'
+    metadata.bind = 'sqlite://'
 
 class TestFields(object):
     def teardown(self):

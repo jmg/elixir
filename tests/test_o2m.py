@@ -7,7 +7,7 @@ from sqlalchemy import and_, ForeignKey
 from sqlalchemy.ext.orderinglist import ordering_list
 
 def setup():
-    metadata.bind = 'sqlite:///'
+    metadata.bind = 'sqlite://'
 
 class TestOneToMany(object):
     def teardown(self):

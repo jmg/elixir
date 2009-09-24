@@ -8,7 +8,7 @@ from elixir import *
 
 class TestSQLAlchemyToElixir(object):
     def setup(self):
-        metadata.bind = "sqlite:///"
+        metadata.bind = "sqlite://"
 
     def teardown(self):
         cleanup_all(True)
@@ -50,7 +50,7 @@ class TestSQLAlchemyToElixir(object):
 
 class TestElixirToSQLAlchemy(object):
     def setup(self):
-        metadata.bind = "sqlite:///"
+        metadata.bind = "sqlite://"
 
     def teardown(self):
         cleanup_all(True)

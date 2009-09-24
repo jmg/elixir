@@ -74,7 +74,7 @@ class TestEvents(object):
                 record_event('before_any_called')
             pre_any = before_insert(before_update(before_delete(pre_any)))
 
-        metadata.bind = 'sqlite:///'
+        metadata.bind = 'sqlite://'
         setup_all(True)
 
         d = Document(name='My Document')
@@ -129,7 +129,7 @@ class TestEvents(object):
         class A(Entity, AddEventMethods):
             name = Field(String(50))
 
-        metadata.bind = 'sqlite:///'
+        metadata.bind = 'sqlite://'
         setup_all(True)
 
         a1 = A(name='a1')

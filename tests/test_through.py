@@ -6,7 +6,7 @@ from elixir import *
 from datetime import datetime
 
 def setup():
-    metadata.bind = 'sqlite:///'
+    metadata.bind = 'sqlite://'
 
 
 class TestThrough(object):

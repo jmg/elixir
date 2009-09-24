@@ -28,7 +28,7 @@ def setup():
         name = Field(String(30))
         records = ManyToMany('Record', order_by='-title')
 
-    metadata.bind = 'sqlite:///'
+    metadata.bind = 'sqlite://'
     setup_all(True)
 
     # insert some data

@@ -9,7 +9,7 @@ from elixir import *
 
 class TestOptions(object):
     def setup(self):
-        metadata.bind = 'sqlite:///'
+        metadata.bind = 'sqlite://'
 
     def teardown(self):
         cleanup_all(True)
@@ -112,7 +112,7 @@ class TestSessionOptions(object):
         cleanup_all()
 
     def test_manual_session(self):
-        engine = create_engine('sqlite:///')
+        engine = create_engine('sqlite://')
 
         class Person(Entity):
             using_options(session=None)
@@ -140,7 +140,7 @@ class TestSessionOptions(object):
         assert session.query(Person).count() == 1
 
     def test_scoped_session(self):
-        engine = create_engine('sqlite:///')
+        engine = create_engine('sqlite://')
         Session = scoped_session(sessionmaker(bind=engine))
 
         class Person(Entity):
@@ -161,7 +161,7 @@ class TestSessionOptions(object):
     def test_global_scoped_session(self):
         global __session__
 
-        engine = create_engine('sqlite:///')
+        engine = create_engine('sqlite://')
         session = scoped_session(sessionmaker(bind=engine))
         __session__ = session
 
@@ -183,7 +183,7 @@ class TestSessionOptions(object):
 
 class TestTableOptions(object):
     def setup(self):
-        metadata.bind = 'sqlite:///'
+        metadata.bind = 'sqlite://'
 
     def teardown(self):
         cleanup_all()

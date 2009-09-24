@@ -8,7 +8,7 @@ from elixir import *
 import elixir
 
 def setup():
-    metadata.bind = 'sqlite:///'
+    metadata.bind = 'sqlite://'
 
 def teardown():
     cleanup_all()
@@ -31,7 +31,6 @@ class TestSetup(object):
 
         assert isinstance(metadata.tables['person'], Table)
 
-    # jeeez, this used to lock up hard the program
     def test_cleanup_before_setup(self):
         class Person(Entity):
             name = Field(String(30))
@@ -51,7 +50,7 @@ class TestSetup(object):
             using_options(tablename='users')
             some_field = Field(Boolean, default=False)
 
-        metadata.bind = 'sqlite:///'
+        metadata.bind = 'sqlite://'
 
         drop_all()
         create_all()
@@ -67,7 +66,7 @@ class TestSetup(object):
             using_options(autosetup=False, tablename='person')
 
         assert 'person' not in metadata.tables
-        assert Person.table == None
+        assert Person.table is None
 
         # check that accessing the table didn't trigger the setup
         assert 'person' not in metadata.tables

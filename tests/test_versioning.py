@@ -41,7 +41,7 @@ def setup():
         using_options(tablename='actors')
 
     setup_all()
-    metadata.bind = 'sqlite:///'
+    metadata.bind = 'sqlite://'
 
 
 def teardown():

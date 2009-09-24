@@ -1,7 +1,7 @@
 from elixir import *
 
 def setup():
-    metadata.bind = "sqlite:///"
+    metadata.bind = "sqlite://"
 
 class TestOneToOne(object):
     def teardown(self):

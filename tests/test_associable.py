@@ -9,8 +9,8 @@ from elixir.ext.associable import associable
 
 
 def setup():
-#    metadata.bind = create_engine('sqlite:///', echo=True)
-    metadata.bind = 'sqlite:///'
+#    metadata.bind = create_engine('sqlite://', echo=True)
+    metadata.bind = 'sqlite://'
 
 class TestOrders(object):
     def teardown(self):

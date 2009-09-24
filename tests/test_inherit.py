@@ -7,7 +7,7 @@ import elixir
 from elixir.py23compat import sort_list
 
 def setup():
-    metadata.bind = 'sqlite:///'
+    metadata.bind = 'sqlite://'
 #    metadata.bind = 'postgres://@/test'
 #    metadata.bind.echo = True
     elixir.options_defaults['shortnames'] = True

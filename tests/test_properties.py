@@ -7,7 +7,7 @@ from sqlalchemy.orm import column_property
 from elixir import *
 
 def setup():
-    metadata.bind = 'sqlite:///'
+    metadata.bind = 'sqlite://'
 
 
 class TestSpecialProperties(object):

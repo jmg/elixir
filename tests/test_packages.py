@@ -7,7 +7,7 @@ import sys
 from elixir import *
 
 def setup():
-    metadata.bind = 'sqlite:///'
+    metadata.bind = 'sqlite://'
     sys.modules.pop('tests.a', None)
     sys.modules.pop('tests.b', None)
 

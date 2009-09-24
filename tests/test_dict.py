@@ -6,7 +6,7 @@ import sqlalchemy as sa
 from elixir import *
 
 def setup():
-    metadata.bind = 'sqlite:///'
+    metadata.bind = 'sqlite://'
 
     global Table1, Table2, Table3
     class Table1(Entity):
@@ -157,7 +157,7 @@ class TestDeepSet(object):
 
 class TestSetOnAliasedColumn(object):
     def setup(self):
-        metadata.bind = 'sqlite:///'
+        metadata.bind = 'sqlite://'
         session.clear()
 
     def teardown(self):

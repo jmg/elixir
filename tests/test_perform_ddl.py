@@ -3,7 +3,7 @@ from elixir.ext.perform_ddl import perform_ddl, preload_data
 
 
 def setup():
-    metadata.bind = "sqlite:///"
+    metadata.bind = "sqlite://"
 
 
 class TestPerformDDL(object):

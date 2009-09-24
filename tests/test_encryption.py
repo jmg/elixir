@@ -19,7 +19,7 @@ def setup():
         owner = ManyToOne('Person')
 
 
-    metadata.bind = 'sqlite:///'
+    metadata.bind = 'sqlite://'
     setup_all()
 
 
