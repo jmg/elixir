@@ -95,11 +95,20 @@ class TestSetup(object):
         assert isinstance(metadata.tables['person'], Table)
 
     def test_createall(self):
+        assert 'person' not in metadata.tables
+
+        # note that if this test included a ManyToMany relationship, it would
+        # probably fail on SA 0.5.x and later, because the monkey-patched
+        # iterator is never called (but the TriggerProxy is).
         class Person(Entity):
             name = Field(String(30))
             using_options(autosetup=True, tablename='person')
 
+        assert isinstance(metadata.tables['person'],
+                          elixir.entity.TriggerProxy)
+
         create_all()
+
         assert isinstance(metadata.tables['person'], Table)
 
     def test_setupall(self):
