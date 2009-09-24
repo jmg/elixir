@@ -18,7 +18,7 @@ def setup_entity_raise(cls):
 
 def setup():
     # First create the tables
-    meta = MetaData('sqlite:///')
+    meta = MetaData('sqlite://')
 
     person_table = Table('person', meta,
         Column('id', Integer, primary_key=True),
@@ -197,7 +197,7 @@ class TestAutoload(object):
     # ----------------
 
     def test_nopk(self):
-        metadata.bind = 'sqlite:///'
+        metadata.bind = 'sqlite://'
 
         local_meta = MetaData(metadata.bind)
 
@@ -208,7 +208,6 @@ class TestAutoload(object):
         local_meta.create_all()
 
         class A(Entity):
-            using_options(tablename='a', autoload=True)
             using_mapper_options(primary_key=['id'])
 
         setup_all()
@@ -224,7 +223,7 @@ class TestAutoload(object):
         assert res[0].name == "a1"
 
     def test_inheritance(self):
-        metadata.bind = 'sqlite:///'
+        metadata.bind = 'sqlite://'
 
         local_meta = MetaData(metadata.bind)
 
@@ -234,10 +233,8 @@ class TestAutoload(object):
 
         local_meta.create_all()
 
-        options_defaults["autoload"] = True
-
         class Father(Entity):
-            using_options(tablename='father')
+            pass
 
         class Son(Father):
             pass
