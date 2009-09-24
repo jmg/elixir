@@ -115,8 +115,9 @@ The list of supported arguments are as follows:
 |                     | module by setting the ``__session__`` attribute of    |
 |                     | that module.                                          |
 +---------------------+-------------------------------------------------------+
-| ``autosetup``       | Specify whether that entity will contain automatic    |
-|                     | setup triggers. That is if this entity will be        |
+| ``autosetup``       | DEPRECATED. Specify whether that entity will contain  |
+|                     | automatic setup triggers.                             |
+|                     | That is if this entity will be                        |
 |                     | automatically setup (along with all other entities    |
 |                     | which were already declared) if any of the following  |
 |                     | condition happen: some of its attributes are accessed |

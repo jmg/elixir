@@ -761,7 +761,7 @@ def instrument_class(cls):
         prop.attach(cls, name)
 
     # Process mutators. Needed before _install_autosetup_triggers so that
-    # we know of the metadata
+    # we know of the metadata (and whether the entity is autosetuped or not).
     process_mutators(cls)
 
     # setup misc options here (like tablename etc.)
@@ -813,6 +813,9 @@ class EntityMeta(type):
 def _install_autosetup_triggers(cls, entity_name=None):
     #TODO: move as much as possible of those "_private" values to the
     # descriptor, so that we don't mess the initial class.
+    warnings.warn("The 'autosetup' option on entities is deprecated. "
+        "Please call setup_all() manually after all your entities have been "
+        "declared.", DeprecationWarning, stacklevel=4)
     tablename = cls._descriptor.tablename
     schema = cls._descriptor.table_options.get('schema', None)
     cls._table_key = sqlalchemy.schema._get_table_key(tablename, schema)
