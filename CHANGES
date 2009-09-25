@@ -33,6 +33,7 @@ New features:
     creation.
   - "preload_data" allows to insert data into the entity table just after it
     has been created.
+- EntityCollection gained a working extend method
 
 Changes:
 - Moved class instrumentation to a separate function: instrument_class
