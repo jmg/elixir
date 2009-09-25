@@ -83,6 +83,9 @@ Bug fixes:
   weird name which is not in sys.modules).
 - Fixed filter argument on OneToMany relationship leaking the filter to the
   unfiltered relationship.
+- Fixed encrypted extension to not encrypt several times an instance attributes
+  when that instance is flushed several times before being expunged from the
+  session.
 - Fixed using to_dict with a ManyToOne relationship in the "deep" set and that
   relationship being None in the entity being converted.
 
