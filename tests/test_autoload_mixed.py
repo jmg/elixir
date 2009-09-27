@@ -9,8 +9,8 @@ def teardown():
 class TestAutoloadMixed(object):
     def setup(self):
         conn = metadata.bind.connect()
-        conn.execute("""CREATE TABLE user
-        (user_id INTEGER PRIMARY KEY AUTOINCREMENT)""")
+        conn.execute("CREATE TABLE user ("
+                     "user_id INTEGER PRIMARY KEY AUTOINCREMENT)")
         conn.close()
 
     def test_belongs_to(self):
@@ -22,5 +22,6 @@ class TestAutoloadMixed(object):
 
         setup_all(True)
 
-        assert Item.table.c['owner_user_id'].foreign_keys[0].column.name == 'user_id'
+        colname = Item.table.c['owner_user_id'].foreign_keys[0].column.name
+        assert colname == 'user_id'
 
