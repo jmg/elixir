@@ -32,6 +32,7 @@ class TestAutoload(object):
         cleanup_all(True)
 
     def test_simple(self):
+        #FIXME: use raw SQL or clear metadata between autoload table definition and autoload !!!!
         person_table = Table('person', metadata,
             Column('id', Integer, primary_key=True),
             Column('name', String(32)))
@@ -43,6 +44,7 @@ class TestAutoload(object):
             Column('feeder_id', Integer, ForeignKey('person.id')))
 
         metadata.create_all()
+        metadata.clear()
 
         class Person(Entity):
             pets = OneToMany('Animal', inverse='owner')
