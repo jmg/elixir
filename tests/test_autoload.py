@@ -32,7 +32,6 @@ class TestAutoload(object):
         cleanup_all(True)
 
     def test_simple(self):
-        #FIXME: use raw SQL or clear metadata between autoload table definition and autoload !!!!
         person_table = Table('person', metadata,
             Column('id', Integer, primary_key=True),
             Column('name', String(32)))
@@ -77,7 +76,9 @@ class TestAutoload(object):
             Column('id', Integer, primary_key=True),
             Column('father_id', Integer, ForeignKey('person.id')),
             Column('name', String(32)))
+
         metadata.create_all()
+        metadata.clear()
 
         class Person(Entity):
             father = ManyToOne('Person')
@@ -117,6 +118,7 @@ class TestAutoload(object):
             Column('category_name', String(30), ForeignKey('category.name')))
 
         metadata.create_all()
+        metadata.clear()
 
         class Person(Entity):
             categories = ManyToMany('Category',
@@ -158,6 +160,7 @@ class TestAutoload(object):
             Column('person_id2', Integer, ForeignKey('person.id')))
 
         metadata.create_all()
+        metadata.clear()
 
         class Person(Entity):
             appreciate = ManyToMany('Person',
@@ -190,6 +193,7 @@ class TestAutoload(object):
             Column('name', String(32)))
 
         metadata.create_all()
+        metadata.clear()
 
     def test_override_pk_fails(self):
         self._create_table_a()
@@ -236,6 +240,7 @@ class TestAutoload(object):
             Column('name', String(32)))
 
         metadata.create_all()
+        metadata.clear()
 
         class A(Entity):
             using_mapper_options(primary_key=['id'])
@@ -258,6 +263,7 @@ class TestAutoload(object):
             Column('row_type', elixir.options.POLYMORPHIC_COL_TYPE))
 
         metadata.create_all()
+        metadata.clear()
 
         class Father(Entity):
             pass
