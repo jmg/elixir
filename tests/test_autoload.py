@@ -266,3 +266,24 @@ class TestAutoload(object):
             pass
 
         setup_all()
+
+    def test_autoload_mixed(self):
+        # mixed autoloaded entity with a non autoloaded one
+        conn = metadata.bind.connect()
+        conn.execute("CREATE TABLE user ("
+                     "user_id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        conn.close()
+
+        class User(Entity):
+            using_options(tablename='user', autoload=True)
+
+        class Item(Entity):
+            using_options(autoload=False)
+
+            owner = ManyToOne('User')
+
+        setup_all(True)
+
+        colname = Item.table.c['owner_user_id'].foreign_keys[0].column.name
+        assert colname == 'user_id'
+
