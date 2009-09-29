@@ -16,10 +16,13 @@ class TestManyToMany(object):
 
     def test_simple(self):
         class A(Entity):
+            using_options(shortnames=True)
             name = Field(String(60))
+            as_ = ManyToMany('A')
             bs_ = ManyToMany('B')
 
         class B(Entity):
+            using_options(shortnames=True)
             name = Field(String(60))
             as_ = ManyToMany('A')
 
@@ -32,8 +35,13 @@ class TestManyToMany(object):
 
         # check column names
         m2m_cols = m2m_table.columns
-        assert 'bs__id' in m2m_cols
+        assert 'a_id' in m2m_cols
+        assert 'b_id' in m2m_cols
+
+        # check selfref m2m table column names were generated correctly
+        m2m_cols = A.as_.property.secondary.columns
         assert 'as__id' in m2m_cols
+        assert 'inverse_id' in m2m_cols
 
         # check the relationships work as expected
         b1 = B(name='b1', as_=[A(name='a1')])
@@ -75,7 +83,7 @@ class TestManyToMany(object):
     def test_alternate_column_formatter(self):
         # this needs to be done before declaring the classes
         elixir.options.M2MCOL_NAMEFORMAT = \
-            elixir.relationships.alternate_m2m_column_formatter
+            elixir.options.ALTERNATE_M2MCOL_NAMEFORMAT
 
         class A(Entity):
             as_ = ManyToMany('A')
@@ -92,20 +100,86 @@ class TestManyToMany(object):
 
         # check m2m table column names were generated correctly
         m2m_cols = A.bs_.property.secondary.columns
-        assert '%s_id' % A.table.name in m2m_cols
-        assert '%s_id' % B.table.name in m2m_cols
+        assert 'as__id' in m2m_cols
+        assert 'bs__id' in m2m_cols
 
         # check selfref m2m table column names were generated correctly
         m2m_cols = A.as_.property.secondary.columns
         assert 'as__id' in m2m_cols
         assert 'inverse_id' in m2m_cols
 
-    #TODO: add an upgrade test
-    #def test_upgrade(self):
-#        elixir.options.M2MCOL_NAMEFORMAT = elixir.options.OLD_M2MCOL_NAMEFORMAT
+    def test_upgrade(self):
+        elixir.options.M2MCOL_NAMEFORMAT = elixir.options.OLD_M2MCOL_NAMEFORMAT
+
+        class A(Entity):
+            using_options(shortnames=True)
+            name = Field(String(20))
+            links_to = ManyToMany('A')
+            is_linked_from = ManyToMany('A')
+            bs_ = ManyToMany('B')
+
+        class B(Entity):
+            using_options(shortnames=True)
+            name = Field(String(20))
+            as_ = ManyToMany('A')
+
+        setup_all(True)
+
+        a = A(name='a1', links_to=[A(name='a2')])
+
+        session.commit()
+        session.clear()
+
+        del A
+        del B
+
+        # do not drop the tables, that's the whole point!
+        cleanup_all()
+
+        # simulate a renaming of columns (as given by the migration aid)
+        # 'a_id1' to 'is_linked_from_id'.
+        # 'a_id2' to 'links_to_id'.
+        conn = metadata.bind.connect()
+        conn.execute("ALTER TABLE a_links_to__a_is_linked_from RENAME TO temp")
+        conn.execute("CREATE TABLE a_links_to__a_is_linked_from ("
+                        "is_linked_from_id INTEGER NOT NULL, "
+                        "links_to_id INTEGER NOT NULL, "
+                     "PRIMARY KEY (is_linked_from_id, links_to_id), "
+                     "CONSTRAINT a_fk1 FOREIGN KEY(is_linked_from_id) "
+                                      "REFERENCES a (id), "
+                     "CONSTRAINT a_fk2 FOREIGN KEY(links_to_id) "
+                                      "REFERENCES a (id))")
+        conn.execute("INSERT INTO a_links_to__a_is_linked_from "
+                     "(is_linked_from_id, links_to_id) "
+                     "SELECT a_id1, a_id2 FROM temp")
+        conn.close()
+
+        # ...
+        elixir.options.M2MCOL_NAMEFORMAT = elixir.options.NEW_M2MCOL_NAMEFORMAT
 #        elixir.options.MIGRATION_TO_07_AID = True
-#        metadata.bind = 'sqlite://'
-#        elixir.options.M2MCOL_NAMEFORMAT = elixir.options.NEW_M2MCOL_NAMEFORMAT    #    assert False
+
+        class A(Entity):
+            using_options(shortnames=True)
+            name = Field(String(20))
+            links_to = ManyToMany('A')
+            is_linked_from = ManyToMany('A')
+            bs_ = ManyToMany('B')
+
+        class B(Entity):
+            using_options(shortnames=True)
+            name = Field(String(20))
+            as_ = ManyToMany('A')
+
+        setup_all()
+
+        a1 = A.get_by(name='a1')
+        assert len(a1.links_to) == 1
+        assert not a1.is_linked_from
+
+        a2 = a1.links_to[0]
+        assert a2.name == 'a2'
+        assert not a2.links_to
+        assert a2.is_linked_from == [a1]
 
     def test_manual_column_format(self):
         class A(Entity):

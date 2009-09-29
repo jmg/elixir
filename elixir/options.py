@@ -182,11 +182,20 @@ from elixir.statements import ClassMutator
 
 __doc_all__ = ['options_defaults']
 
+OLD_M2MCOL_NAMEFORMAT = "%(tablename)s_%(key)s%(numifself)s"
+ALTERNATE_M2MCOL_NAMEFORMAT = "%(inversename)s_%(key)s"
+
+def default_m2m_column_formatter(data):
+    if data['selfref']:
+        return ALTERNATE_M2MCOL_NAMEFORMAT % data
+    else:
+        return OLD_M2MCOL_NAMEFORMAT % data
+
+NEW_M2MCOL_NAMEFORMAT = default_m2m_column_formatter
+
 # format constants
 FKCOL_NAMEFORMAT = "%(relname)s_%(key)s"
-OLD_M2MCOL_NAMEFORMAT = "%(tablename)s_%(key)s%(numifself)s"
-NEW_M2MCOL_NAMEFORMAT = "%(relname)s_%(key)s"
-M2MCOL_NAMEFORMAT = OLD_M2MCOL_NAMEFORMAT
+M2MCOL_NAMEFORMAT = NEW_M2MCOL_NAMEFORMAT
 CONSTRAINT_NAMEFORMAT = "%(tablename)s_%(colnames)s_fk"
 MULTIINHERITANCECOL_NAMEFORMAT = "%(entity)s_%(key)s"
 

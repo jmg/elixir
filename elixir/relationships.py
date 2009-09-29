@@ -869,7 +869,9 @@ class ManyToMany(Relationship):
             self.column_format = lambda data: format % data
         if options.MIGRATION_TO_07_AID:
             self.column_format = \
-                migration_aid_m2m_column_formatter(self.column_format)
+                migration_aid_m2m_column_formatter(
+                    lambda data: options.OLD_M2MCOL_NAMEFORMAT % data,
+                    self.column_format)
 
         self.filter = filter
         if filter is not None:
@@ -994,9 +996,9 @@ class ManyToMany(Relationship):
             constraints = []
 
             joins = (self.primaryjoin_clauses, self.secondaryjoin_clauses)
-            for num, desc, fk_name, rel, colnames in (
-              (0, e1_desc, source_fk_name, self, self.local_colname),
-              (1, e2_desc, target_fk_name, self.inverse, self.remote_colname)):
+            for num, desc, fk_name, rel, inverse, colnames in (
+              (0, e1_desc, source_fk_name, self, self.inverse, self.local_colname),
+              (1, e2_desc, target_fk_name, self.inverse, self, self.remote_colname)):
 
                 fk_colnames = []
                 fk_refcols = []
@@ -1004,20 +1006,43 @@ class ManyToMany(Relationship):
                 if colnames:
                     assert len(colnames) == len(desc.primary_keys)
                 else:
-                    #FIXME: desc is not the target desc. Do I need to fix to
-                    # code or the doc? in fact the relname corresponds to the
-                    # relationship going from the entity to the M2M, so the new
-                    # naming scheme might not really make sense
-                    data = {# relationship info
+                    # The data generated here will be fed to the M2M column
+                    # formatter to generate the name of the columns of the
+                    # intermediate table for *one* side of the relationship,
+                    # that is, from the intermediate table to the current
+                    # entity, as stored in the "desc" variable.
+                    data = {# A) relationships info
+
+                            # the name of the rel going *from* the entity
+                            # we are currently generating a column pointing
+                            # *to*. This is generally *not* what you want to
+                            # use. eg in a "Post" and "Tag" example, with
+                            # relationships named 'tags' and 'posts', when
+                            # creating the columns from the intermediate
+                            # table to the "Post" entity, 'relname' will
+                            # contain 'tags'.
                             'relname': rel and rel.name or 'inverse',
+
+                            # the name of the inverse relationship. In the
+                            # above example, 'inversename' will contain
+                            # 'posts'.
+                            'inversename': inverse and inverse.name
+                                                   or 'inverse',
+                            # is A == B?
                             'selfref': e1_desc is e2_desc,
+                            # provided for backward compatibility, DO NOT USE!
                             'num': num,
+                            # provided for backward compatibility, DO NOT USE!
                             'numifself': e1_desc is e2_desc and str(num + 1)
                                                             or '',
-                            # source (not target!) info
-                            'source': desc.entity,
+                            # B) target information (from the perspective of
+                            #    the intermediate table)
+                            'target': desc.entity,
                             'entity': desc.entity.__name__.lower(),
-                            'tablename': desc.tablename
+                            'tablename': desc.tablename,
+
+                            # C) current (intermediate) table name
+                            'current_table': tablename
                            }
                     colnames = []
                     for pk_col in desc.primary_keys:
@@ -1044,6 +1069,7 @@ class ManyToMany(Relationship):
                 onupdate = rel and rel.onupdate
                 ondelete = rel and rel.ondelete
 
+                #FIXME: fk_name is misleading
                 constraints.append(
                     ForeignKeyConstraint(fk_colnames, fk_refcols,
                                          name=fk_name, onupdate=onupdate,
@@ -1103,30 +1129,23 @@ class ManyToMany(Relationship):
                 (not self.user_tablename and not other.user_tablename))
 
 
-def alternate_m2m_column_formatter(data):
-    if data['selfref']:
-        return options.NEW_M2MCOL_NAMEFORMAT % data
-    else:
-        return options.OLD_M2MCOL_NAMEFORMAT % data
-
-
-def migration_aid_m2m_column_formatter(formatter):
+def migration_aid_m2m_column_formatter(oldformatter, newformatter):
     def debug_formatter(data):
-        new_name = formatter(data)
-        old_name = options.OLD_M2MCOL_NAMEFORMAT % data
+        old_name = oldformatter(data)
+        new_name = newformatter(data)
         if new_name != old_name:
             complete_data = data.copy()
             complete_data.update(old_name=old_name,
                                  new_name=new_name,
-                                 dir=data['num'] is 0 and 'local' or 'remote')
+                                 targetname=data['target'].__name__)
             # Specifying a stacklevel is useless in this case as the name
             # generation is triggered by setup_all(), not by the declaration
             # of the offending relationship.
-            #FIXME: entity is probably wrong here since it refers to the target
-            #entity.
-            warnings.warn("The generated column name for the '%(relname)s' "
-                          "relationship on the '%(entity)s' entity changed "
-                          "from '%(old_name)s' to '%(new_name)s'. "
+            warnings.warn("The '%(old_name)s' column in the "
+                          "'%(current_table)s' table, used as the "
+                          "intermediate table for the '%(relname)s' "
+                          "relationship on the '%(targetname)s' entity "
+                          "was renamed to '%(new_name)s'."
                           % complete_data)
         return new_name
     return debug_formatter
