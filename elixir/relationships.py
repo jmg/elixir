@@ -995,10 +995,11 @@ class ManyToMany(Relationship):
             columns = []
             constraints = []
 
-            joins = (self.primaryjoin_clauses, self.secondaryjoin_clauses)
-            for num, desc, fk_name, rel, inverse, colnames in (
-              (0, e1_desc, source_fk_name, self, self.inverse, self.local_colname),
-              (1, e2_desc, target_fk_name, self.inverse, self, self.remote_colname)):
+            for num, desc, fk_name, rel, inverse, colnames, join_clauses in (
+              (0, e1_desc, source_fk_name, self, self.inverse,
+               self.local_colname, self.primaryjoin_clauses),
+              (1, e2_desc, target_fk_name, self.inverse, self,
+               self.remote_colname, self.secondaryjoin_clauses)):
 
                 fk_colnames = []
                 fk_refcols = []
@@ -1064,7 +1065,7 @@ class ManyToMany(Relationship):
 
                     # Build join clauses (in case we have a self-ref)
                     if self.entity is self.target:
-                        joins[num].append(col == pk_col)
+                        join_clauses.append(col == pk_col)
 
                 onupdate = rel and rel.onupdate
                 ondelete = rel and rel.ondelete
