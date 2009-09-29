@@ -57,19 +57,33 @@ class TestManyToMany(object):
 
     def test_table_kwargs(self):
         class A(Entity):
-            using_options(shortnames=True)
-            name = Field(String(60))
             bs_ = ManyToMany('B', table_kwargs={'info': {'test': True}})
 
         class B(Entity):
-            using_options(shortnames=True)
-            name = Field(String(60))
             as_ = ManyToMany('A')
 
         setup_all(True)
         A.mapper.compile()
 
         assert A.bs_.property.secondary.info['test'] is True
+
+    def test_table_default_kwargs(self):
+        options_defaults['table_options'] = {'info': {'test': True}}
+
+        class A(Entity):
+            bs_ = ManyToMany('B')
+
+        class B(Entity):
+            as_ = ManyToMany('A')
+
+        setup_all(True)
+        A.mapper.compile()
+
+        options_defaults['table_options'] = {}
+
+        assert A.bs_.property.secondary.info['test'] is True
+        assert A.table.info['test'] is True
+        assert B.table.info['test'] is True
 
     def test_custom_global_column_nameformat(self):
         # this needs to be done before declaring the classes

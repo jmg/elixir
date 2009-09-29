@@ -914,6 +914,10 @@ class ManyToMany(Relationship):
                 self.secondaryjoin_clauses = self.inverse.primaryjoin_clauses
                 return
 
+        # compute table_kwargs
+        complete_kwargs = options.options_defaults['table_options'].copy()
+        complete_kwargs.update(self.table_kwargs)
+
         #needs: table_options['schema'], autoload, tablename, primary_keys,
         #entity.__name__, table_fullname
         e1_desc = self.entity._descriptor
@@ -981,7 +985,7 @@ class ManyToMany(Relationship):
                        self.target.__name__))
 
             self.table = Table(tablename, e1_desc.metadata, autoload=True,
-                               **self.table_kwargs)
+                               **complete_kwargs)
             if 'primaryjoin' not in self.kwargs or \
                'secondaryjoin' not in self.kwargs:
                 self._build_join_clauses()
@@ -1085,7 +1089,7 @@ class ManyToMany(Relationship):
             args = columns + constraints
 
             self.table = Table(tablename, e1_desc.metadata,
-                               schema=schema, *args, **self.table_kwargs)
+                               schema=schema, *args, **complete_kwargs)
             if DEBUG:
                 print self.table.repr2()
 

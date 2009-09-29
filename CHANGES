@@ -17,8 +17,8 @@ New features:
   is now deprecated. Change based on a patch from Diez B. Roggisch.
 - Added (or rather fixed and documented) a "table" argument on ManyToMany
   relationships to allow using a manually-defined Table (closes #44).
-- Added a "schema" argument on ManyToMany relationships to be able to create 
-  the ManyToMany table in a custom schema and not necessarily the same schema 
+- Added a "schema" argument on ManyToMany relationships to be able to create
+  the ManyToMany table in a custom schema and not necessarily the same schema
   as the table of the "source" entity (patch from Diez B. Roggisch).
 - Added a "table_kwargs" argument on ManyToMany relationships to pass any
   extra keyword arguments to the underlying Table object (ticket #94).
@@ -54,6 +54,8 @@ Changes:
   extension (closes #53).
 - Made manually defined mapper options take precedence over Elixir-generated
   ones. Not very useful yet since most are expecting Column objects.
+- Default table_options (defined in options_defaults['table_options']) are now
+  also used for ManyToMany tables.
 
 Bug fixes:
 - Fixed Elixir to work with the future SQLAlchemy 0.6 (trunk as of 6377).
