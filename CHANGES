@@ -21,7 +21,7 @@ New features:
   the ManyToMany table in a custom schema and not necessarily the same schema
   as the table of the "source" entity (patch from Diez B. Roggisch).
 - Added a "table_kwargs" argument on ManyToMany relationships to pass any
-  extra keyword arguments to the underlying Table object (ticket #94).
+  extra keyword arguments to the underlying Table object (closes #94).
 - Added a new "target_column" argument on ManyToOne relationships so that you
   can target unique but non-primary key columns. At the moment, this only works
   if the target column is declared before the ManyToOne (see ticket #26).
@@ -55,7 +55,7 @@ Changes:
 - Made manually defined mapper options take precedence over Elixir-generated
   ones. Not very useful yet since most are expecting Column objects.
 - Default table_options (defined in options_defaults['table_options']) are now
-  also used for ManyToMany tables.
+  also used for ManyToMany tables (closes #94).
 
 Bug fixes:
 - Fixed Elixir to work with the future SQLAlchemy 0.6 (trunk as of 6377).
