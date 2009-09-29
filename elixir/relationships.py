@@ -300,7 +300,9 @@ relationships accept the following optional (keyword) arguments:
 |                    | May be one of: ``cascade``, ``restrict``,              |
 |                    | ``set null``, or ``set default``.                      |
 +--------------------+--------------------------------------------------------+
-| ``column_format``  | DEPRECATED. Specify an alternate format string for     |
+| ``table_kwargs``   | A dictionary holding any other keyword argument you    |
+|                    | might want to pass to the underlying Table object.     |
++--------------------+--------------------------------------------------------+| ``column_format``  | DEPRECATED. Specify an alternate format string for     |
 |                    | naming the                                             |
 |                    | columns in the mapping table.  The default value is    |
 |                    | defined in ``elixir.options.M2MCOL_NAMEFORMAT``.  You  |
@@ -838,6 +840,7 @@ class ManyToMany(Relationship):
                  table=None, schema=None,
                  column_format=None,
                  filter=None,
+                 table_kwargs=None,
                  *args, **kwargs):
         self.user_tablename = tablename
 
@@ -879,6 +882,8 @@ class ManyToMany(Relationship):
             # unless manually overridden.
             if 'viewonly' not in kwargs:
                 kwargs['viewonly'] = True
+
+        self.table_kwargs = table_kwargs or {}
 
         self.primaryjoin_clauses = []
         self.secondaryjoin_clauses = []
@@ -975,7 +980,8 @@ class ManyToMany(Relationship):
                     % (self.entity.__name__, self.name,
                        self.target.__name__))
 
-            self.table = Table(tablename, e1_desc.metadata, autoload=True)
+            self.table = Table(tablename, e1_desc.metadata, autoload=True,
+                               **self.table_kwargs)
             if 'primaryjoin' not in self.kwargs or \
                'secondaryjoin' not in self.kwargs:
                 self._build_join_clauses()
@@ -1079,7 +1085,7 @@ class ManyToMany(Relationship):
             args = columns + constraints
 
             self.table = Table(tablename, e1_desc.metadata,
-                               schema=schema, *args)
+                               schema=schema, *args, **self.table_kwargs)
             if DEBUG:
                 print self.table.repr2()
 

@@ -55,6 +55,22 @@ class TestManyToMany(object):
         assert a in b.as_
         assert b in a.bs_
 
+    def test_table_kwargs(self):
+        class A(Entity):
+            using_options(shortnames=True)
+            name = Field(String(60))
+            bs_ = ManyToMany('B', table_kwargs={'info': {'test': True}})
+
+        class B(Entity):
+            using_options(shortnames=True)
+            name = Field(String(60))
+            as_ = ManyToMany('A')
+
+        setup_all(True)
+        A.mapper.compile()
+
+        assert A.bs_.property.secondary.info['test'] is True
+
     def test_custom_global_column_nameformat(self):
         # this needs to be done before declaring the classes
         elixir.options.M2MCOL_NAMEFORMAT = elixir.options.OLD_M2MCOL_NAMEFORMAT
