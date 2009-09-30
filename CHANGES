@@ -89,6 +89,11 @@ Bug fixes:
   (introduced in release 0.5.0).
 - Added workaround for an odd mod_python behavior (class.__module__ returns a
   weird name which is not in sys.modules).
+- tablename, remote_colname, local_colname, schema and table_kwargs can now be
+  defined on either side of a ManyToMany relationship and will propagate to
+  the other side if that other side doesn't specify anything for that argument.
+  Also added an assertion to catch the case where the same/mirror
+  argument is specified on both sides but with different values.
 - Fixed filter argument on OneToMany relationship leaking the filter to the
   unfiltered relationship.
 - Fixed encrypted extension to not encrypt several times an instance attributes
