@@ -138,7 +138,7 @@ class TestManyToMany(object):
         assert 'as__id' in m2m_cols
         assert 'inverse_id' in m2m_cols
 
-    def test_upgrade(self):
+    def test_upgrade_rename_col(self):
         elixir.options.M2MCOL_NAMEFORMAT = elixir.options.OLD_M2MCOL_NAMEFORMAT
 
         class A(Entity):
@@ -193,6 +193,61 @@ class TestManyToMany(object):
             name = Field(String(20))
             links_to = ManyToMany('A')
             is_linked_from = ManyToMany('A')
+            bs_ = ManyToMany('B')
+
+        class B(Entity):
+            using_options(shortnames=True)
+            name = Field(String(20))
+            as_ = ManyToMany('A')
+
+        setup_all()
+
+        a1 = A.get_by(name='a1')
+        assert len(a1.links_to) == 1
+        assert not a1.is_linked_from
+
+        a2 = a1.links_to[0]
+        assert a2.name == 'a2'
+        assert not a2.links_to
+        assert a2.is_linked_from == [a1]
+
+    def test_upgrade_local_colname(self):
+        elixir.options.M2MCOL_NAMEFORMAT = elixir.options.OLD_M2MCOL_NAMEFORMAT
+
+        class A(Entity):
+            using_options(shortnames=True)
+            name = Field(String(20))
+            links_to = ManyToMany('A')
+            is_linked_from = ManyToMany('A')
+            bs_ = ManyToMany('B')
+
+        class B(Entity):
+            using_options(shortnames=True)
+            name = Field(String(20))
+            as_ = ManyToMany('A')
+
+        setup_all(True)
+
+        a = A(name='a1', links_to=[A(name='a2')])
+
+        session.commit()
+        session.clear()
+
+        del A
+        del B
+
+        # do not drop the tables, that's the whole point!
+        cleanup_all()
+
+        # ...
+        elixir.options.M2MCOL_NAMEFORMAT = elixir.options.NEW_M2MCOL_NAMEFORMAT
+#        elixir.options.MIGRATION_TO_07_AID = True
+
+        class A(Entity):
+            using_options(shortnames=True)
+            name = Field(String(20))
+            links_to = ManyToMany('A', local_colname='a_id1')
+            is_linked_from = ManyToMany('A', local_colname='a_id2')
             bs_ = ManyToMany('B')
 
         class B(Entity):

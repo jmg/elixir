@@ -905,14 +905,34 @@ class ManyToMany(Relationship):
             if 'primaryjoin' not in self.kwargs or \
                'secondaryjoin' not in self.kwargs:
                 self._build_join_clauses()
+            assert self.inverse is None or self.inverse.table is None or \
+                   self.inverse.table is self.table
             return
 
         if self.inverse:
-            if self.inverse.table is not None:
-                self.table = self.inverse.table
-                self.primaryjoin_clauses = self.inverse.secondaryjoin_clauses
-                self.secondaryjoin_clauses = self.inverse.primaryjoin_clauses
+            inverse = self.inverse
+            if inverse.table is not None:
+                self.table = inverse.table
+                self.primaryjoin_clauses = inverse.secondaryjoin_clauses
+                self.secondaryjoin_clauses = inverse.primaryjoin_clauses
                 return
+
+            assert not inverse.user_tablename or not self.user_tablename or \
+                   inverse.user_tablename == self.user_tablename
+            assert not inverse.remote_colname or not self.local_colname or \
+                   inverse.remote_colname == self.local_colname
+            assert not inverse.local_colname or not self.remote_colname or \
+                   inverse.local_colname == self.remote_colname
+            assert not inverse.schema or not self.schema or \
+                   inverse.schema == self.schema
+            assert not inverse.table_kwargs or not self.table_kwargs or \
+                   inverse.table_kwargs == self.table_kwargs
+
+            self.user_tablename = inverse.user_tablename or self.user_tablename
+            self.local_colname = inverse.remote_colname or self.local_colname
+            self.remote_colname = inverse.local_colname or self.remote_colname
+            self.schema = inverse.schema or self.schema
+            self.local_colname = inverse.remote_colname or self.local_colname
 
         # compute table_kwargs
         complete_kwargs = options.options_defaults['table_options'].copy()
@@ -960,9 +980,15 @@ class ManyToMany(Relationship):
                 #XXX: use a different scheme for selfref (to not include the
                 #     table name twice)?
                 tablename = "%s__%s" % (target_part, source_part)
-                if options.MIGRATION_TO_07_AID and \
-                   e1_desc.tablename >= e2_desc.tablename:
-                    oldname = "%s__%s" % (source_part, target_part)
+            else:
+                tablename = "%s__%s" % (source_part, target_part)
+
+            if options.MIGRATION_TO_07_AID:
+                oldname = (self.inverse and
+                           e1_desc.tablename < e2_desc.tablename) and \
+                          "%s__%s" % (target_part, source_part) or \
+                          "%s__%s" % (source_part, target_part)
+                if oldname != tablename:
                     warnings.warn(
                         "The generated table name for the '%s' relationship "
                         "on the '%s' entity changed from '%s' (the name "
@@ -972,8 +998,6 @@ class ManyToMany(Relationship):
                         "relationship to force the old name: tablename='%s'!"
                         % (self.name, self.entity.__name__, oldname,
                            tablename, oldname))
-            else:
-                tablename = "%s__%s" % (source_part, target_part)
 
         if e1_desc.autoload:
             if not e2_desc.autoload:
@@ -1013,7 +1037,6 @@ class ManyToMany(Relationship):
 
                 fk_colnames = []
                 fk_refcols = []
-
                 if colnames:
                     assert len(colnames) == len(desc.primary_keys)
                 else:
@@ -1096,11 +1119,6 @@ class ManyToMany(Relationship):
     def _build_join_clauses(self):
         # In the case we have a self-reference, we need to build join clauses
         if self.entity is self.target:
-            #TODO: we should check if that information was defined on the
-            #inverse relationship. We have two options: either we force the
-            #definition on both sides, or we accept defining on one side only.
-            #In the later case, we still need to make the check as to not
-            #peusdo-randomly fail depending on initialization order.
             if not self.local_colname and not self.remote_colname:
                 raise Exception(
                     "Self-referential ManyToMany "
