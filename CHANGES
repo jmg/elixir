@@ -56,6 +56,9 @@ Changes:
   ones. Not very useful yet since most are expecting Column objects.
 - Default table_options (defined in options_defaults['table_options']) are now
   also used for ManyToMany tables (closes #94).
+- Provide our own Session.mapper equivalent to avoid SQLAlchemy 0.5.5+
+  deprecation warning. This mapper autosave object instances on __init__ unless
+  save_on_init=False is passed as a mapper argument (closes #92).
 
 Bug fixes:
 - Fixed Elixir to work with the future SQLAlchemy 0.6 (trunk as of 6377).

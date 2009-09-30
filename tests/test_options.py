@@ -116,8 +116,7 @@ class TestSessionOptions(object):
 
         class Person(Entity):
             using_options(session=None)
-            firstname = Field(String(30))
-            surname = Field(String(30))
+            name = Field(String(30))
 
         setup_all()
         create_all(engine)
@@ -125,8 +124,8 @@ class TestSessionOptions(object):
         Session = sessionmaker(bind=engine)
         session = Session()
 
-        homer = Person(firstname="Homer", surname='Simpson')
-        bart = Person(firstname="Bart", surname='Simpson')
+        homer = Person(name="Homer")
+        bart = Person(name="Bart")
 
         session.add(homer)
         session.add(bart)
@@ -135,7 +134,7 @@ class TestSessionOptions(object):
         bart.delete()
         session.commit()
 
-        assert session.query(Person).filter_by(firstname='Homer').one() is \
+        assert session.query(Person).filter_by(name='Homer').one() is \
                homer
         assert session.query(Person).count() == 1
 
@@ -145,18 +144,36 @@ class TestSessionOptions(object):
 
         class Person(Entity):
             using_options(session=Session)
-            firstname = Field(String(30))
-            surname = Field(String(30))
+            name = Field(String(30))
 
         setup_all()
         create_all(engine)
 
-        homer = Person(firstname="Homer", surname='Simpson')
-        bart = Person(firstname="Bart", surname='Simpson')
+        homer = Person(name="Homer")
+        bart = Person(name="Bart")
         Session.commit()
 
         assert Person.query.session is Session()
-        assert Person.query.filter_by(firstname='Homer').one() is homer
+        assert Person.query.filter_by(name='Homer').one() is homer
+
+    def test_scoped_session_no_save_on_init(self):
+        metadata.bind = 'sqlite://'
+
+        class Person(Entity):
+            using_mapper_options(save_on_init=False)
+            name = Field(String(30))
+
+        setup_all(True)
+
+        homer = Person(name="Homer")
+        bart = Person(name="Bart")
+        assert homer not in session
+        assert bart not in session
+        session.add(homer)
+        session.add(bart)
+        session.commit()
+
+        assert Person.query.filter_by(name='Homer').one() is homer
 
     def test_global_scoped_session(self):
         global __session__
@@ -166,20 +183,20 @@ class TestSessionOptions(object):
         __session__ = session
 
         class Person(Entity):
-            firstname = Field(String(30))
-            surname = Field(String(30))
+            name = Field(String(30))
 
         setup_all()
         create_all(engine)
 
-        homer = Person(firstname="Homer", surname='Simpson')
-        bart = Person(firstname="Bart", surname='Simpson')
+        homer = Person(name="Homer")
+        bart = Person(name="Bart")
         session.commit()
 
         assert Person.query.session is session()
-        assert Person.query.filter_by(firstname='Homer').one() is homer
+        assert Person.query.filter_by(name='Homer').one() is homer
 
         del __session__
+
 
 class TestTableOptions(object):
     def setup(self):

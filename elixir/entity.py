@@ -35,6 +35,19 @@ except ImportError:
 __doc_all__ = ['Entity', 'EntityMeta']
 
 
+def session_mapper_factory(scoped_session):
+    def session_mapper(cls, *args, **kwargs):
+        if kwargs.pop('save_on_init', True):
+            old_init = cls.__init__
+            def __init__(self, *args, **kwargs):
+                old_init(self, *args, **kwargs)
+                scoped_session.add(self)
+            cls.__init__ = __init__
+        cls.query = scoped_session.query_property()
+        return mapper(cls, *args, **kwargs)
+    return session_mapper
+
+
 class EntityDescriptor(object):
     '''
     EntityDescriptor describes fields and options needed for table creation.
@@ -440,8 +453,8 @@ class EntityDescriptor(object):
         if self.session is None:
             self.entity.mapper = mapper(self.entity, *args, **kwargs)
         elif isinstance(self.session, ScopedSession):
-            self.entity.mapper = self.session.mapper(self.entity,
-                                                     *args, **kwargs)
+            session_mapper = session_mapper_factory(self.session)
+            self.entity.mapper = session_mapper(self.entity, *args, **kwargs)
         else:
             raise Exception("Failed to map entity '%s' with its table or "
                             "selectable. You can only bind an Entity to a "
