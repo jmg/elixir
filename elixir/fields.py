@@ -28,15 +28,15 @@ Here is a quick example of how to use the object-oriented syntax.
 
 The Field class takes one mandatory argument, which is its type. Please refer
 to SQLAlchemy documentation for a list of `types supported by SQLAlchemy
-<http://www.sqlalchemy.org/docs/04/types.html>`_.
+<http://www.sqlalchemy.org/docs/05/reference/sqlalchemy/types.html>`_.
 
 Following that first mandatory argument, fields can take any number of
 optional keyword arguments. Please note that all the **arguments** that are
 **not specifically processed by Elixir**, as mentioned in the documentation
 below **are passed on to the SQLAlchemy ``Column`` object**. Please refer to
 the `SQLAlchemy Column object's documentation
-<http://www.sqlalchemy.org/docs/04/sqlalchemy_schema.html
-#docstrings_sqlalchemy.schema_Column>`_ for more details about other
+<http://www.sqlalchemy.org/docs/05/reference/sqlalchemy/schema.html
+#sqlalchemy.schema.Column>`_ for more details about other
 supported keyword arguments.
 
 The following Elixir-specific arguments are supported:

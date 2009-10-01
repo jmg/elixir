@@ -14,7 +14,8 @@ class TestThrough(object):
         cleanup_all(True)
 
     def test_rel_through(self):
-        # converted from http://www.sqlalchemy.org/docs/04/plugins.html#plugins_associationproxy
+        # converted from
+        # http://www.sqlalchemy.org/docs/05/reference/ext/associationproxy.html
         class User(Entity):
             has_field('name', String(64))
             has_many('user_keywords', of_kind='UserKeyword')

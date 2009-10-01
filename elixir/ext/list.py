@@ -1,12 +1,16 @@
 '''
 This extension is DEPRECATED. Please use the orderinglist SQLAlchemy
 extension instead.
+
 For details:
-http://www.sqlalchemy.org/docs/04/plugins.html#plugins_orderinglist
-http://www.sqlalchemy.org/docs/04/sqlalchemy_ext_orderinglist.html
+http://www.sqlalchemy.org/docs/05/reference/ext/orderinglist.html
 
 For an Elixir example:
-http://elixir.ematia.de/trac/browser/elixir/trunk/tests/test_o2m.py#L167
+http://elixir.ematia.de/trac/wiki/Recipes/UsingEntityForOrderedList
+or
+http://elixir.ematia.de/trac/browser/elixir/0.7.0/tests/test_o2m.py#L155
+
+
 
 An ordered-list plugin for Elixir to help you make an entity be able to be
 managed in a list-like way. Much inspiration comes from the Ruby on Rails

@@ -192,8 +192,8 @@ class ColumnProperty(GenericProperty):
                                    deferred=True)
 
     Please look at the `corresponding SQLAlchemy
-    documentation <http://www.sqlalchemy.org/docs/04/mappers.html
-    #advdatamapping_mapper_expressions>`_ for details.
+    documentation <http://www.sqlalchemy.org/docs/05/mappers.html
+    #sql-expressions-as-mapped-attributes>`_ for details.
     '''
 
     def evaluate_property(self, prop):

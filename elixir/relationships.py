@@ -19,8 +19,8 @@ for a list of their specific keyword arguments. At this point, we'll just note
 that all the arguments that are not specifically processed by Elixir, as
 mentioned in the documentation below are passed on to the SQLAlchemy
 ``relation`` function. So, please refer to the `SQLAlchemy relation function's
-documentation <http://www.sqlalchemy.org/docs/04/sqlalchemy_orm.html
-#docstrings_sqlalchemy.orm_modfunc_relation>`_ for further detail about which
+documentation <http://www.sqlalchemy.org/docs/05/reference/orm/mapping.html
+#sqlalchemy.orm.relation>`_ for further detail about which
 keyword arguments are supported.
 
 You should keep in mind that the following

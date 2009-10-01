@@ -30,9 +30,9 @@ The list of supported arguments are as follows:
 |                     | ``multi``. Defaults to ``single``.                    |
 |                     | Note that polymorphic concrete inheritance is         |
 |                     | currently not implemented. See:                       |
-|                     | http://www.sqlalchemy.org/docs/04/mappers.html        |
-|                     | #advdatamapping_mapper_inheritance for an explanation |
-|                     | of the different kinds of inheritances.               |
+|                     | http://www.sqlalchemy.org/docs/05/mappers.html        |
+|                     | #mapping-class-inheritance-hierarchies for an         |
+|                     | explanation of the different kinds of inheritances.   |
 +---------------------+-------------------------------------------------------+
 | ``polymorphic``     | Whether the inheritance should be polymorphic or not. |
 |                     | Defaults to ``True``. The column used to store the    |
@@ -145,11 +145,12 @@ directly to the underlying SQLAlchemy Table object (both non-keyword arguments
 and keyword arguments) without any processing.
 
 For further information, please refer to the `SQLAlchemy table's documentation
-<http://www.sqlalchemy.org/docs/04/sqlalchemy_schema.html
-#docstrings_sqlalchemy.schema_Table>`_.
+<http://www.sqlalchemy.org/docs/05/reference/sqlalchemy/schema.html
+#sqlalchemy.schema.Table>`_.
 
 You might also be interested in the section about `constraints
-<http://www.sqlalchemy.org/docs/04/metadata.html#metadata_constraints>`_.
+<http://www.sqlalchemy.org/docs/05/metadata.html
+#defining-constraints-and-indexes>`_.
 
 `using_mapper_options`
 ----------------------
@@ -162,8 +163,8 @@ without any processing.
 
 For further information, please refer to the `SQLAlchemy mapper
 function's documentation
-<http://www.sqlalchemy.org/docs/04/sqlalchemy_orm.html
-#docstrings_sqlalchemy.orm_modfunc_mapper>`_.
+<http://www.sqlalchemy.org/docs/05/reference/orm/mapping.html
+#sqlalchemy.orm.mapper>`_.
 
 `using_options_defaults`
 ------------------------
