@@ -865,7 +865,7 @@ class ManyToMany(Relationship):
                 "options.M2MCOL_NAMEFORMAT if you want a custom format for "
                 "all ManyToMany tables", DeprecationWarning, stacklevel=3)
         self.column_format = column_format or options.M2MCOL_NAMEFORMAT
-        if not callable(self.column_format):
+        if not hasattr(self.column_format, '__call__'):
             # we need to store the format in a variable so that the
             # closure of the lambda is correct
             format = self.column_format
