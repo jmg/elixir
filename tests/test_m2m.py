@@ -495,8 +495,7 @@ class TestManyToMany(object):
         assert b in a.bs_
 
     def test_manual_table_manual_joins(self):
-        from sqlalchemy import Table, Column, ForeignKey, \
-                               ForeignKeyConstraint, and_
+        from sqlalchemy import Table, Column, and_
 
         a_b = Table('a_b', metadata,
                     Column('a_key1', Integer),

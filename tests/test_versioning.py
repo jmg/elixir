@@ -1,6 +1,6 @@
 from elixir import *
 from elixir.ext.versioned import acts_as_versioned
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import time
 

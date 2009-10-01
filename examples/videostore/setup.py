@@ -7,7 +7,7 @@ execfile(os.path.join("videostore", "release.py"))
 setup(
     name="videostore",
     version=version,
-    
+
     # uncomment the following lines if you fill them out in release.py
     #description=description,
     #author=author,
@@ -15,10 +15,10 @@ setup(
     #url=url,
     #download_url=download_url,
     #license=license,
-    
+
     install_requires = [
         "TurboGears >= 1.0",
-        "SQLAlchemy", 
+        "SQLAlchemy",
     ],
     scripts = ["start-videostore.py"],
     zip_safe=False,
@@ -28,19 +28,19 @@ setup(
     keywords = [
         # Use keywords if you'll be adding your package to the
         # Python Cheeseshop
-        
+
         # if this has widgets, uncomment the next line
         # 'turbogears.widgets',
-        
+
         # if this has a tg-admin command, uncomment the next line
         # 'turbogears.command',
-        
+
         # if this has identity providers, uncomment the next line
         # 'turbogears.identity.provider',
-    
+
         # If this is a template plugin, uncomment the next line
         # 'python.templating.engines',
-        
+
         # If this is a full application, uncomment the next line
         # 'turbogears.app',
     ],
@@ -53,11 +53,11 @@ setup(
         # if this is an application that you'll distribute through
         # the Cheeseshop, uncomment the next line
         # 'Framework :: TurboGears :: Applications',
-        
+
         # if this is a package that includes widgets that you'll distribute
         # through the Cheeseshop, uncomment the next line
         # 'Framework :: TurboGears :: Widgets',
     ],
     test_suite = 'nose.collector',
     )
-    
+

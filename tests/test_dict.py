@@ -2,7 +2,6 @@
     test the deep-set functionality
 """
 
-import sqlalchemy as sa
 from elixir import *
 
 def setup():

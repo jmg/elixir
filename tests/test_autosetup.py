@@ -3,7 +3,6 @@ Autosetup tests. Test that all setup triggers actually work.
 """
 
 from sqlalchemy import Table
-from sqlalchemy.orm import create_session
 from elixir import *
 import elixir
 

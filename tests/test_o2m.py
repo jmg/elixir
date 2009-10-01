@@ -3,7 +3,7 @@ test one to many relationships
 """
 
 from elixir import *
-from sqlalchemy import and_, ForeignKey
+from sqlalchemy import and_
 from sqlalchemy.ext.orderinglist import ordering_list
 
 def setup():
