@@ -1,8 +1,8 @@
-0.7.0 - 2009-09-xx
+0.7.0 - 2009-10-01
 
 Please see http://elixir.ematia.de/trac/wiki/Migrate06to07 for detailed
 upgrade notes. If you are upgrading an application with existing data from an
-earlier version of Elixir, you are VERY STRONGLY ADVISED to read them!
+earlier version of Elixir, you are STRONGLY ADVISED to read them!
 
 New features:
 - Added a new statement 'using_options_defaults' which can be used
