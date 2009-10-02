@@ -38,7 +38,7 @@ from elixir.statements import Statement
 from elixir.collection import EntityCollection
 
 
-__version__ = '0.7.0'
+__version__ = '0.8.0dev'
 
 __all__ = ['Entity', 'EntityBase', 'EntityMeta', 'EntityCollection',
            'entities',
