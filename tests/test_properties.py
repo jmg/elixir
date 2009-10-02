@@ -38,7 +38,7 @@ class TestSpecialProperties(object):
         t2 = Tag(score1=10.0, score2=2.0)
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         for tag in Tag.query.all():
             assert tag.score == tag.score1 * tag.score2
@@ -56,7 +56,7 @@ class TestSpecialProperties(object):
         t2 = Tag(score1=10.0, score2=2.0)
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         for tag in Tag.query.all():
             assert tag.score == tag.score1 * tag.score2
@@ -98,7 +98,7 @@ class TestSpecialProperties(object):
         c1 = Category(name='dummy', users=[u1, u2])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         category = Category.query.one()
         assert category.score == 85
@@ -121,7 +121,7 @@ class TestSpecialProperties(object):
         t1 = Tag(score1=10.0, score2=2.0)
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         for tag in Tag.query.all():
             assert tag.score == tag.score1 * tag.score2
@@ -165,7 +165,7 @@ class TestSpecialProperties(object):
         assert Person.email_values == ['x@y.com', 'x@z.com']
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         # test the synonym itself (ie querying)
         p = Person.get_by(email='x@z.com')
@@ -194,7 +194,7 @@ class TestSpecialProperties(object):
             password = 'unencrypted'
         )
 
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         p = Person.get_by(name='Alexandre da Silva')
         assert p.primary_email == 'x@y.com'
@@ -203,7 +203,7 @@ class TestSpecialProperties(object):
         assert u.email_address == 'y@z.com'
 
         u.email_address = 'new@z.com'
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         p = Person.get_by(name='Johann Felipe Voigt')
         assert p.primary_email == 'new@z.com'
@@ -218,7 +218,7 @@ class TestSpecialProperties(object):
 
         a1 = A(name='a1')
 
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         a = A.query.one()
 

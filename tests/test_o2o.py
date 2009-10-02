@@ -21,7 +21,7 @@ class TestOneToOne(object):
         b1 = B(name='b1', a=A(name='a1'))
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         b = B.query.one()
         a = b.a

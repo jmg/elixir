@@ -41,7 +41,7 @@ class TestSQLAlchemyToElixir(object):
 
         session.add(b1)
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         b = session.query(B).one()
 
@@ -79,7 +79,7 @@ class TestElixirToSQLAlchemy(object):
 
         session.add(b1)
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         b = B.query.one()
 
@@ -113,7 +113,7 @@ class TestElixirToSQLAlchemy(object):
         b1 = B(name='b1', a=a1)
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         b = B.query.one()
 
@@ -142,7 +142,7 @@ class TestElixirToSQLAlchemy(object):
 #        b1 = B(name='b1', many_a=[a1])
 #
 #        session.commit()
-#        session.clear()
+#        session.expunge_all()
 #
 #        b = B.query.one()
 #

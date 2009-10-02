@@ -73,7 +73,7 @@ class TestOrders(object):
         user.orders.append(neworder)
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         # Queries using the added helpers
         people = Person.select_by_addresses(city='Cupertino')
@@ -109,4 +109,4 @@ class TestOrders(object):
         art = Article(title='Hope Soars')
 
         session.commit()
-        session.clear()
+        session.expunge_all()

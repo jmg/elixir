@@ -3,8 +3,6 @@ This module provides the ``Entity`` base class, as well as its metaclass
 ``EntityMeta``.
 '''
 
-from py23compat import sorted
-
 import sys
 import inspect
 import types
@@ -498,12 +496,7 @@ class EntityDescriptor(object):
         if col.primary_key:
             self.has_pk = True
 
-        # Autosetup triggers shouldn't be active anymore at this point, so we
-        # can theoretically access the entity's table safely. But the problem
-        # is that if, for some reason, the trigger removal phase didn't
-        # happen, we'll get an infinite loop. So we just make sure we don't
-        # get one in any case.
-        table = type.__getattribute__(self.entity, 'table')
+        table = self.entity.table
         if table is not None:
             if check_duplicate and col.key in table.columns.keys():
                 raise Exception("Column '%s' already exist in table '%s' ! " %
@@ -690,43 +683,6 @@ class FakeTable(object):
     fullname = property(fullname)
 
 
-class TriggerProxy(object):
-    """
-    A class that serves as a "trigger" ; accessing its attributes runs
-    the setup_all function.
-
-    Note that the `setup_all` is called on each access of the attribute.
-    """
-
-    def __init__(self, class_, attrname):
-        self.class_ = class_
-        self.attrname = attrname
-
-    def __getattr__(self, name):
-        elixir.setup_all()
-        #FIXME: it's possible to get an infinite loop here if setup_all doesn't
-        #remove the triggers for this entity. This can happen if the entity is
-        #not in the `entities` list for some reason.
-        proxied_attr = getattr(self.class_, self.attrname)
-        return getattr(proxied_attr, name)
-
-    def __repr__(self):
-        proxied_attr = getattr(self.class_, self.attrname)
-        return "<TriggerProxy (%s)>" % (self.class_.__name__)
-
-
-class TriggerAttribute(object):
-
-    def __init__(self, attrname):
-        self.attrname = attrname
-
-    def __get__(self, instance, owner):
-        #FIXME: it's possible to get an infinite loop here if setup_all doesn't
-        #remove the triggers for this entity. This can happen if the entity is
-        #not in the `entities` list for some reason.
-        elixir.setup_all()
-        return getattr(owner, self.attrname)
-
 def is_entity(cls):
     """
     Scan the bases classes of `cls` to see if any is an instance of
@@ -773,19 +729,11 @@ def instrument_class(cls):
     for name, prop in sorted_props:
         prop.attach(cls, name)
 
-    # Process mutators. Needed before _install_autosetup_triggers so that
-    # we know of the metadata (and whether the entity is autosetuped or not).
+    # Process mutators
     process_mutators(cls)
 
     # setup misc options here (like tablename etc.)
     desc.setup_options()
-
-    # create trigger proxies
-    # TODO: support entity_name... It makes sense only for autoloaded
-    # tables for now, and would make more sense if we support "external"
-    # tables
-    if desc.autosetup:
-        _install_autosetup_triggers(cls)
 
 
 class EntityMeta(type):
@@ -807,11 +755,6 @@ class EntityMeta(type):
 
         instrument_class(cls)
 
-    def __call__(cls, *args, **kwargs):
-        if cls._descriptor.autosetup and not hasattr(cls, '_setup_done'):
-            elixir.setup_all()
-        return type.__call__(cls, *args, **kwargs)
-
     def __setattr__(cls, key, value):
         if isinstance(value, Property):
             if hasattr(cls, '_setup_done'):
@@ -821,84 +764,6 @@ class EntityMeta(type):
                 value.attach(cls, key)
         else:
             type.__setattr__(cls, key, value)
-
-
-def _install_autosetup_triggers(cls, entity_name=None):
-    #TODO: move as much as possible of those "_private" values to the
-    # descriptor, so that we don't mess the initial class.
-    warnings.warn("The 'autosetup' option on entities is deprecated. "
-        "Please call setup_all() manually after all your entities have been "
-        "declared.", DeprecationWarning, stacklevel=4)
-    tablename = cls._descriptor.tablename
-    schema = cls._descriptor.table_options.get('schema', None)
-    cls._table_key = sqlalchemy.schema._get_table_key(tablename, schema)
-
-    table_proxy = TriggerProxy(cls, 'table')
-
-    md = cls._descriptor.metadata
-    md.tables[cls._table_key] = table_proxy
-
-    # We need to monkeypatch the metadata's table iterator method because
-    # otherwise it doesn't work if the setup is triggered by the
-    # metadata.create_all().
-    # This is because ManyToMany relationships add tables AFTER the list
-    # of tables that are going to be created is "computed"
-    # (metadata.tables.values()).
-    # see:
-    # - table_iterator method in MetaData class in sqlalchemy/schema.py
-    # - visit_metadata method in sqlalchemy/ansisql.py
-    if SA05orlater:
-        warnings.warn(
-            "The automatic setup via metadata.create_all() through "
-            "the autosetup option doesn't work with SQLAlchemy 0.5 and later!")
-    else:
-        # SA 0.6 does not use table_iterator anymore (it was already deprecated
-        # since SA 0.5.0)
-        original_table_iterator = md.table_iterator
-        if not hasattr(original_table_iterator,
-                       '_non_elixir_patched_iterator'):
-            def table_iterator(*args, **kwargs):
-                elixir.setup_all()
-                return original_table_iterator(*args, **kwargs)
-            table_iterator.__doc__ = original_table_iterator.__doc__
-            table_iterator._non_elixir_patched_iterator = \
-                original_table_iterator
-            md.table_iterator = table_iterator
-
-    #TODO: we might want to add all columns that will be available as
-    #attributes on the class itself (in SA 0.4+). This is a pretty
-    #rare usecase, as people will normally hit the query attribute before the
-    #column attributes, but I've seen people hitting this problem...
-    for name in ('c', 'table', 'mapper', 'query'):
-        setattr(cls, name, TriggerAttribute(name))
-
-    cls._has_triggers = True
-
-
-def _cleanup_autosetup_triggers(cls):
-    if not hasattr(cls, '_has_triggers'):
-        return
-
-    for name in ('table', 'mapper'):
-        setattr(cls, name, None)
-
-    for name in ('c', 'query'):
-        delattr(cls, name)
-
-    desc = cls._descriptor
-    md = desc.metadata
-
-    # the fake table could have already been removed (namely in a
-    # single table inheritance scenario)
-    md.tables.pop(cls._table_key, None)
-
-    # restore original table iterator if not done already
-    if not SA05orlater:
-        if hasattr(md.table_iterator, '_non_elixir_patched_iterator'):
-            md.table_iterator = \
-                md.table_iterator._non_elixir_patched_iterator
-
-    del cls._has_triggers
 
 
 def setup_entities(entities):
@@ -911,9 +776,6 @@ def setup_entities(entities):
         for name, attr in entity.__dict__.items():
             if isinstance(attr, Property):
                 delattr(entity, name)
-
-        if entity._descriptor.autosetup:
-            _cleanup_autosetup_triggers(entity)
 
     for method_name in (
             'setup_autoload_table', 'create_pk_cols', 'setup_relkeys',
@@ -939,8 +801,7 @@ def setup_entities(entities):
 def cleanup_entities(entities):
     """
     Try to revert back the list of entities passed as argument to the state
-    they had just before their setup phase. It will not work entirely for
-    autosetup entities as we need to remove the autosetup triggers.
+    they had just before their setup phase.
 
     As of now, this function is *not* functional in that it doesn't revert to
     the exact same state the entities were before setup. For example, the
@@ -952,8 +813,6 @@ def cleanup_entities(entities):
     """
     for entity in entities:
         desc = entity._descriptor
-        if desc.autosetup:
-            _cleanup_autosetup_triggers(entity)
 
         if hasattr(entity, '_setup_done'):
             del entity._setup_done

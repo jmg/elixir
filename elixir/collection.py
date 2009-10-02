@@ -3,8 +3,6 @@ Default entity collection implementation
 '''
 import sys
 
-from elixir.py23compat import rsplit
-
 # default entity collection
 class EntityCollection(list):
     def __init__(self, entities=None):
@@ -32,7 +30,7 @@ class EntityCollection(list):
         Resolve a key to an Entity. The optional `entity` argument is the
         "source" entity when resolving relationship targets.
         '''
-        path = rsplit(key, '.', 1)
+        path = key.rsplit('.', 1)
         classname = path.pop()
         if path:
             # Do we have a fully qualified entity name?

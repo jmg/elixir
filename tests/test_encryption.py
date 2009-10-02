@@ -52,7 +52,7 @@ class TestEncryption(object):
         jonathan.pets = [winston, nelson]
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         p = Person.get_by(name='Jonathan LaCour')
         assert p.password == 's3cr3tw0RD'
@@ -65,7 +65,7 @@ class TestEncryption(object):
         p.password = 'N3wpAzzw0rd'
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         p = Person.get_by(name='Jonathan LaCour')
         assert p.password == 'N3wpAzzw0rd'
@@ -77,7 +77,7 @@ class TestEncryption(object):
             ssn='123-45-6789'
         )
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         p = Person.get_by(name='Jonathan LaCour')
         assert p.password == 's3cr3tw0RD'
@@ -93,7 +93,7 @@ class TestEncryption(object):
         assert p.password == 'r\\x9d\\xa8\\xb4\\x8d|\\xffp\\xf5\\x0e'
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         p = Person.get_by(name='Jonathan LaCour')
         assert p.password == 's3cr3tw0RD'

@@ -37,7 +37,7 @@ class TestPackages(object):
         b1 = B(name='b1', many_a=[A(name='a1')])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         a = A.query.one()
 

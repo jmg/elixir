@@ -24,7 +24,7 @@ class TestManyToOne(object):
         b1 = B(name='b1', a=A(name='a1'))
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         b = B.query.one()
 
@@ -45,7 +45,7 @@ class TestManyToOne(object):
         b1 = B(a=A(testx=1))
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         b = B.query.one()
 
@@ -71,7 +71,7 @@ class TestManyToOne(object):
         session.commit()
         b = B(a=a)
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         assert B.query.first().a == A.query.first()
 
@@ -93,7 +93,7 @@ class TestManyToOne(object):
         slh = Animal(name="Santa's Little Helper", owner=homer)
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         homer = Person.get_by(name="Homer")
         animals = Animal.query.all()
@@ -190,7 +190,7 @@ class TestManyToOne(object):
         b2 = B(name="b2", a_rel1=a1, a_rel2=a1)
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         a1 = A.get_by(name="a1")
         a2 = A.get_by(name="a2")
@@ -218,7 +218,7 @@ class TestManyToOne(object):
         b1 = B(name='b1', a=A(name='a1'))
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         b = B.query.one()
 
@@ -238,6 +238,6 @@ class TestManyToOne(object):
         rudolph = Animal(name="Rudolph", owner=santa)
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         assert "Claus" in Animal.get_by(name="Rudolph").owner.name

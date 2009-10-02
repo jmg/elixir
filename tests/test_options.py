@@ -25,19 +25,19 @@ class TestOptions(object):
 
         p1 = Person(name='Daniel')
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         person = Person.query.first()
         person.name = 'Gaetan'
         session.commit()
         assert person.row_version == 2
-        session.clear()
+        session.expunge_all()
 
         person = Person.query.first()
         person.name = 'Jonathan'
         session.commit()
         assert person.row_version == 3
-        session.clear()
+        session.expunge_all()
 
         # check that a concurrent modification raises exception
         p1 = Person.query.first()

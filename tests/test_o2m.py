@@ -31,7 +31,7 @@ class TestOneToMany(object):
         assert b1 in a1.bs
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         b = B.query.one()
         a = b.a
@@ -57,7 +57,7 @@ class TestOneToMany(object):
         lisa.father = homer
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         p = Person.get_by(name="Homer")
 
@@ -87,7 +87,7 @@ class TestOneToMany(object):
         root.children.append(TreeNode(name='node3', root=root))
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         root = TreeNode.get_by(name='rootnode')
         sub2 = TreeNode.get_by(name='subnode2')
@@ -117,7 +117,7 @@ class TestOneToMany(object):
                                        city=u"Boston")])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         user = User.get(1)
         assert len(user.addresses) == 2
@@ -145,7 +145,7 @@ class TestOneToMany(object):
                                        city=u"Boston")])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         user = User.get(1)
         assert len(user.addresses) == 2
@@ -172,7 +172,7 @@ class TestOneToMany(object):
                             Blurb(text=u'two')])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         user = User.get(1)
         assert len(user.blurbs) == 3
@@ -196,7 +196,7 @@ class TestOneToMany(object):
 #        a1 = A(name='a1', bs=[B(name='b1')])
 #
 #        session.commit()
-#        session.clear()
+#        session.expunge_all()
 #
 #        b = B.query.one()
 #
@@ -220,7 +220,7 @@ class TestOneToMany(object):
         assert b1 in a1.bs
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         b = B.query.one()
         a = b.a
@@ -243,7 +243,7 @@ class TestOneToMany(object):
         rudolph = Animal(name="Rudolph", owner=santa)
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         santa = Person.get_by(name="Santa Claus")
 

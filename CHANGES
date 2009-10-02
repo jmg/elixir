@@ -1,3 +1,10 @@
+0.8.0
+
+Changes:
+Dropped support for python 2.3, SQLAlchemy 0.4 and deprecated stuff from Elixir
+0.7
+
+
 0.7.0 - 2009-10-01
 
 Please see http://elixir.ematia.de/trac/wiki/Migrate06to07 for detailed

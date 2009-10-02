@@ -47,7 +47,7 @@ class TestManyToMany(object):
         b1 = B(name='b1', as_=[A(name='a1')])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         a = A.query.one()
         b = B.query.one()
@@ -158,7 +158,7 @@ class TestManyToMany(object):
         a = A(name='a1', links_to=[A(name='a2')])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         del A
         del B
@@ -231,7 +231,7 @@ class TestManyToMany(object):
         a = A(name='a1', links_to=[A(name='a2')])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         del A
         del B
@@ -266,37 +266,6 @@ class TestManyToMany(object):
         assert not a2.links_to
         assert a2.is_linked_from == [a1]
 
-    def test_manual_column_format(self):
-        class A(Entity):
-            using_options(tablename='aye')
-            name = Field(String(60))
-            bs_ = ManyToMany('B', column_format='%(entity)s_%(key)s')
-
-        class B(Entity):
-            using_options(tablename='bee')
-            name = Field(String(60))
-            as_ = ManyToMany('A', column_format='%(entity)s_%(key)s')
-
-        setup_all(True)
-
-        # check column names were generated correctly
-        A.mapper.compile()
-        m2m_cols = A.bs_.property.secondary.columns
-        assert 'a_id' in m2m_cols
-        assert 'b_id' in m2m_cols
-
-        # check the relationships work as expected
-        b1 = B(name='b1', as_=[A(name='a1')])
-
-        session.commit()
-        session.clear()
-
-        a = A.query.one()
-        b = B.query.one()
-
-        assert a in b.as_
-        assert b in a.bs_
-
     def test_multi_pk_in_target(self):
         class A(Entity):
             key1 = Field(Integer, primary_key=True, autoincrement=False)
@@ -313,7 +282,7 @@ class TestManyToMany(object):
         b1 = B(name='b1', as_=[A(key1=10, key2='a1')])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         a = A.query.one()
         b = B.query.one()
@@ -338,7 +307,7 @@ class TestManyToMany(object):
                           rel2=[B(name='b3'), B(name='b4'), b1])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         a1 = A.query.one()
         b1 = B.get_by(name='b1')
@@ -362,7 +331,7 @@ class TestManyToMany(object):
         barney.friends.append(homer)
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         homer = Person.get_by(name="Homer")
         barney = Person.get_by(name="Barney")
@@ -389,7 +358,7 @@ class TestManyToMany(object):
         barney.friends.append(homer)
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         homer = Person.get_by(name="Homer")
         barney = Person.get_by(name="Barney")
@@ -418,7 +387,7 @@ class TestManyToMany(object):
         a3 = A(name='a3')
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         a1 = A.get_by(name='a1')
         a2 = A.get_by(name='a2')
@@ -451,7 +420,7 @@ class TestManyToMany(object):
         b1 = B(name='b1', as_=[A(key1=10, key2='a1')])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         a = A.query.one()
         b = B.query.one()
@@ -486,7 +455,7 @@ class TestManyToMany(object):
         b1 = B(name='b1', as_=[A(key1=10, key2='a1')])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         a = A.query.one()
         b = B.query.one()
@@ -523,7 +492,7 @@ class TestManyToMany(object):
         a1 = A(key1=10, key2='a1', bs_=[B(name='b1')])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         a = A.query.one()
         b = B.query.one()

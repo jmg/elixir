@@ -302,12 +302,6 @@ relationships accept the following optional (keyword) arguments:
 +--------------------+--------------------------------------------------------+
 | ``table_kwargs``   | A dictionary holding any other keyword argument you    |
 |                    | might want to pass to the underlying Table object.     |
-+--------------------+--------------------------------------------------------+| ``column_format``  | DEPRECATED. Specify an alternate format string for     |
-|                    | naming the                                             |
-|                    | columns in the mapping table.  The default value is    |
-|                    | defined in ``elixir.options.M2MCOL_NAMEFORMAT``.  You  |
-|                    | will be passed ``tablename``, ``key``, and ``entity``  |
-|                    | as arguments to the format string.                     |
 +--------------------+--------------------------------------------------------+
 
 
@@ -838,7 +832,6 @@ class ManyToMany(Relationship):
                  local_colname=None, remote_colname=None,
                  ondelete=None, onupdate=None,
                  table=None, schema=None,
-                 column_format=None,
                  filter=None,
                  table_kwargs=None,
                  *args, **kwargs):
@@ -857,14 +850,9 @@ class ManyToMany(Relationship):
         self.table = table
         self.schema = schema
 
-        if column_format:
-            warnings.warn("The 'column_format' argument on ManyToMany "
-                "relationships is deprecated. Please use the 'local_colname' "
-                "and/or 'remote_colname' arguments if you want custom "
-                "column names for this table only, or modify "
-                "options.M2MCOL_NAMEFORMAT if you want a custom format for "
-                "all ManyToMany tables", DeprecationWarning, stacklevel=3)
-        self.column_format = column_format or options.M2MCOL_NAMEFORMAT
+        #TODO: this can probably be simplified/moved elsewhere since the
+        #argument disappeared
+        self.column_format = options.M2MCOL_NAMEFORMAT
         if not hasattr(self.column_format, '__call__'):
             # we need to store the format in a variable so that the
             # closure of the lambda is correct
@@ -889,13 +877,6 @@ class ManyToMany(Relationship):
         self.secondaryjoin_clauses = []
 
         super(ManyToMany, self).__init__(of_kind, *args, **kwargs)
-
-    def get_table(self):
-        warnings.warn("The secondary_table attribute on ManyToMany objects is "
-                      "deprecated. You should rather use the table attribute.",
-                      DeprecationWarning, stacklevel=2)
-        return self.table
-    secondary_table = property(get_table)
 
     def match_type_of(self, other):
         return isinstance(other, ManyToMany)

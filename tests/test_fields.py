@@ -22,7 +22,7 @@ class TestFields(object):
         bart = Person(firstname="Bart", surname="Simpson")
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         p = Person.get_by(firstname="Homer")
 
@@ -39,7 +39,7 @@ class TestFields(object):
         bart = Person(firstname="Bart", surname="Simpson")
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         p = Person.get_by(firstname="Homer")
 

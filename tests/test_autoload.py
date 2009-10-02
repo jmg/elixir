@@ -61,7 +61,7 @@ class TestAutoload(object):
         lisa = Person(name="Lisa", pets=[snowball])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         homer = Person.get_by(name="Homer")
         lisa = Person.get_by(name="Lisa")
@@ -96,7 +96,7 @@ class TestAutoload(object):
         lisa.father = homer
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         p = Person.get_by(name="Homer")
 
@@ -142,7 +142,7 @@ class TestAutoload(object):
         simpson.persons.extend([bart, lisa])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         c = Category.get_by(name="Simpson")
         grampa = Person.get_by(name="Abe")
@@ -176,7 +176,7 @@ class TestAutoload(object):
         homer = Person(name="Homer", appreciate=[barney])
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         homer = Person.get_by(name="Homer")
         barney = Person.get_by(name="Barney")
@@ -250,7 +250,7 @@ class TestAutoload(object):
         a1 = A(id=1, name="a1")
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         res = A.query.all()
 

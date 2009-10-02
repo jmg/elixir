@@ -22,7 +22,7 @@ class TestOldMethods(object):
         a1 = A(name="a1")
 
         session.commit()
-        session.clear()
+        session.expunge_all()
 
         assert A.get(1).name == "a1"
 

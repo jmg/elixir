@@ -157,7 +157,7 @@ class TestDeepSet(object):
 class TestSetOnAliasedColumn(object):
     def setup(self):
         metadata.bind = 'sqlite://'
-        session.clear()
+        session.expunge_all()
 
     def teardown(self):
         cleanup_all(True)
@@ -173,5 +173,5 @@ class TestSetOnAliasedColumn(object):
 
         assert a.name == 'Aye'
         session.commit()
-        session.clear()
+        session.expunge_all()
 

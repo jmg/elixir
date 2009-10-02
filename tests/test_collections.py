@@ -20,7 +20,7 @@ class TestCollections(object):
     def test_no_collection(self):
         class Person(Entity):
             name = Field(String(30))
-            using_options(autosetup=False, tablename='person', collection=None)
+            using_options(tablename='person', collection=None)
 
         # global collection should be empty
         assert not elixir.entities

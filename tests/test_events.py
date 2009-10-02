@@ -78,15 +78,15 @@ class TestEvents(object):
         setup_all(True)
 
         d = Document(name='My Document')
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         d = Document.query.one()
         d.name = 'My Document Updated'
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         d = Document.query.one()
         d.delete()
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         def checkCount(name, value):
             dictCount = stateDict[name]
@@ -133,11 +133,11 @@ class TestEvents(object):
         setup_all(True)
 
         a1 = A(name='a1')
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         a = A.query.one()
         a.name = 'a1 updated'
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         assert a.update_count == 1
 

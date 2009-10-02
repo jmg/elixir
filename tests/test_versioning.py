@@ -61,7 +61,7 @@ class TestVersioning(object):
         monkeys = Movie(id=1, title='12 Monkeys',
                         description='draft description', director=gilliam)
         bruce = Actor(name='Bruce Willis', movies=[monkeys])
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         time.sleep(1)
         after_create = datetime.now()
@@ -73,7 +73,7 @@ class TestVersioning(object):
         assert movie.director.name == 'Terry Gilliam'
         assert movie.autoupd == 2, movie.autoupd
         movie.description = 'description two'
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         time.sleep(1)
         after_update_one = datetime.now()
@@ -81,12 +81,12 @@ class TestVersioning(object):
 
         movie = Movie.get_by(title='12 Monkeys')
         movie.description = 'description three'
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         # Edit the ignored field, this shouldn't change the version
         monkeys = Movie.get_by(title='12 Monkeys')
         monkeys.ignoreme = 1
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         time.sleep(1)
         after_update_two = datetime.now()
@@ -128,7 +128,7 @@ class TestVersioning(object):
         movie.description = 'description four'
 
         movie.revert_to(2)
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         movie = Movie.get_by(title='12 Monkeys')
         assert movie.version_no == 2, \
@@ -136,17 +136,17 @@ class TestVersioning(object):
         assert movie.description == 'description two', movie.description
 
         movie.description = "description 3"
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         movie = Movie.get_by(title='12 Monkeys')
         movie.description = "description 4"
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         movie = Movie.get_by(title='12 Monkeys')
         assert movie.version_no == 4
         movie.revert_to(movie.versions[-2])
         movie.description = "description 5"
-        session.commit(); session.clear()
+        session.commit(); session.expunge_all()
 
         movie = Movie.get_by(title='12 Monkeys')
         assert movie.version_no == 4
