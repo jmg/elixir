@@ -486,6 +486,7 @@ class Relationship(Property):
         self.property = relation(self.target, **kwargs)
         self.add_mapper_property(self.name, self.property)
 
+    @property
     def target(self):
         if not self._target:
             if isinstance(self.of_kind, basestring):
@@ -494,8 +495,8 @@ class Relationship(Property):
             else:
                 self._target = self.of_kind
         return self._target
-    target = property(target)
 
+    @property
     def inverse(self):
         if not hasattr(self, '_inverse'):
             if self.inverse_name:
@@ -524,7 +525,6 @@ class Relationship(Property):
                 inverse._inverse = self
 
         return self._inverse
-    inverse = property(inverse)
 
     def match_type_of(self, other):
         return False
@@ -605,12 +605,12 @@ class ManyToOne(Relationship):
     def match_type_of(self, other):
         return isinstance(other, (OneToMany, OneToOne))
 
+    @property
     def target_table(self):
         if isinstance(self.target, EntityMeta):
             return self.target._descriptor.table
         else:
             return class_mapper(self.target).local_table
-    target_table = property(target_table)
 
     def create_keys(self, pk):
         '''

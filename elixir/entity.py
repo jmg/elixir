@@ -24,11 +24,6 @@ from elixir import options
 from elixir.properties import Property
 
 DEBUG = False
-try:
-    from sqlalchemy.orm import EXT_PASS
-    SA05orlater = False
-except ImportError:
-    SA05orlater = True
 
 __doc_all__ = ['Entity', 'EntityMeta']
 
@@ -588,6 +583,7 @@ class EntityDescriptor(object):
     #------------------------
     # some useful properties
 
+    @property
     def table_fullname(self):
         '''
         Complete name of the table for the related entity.
@@ -598,8 +594,8 @@ class EntityDescriptor(object):
             return "%s.%s" % (schema, self.tablename)
         else:
             return self.tablename
-    table_fullname = property(table_fullname)
 
+    @property
     def columns(self):
         if self.entity.table is not None:
             return self.entity.table.columns
@@ -608,8 +604,8 @@ class EntityDescriptor(object):
             # return the parent entity's columns (for example for order_by
             # using a column defined in the parent.
             return self._columns
-    columns = property(columns)
 
+    @property
     def primary_keys(self):
         """
         Returns the list of primary key columns of the entity.
@@ -623,15 +619,15 @@ class EntityDescriptor(object):
                 return self.parent._descriptor.primary_keys
             else:
                 return [col for col in self.columns if col.primary_key]
-    primary_keys = property(primary_keys)
 
+    @property
     def table(self):
         if self.entity.table is not None:
             return self.entity.table
         else:
             return FakeTable(self)
-    table = property(table)
 
+    @property
     def primary_key_properties(self):
         """
         Returns the list of (mapper) properties corresponding to the primary
@@ -651,7 +647,6 @@ class EntityDescriptor(object):
             pk_cols = [c for c in mapper.mapped_table.c if c.primary_key]
             self._pk_props = [col_to_prop[c] for c in pk_cols]
         return self._pk_props
-    primary_key_properties = property(primary_key_properties)
 
 class FakePK(object):
     def __init__(self, descriptor):
@@ -948,9 +943,9 @@ class EntityBase(object):
 
     # This bunch of session methods, along with all the query methods below
     # only make sense when using a global/scoped/contextual session.
+    @property
     def _global_session(self):
         return self._descriptor.session.registry()
-    _global_session = property(_global_session)
 
     def merge(self, *args, **kwargs):
         return self._global_session.merge(self, *args, **kwargs)
@@ -969,6 +964,7 @@ class EntityBase(object):
         return self._global_session.save_or_update(self, *args, **kwargs)
 
     # query methods
+    @classmethod
     def get_by(cls, *args, **kwargs):
         """
         Returns the first instance of this class matching the given criteria.
@@ -976,8 +972,8 @@ class EntityBase(object):
         session.query(MyClass).filter_by(...).first()
         """
         return cls.query.filter_by(*args, **kwargs).first()
-    get_by = classmethod(get_by)
 
+    @classmethod
     def get(cls, *args, **kwargs):
         """
         Return the instance of this class based on the given identifier,
@@ -985,7 +981,6 @@ class EntityBase(object):
         session.query(MyClass).get(...)
         """
         return cls.query.get(*args, **kwargs)
-    get = classmethod(get)
 
 
 class Entity(EntityBase):
