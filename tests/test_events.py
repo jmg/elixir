@@ -3,15 +3,14 @@ from elixir.events import *
 
 from sqlalchemy import Table, Column
 
-stateDict = {}
-
-def teardown():
-    cleanup_all(True)
 
 class TestEvents(object):
-    def setup(self):
-        # reset counters
-        stateDict.update({
+    def teardown(self):
+        cleanup_all(True)
+
+    def test_events(self):
+        # initialize counters
+        stateDict = {
             'reconstructor_called': 0,
             'before_insert_called': 0,
             'after_insert_called': 0,
@@ -20,12 +19,8 @@ class TestEvents(object):
             'before_delete_called': 0,
             'after_delete_called': 0,
             'before_any_called': 0
-        })
+        }
 
-    def teardown(self):
-        cleanup_all()
-
-    def test_events(self):
         events = Table('events', metadata,
             Column('id', Integer, primary_key=True),
             Column('name', String(50))
@@ -144,6 +139,7 @@ class TestEvents(object):
             def post_update(self):
                 pass
 
+        metadata.bind = 'sqlite://'
         # we just check that setup does not trigger an exception
-        setup_all()
+        setup_all(True)
 
