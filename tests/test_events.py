@@ -6,7 +6,7 @@ from sqlalchemy import Table, Column
 stateDict = {}
 
 def teardown():
-    cleanup_all()
+    cleanup_all(True)
 
 class TestEvents(object):
     def setup(self):
@@ -39,40 +39,39 @@ class TestEvents(object):
         class Document(Entity):
             name = Field(String(50))
 
-            try:
-                def post_fetch(self):
-                    record_event('reconstructor_called')
-                post_fetch = reconstructor(post_fetch)
-            except:
-                pass
+            @reconstructor
+            def post_fetch(self):
+                record_event('reconstructor_called')
 
+            @before_insert
             def pre_insert(self):
                 record_event('before_insert_called')
-            pre_insert = before_insert(pre_insert)
 
+            @after_insert
             def post_insert(self):
                 record_event('after_insert_called')
-            post_insert = after_insert(post_insert)
 
+            @before_update
             def pre_update(self):
                 record_event('before_update_called')
-            pre_update = before_update(pre_update)
 
+            @after_update
             def post_update(self):
                 record_event('after_update_called')
-            post_update = after_update(post_update)
 
+            @before_delete
             def pre_delete(self):
                 record_event('before_delete_called')
-            pre_delete = before_delete(pre_delete)
 
+            @after_delete
             def post_delete(self):
                 record_event('after_delete_called')
-            post_delete = after_delete(post_delete)
 
+            @before_insert
+            @before_update
+            @before_delete
             def pre_any(self):
                 record_event('before_any_called')
-            pre_any = before_insert(before_update(before_delete(pre_any)))
 
         metadata.bind = 'sqlite://'
         setup_all(True)
@@ -107,24 +106,15 @@ class TestEvents(object):
         checkCount('before_delete_called', 1)
         checkCount('after_delete_called', 1)
         checkCount('before_any_called', 3)
-
-        reconstructor_available = False
-        try:
-            reconstructor(lambda: 0)
-            reconstructor_available = True
-        except:
-            pass
-
-        if reconstructor_available:
-            checkCount('reconstructor_called', 2)
+        checkCount('reconstructor_called', 2)
 
     def test_multiple_inheritance(self):
         class AddEventMethods(object):
             update_count = 0
 
+            @after_update
             def post_update(self):
                 self.update_count += 1
-            post_update = after_update(post_update)
 
         class A(Entity, AddEventMethods):
             name = Field(String(50))
@@ -150,9 +140,9 @@ class TestEvents(object):
             d = BrokenDescriptor()
             name = Field(String(50))
 
+            @after_update
             def post_update(self):
                 pass
-            post_update = after_update(post_update)
 
         # we just check that setup does not trigger an exception
         setup_all()
