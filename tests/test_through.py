@@ -38,7 +38,8 @@ class TestThrough(object):
         setup_all(True)
 
         user = User(name='log')
-        keywords = [Keyword('its_big'), Keyword('its_heavy'), Keyword('its_wood')]
+        keywords = [Keyword('its_big'), Keyword('its_heavy'),
+                    Keyword('its_wood')]
         for kw in keywords:
             user.keywords.append(kw)
 
