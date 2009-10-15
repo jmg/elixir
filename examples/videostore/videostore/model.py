@@ -28,18 +28,18 @@ class Actor(Entity):
     name = Field(Unicode(60))
     movies = ManyToMany('Movie', inverse='actors', tablename='movie_casting')
     using_options(tablename='actors')
-   
+
 
 #
 # identity model
-# 
+#
 
 class Visit(Entity):
     visit_key = Field(String(40), primary_key=True)
     created = Field(DateTime, required=True, default=datetime.now)
     expiry = Field(DateTime)
     using_options(tablename='visit')
-    
+
     @classmethod
     def lookup_visit(cls, visit_key):
         return Visit.get(visit_key)
@@ -67,7 +67,7 @@ class User(Entity):
     created = Field(DateTime, default=datetime.now)
     groups = ManyToMany('Group', inverse='users')
     using_options(tablename='tg_user')
-    
+
     @property
     def permissions(self):
         perms = set()

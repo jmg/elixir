@@ -6,8 +6,8 @@ import cherrypy
 
 def teardown_func():
     """Tests for apps using identity need to stop CP/TG after each test to
-    stop the VisitManager thread. See http://trac.turbogears.org/turbogears/ticket/1217
-    for details.
+    stop the VisitManager thread.
+    See http://trac.turbogears.org/turbogears/ticket/1217 for details.
     """
     turbogears.startup.stopTurboGears()
 
