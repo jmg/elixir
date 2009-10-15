@@ -147,16 +147,19 @@ class TestCustomBase(object):
         class OptionBase(object):
             __metaclass__ = EntityMeta
 
-            using_options_defaults(tablename=camel_to_underscore)
+            options_defaults = dict(tablename=camel_to_underscore)
+            using_options_defaults(identity=camel_to_underscore)
+            using_options_defaults(inheritance='multi')
 
         class TestA(OptionBase):
             name = Field(String(32))
 
-        class SuperTestB(OptionBase):
+        class SuperTestB(TestA):
             pass
 
         setup_all(True)
 
         assert TestA.table.name == 'test_a'
         assert SuperTestB.table.name == 'super_test_b'
+        assert TestA._descriptor.identity == 'test_a'
 

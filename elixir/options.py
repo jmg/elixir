@@ -230,8 +230,9 @@ def using_options_defaults_handler(entity, **kwargs):
         if kwarg not in valid_options:
             raise Exception("'%s' is not a valid option for Elixir entities."
                             % kwarg)
-
-    entity.options_defaults = kwargs
+    if not hasattr(entity, 'options_defaults'):
+        entity.options_defaults = {}
+    entity.options_defaults.update(kwargs)
 
 
 def using_options_handler(entity, *args, **kwargs):
@@ -244,7 +245,7 @@ def using_options_handler(entity, *args, **kwargs):
 
 
 def using_table_options_handler(entity, *args, **kwargs):
-    entity._descriptor.table_args = list(args)
+    entity._descriptor.table_args.extend(list(args))
     entity._descriptor.table_options.update(kwargs)
 
 

@@ -144,7 +144,8 @@ class EntityDescriptor(object):
             if 'polymorphic_identity' in self.mapper_options:
                 self.identity = self.mapper_options['polymorphic_identity']
             else:
-                #TODO: include module name
+                #TODO: include module name (We could have b.Account inherit
+                # from a.Account)
                 self.identity = entity.__name__.lower()
         elif 'polymorphic_identity' in self.mapper_options:
             raise Exception('You cannot use the "identity" option and the '

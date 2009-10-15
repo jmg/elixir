@@ -59,13 +59,11 @@ class TestOptions(object):
 
         setup_all(True)
 
-        raised = False
         try:
             MyEntity._descriptor.add_column(Column('name', String(30)))
+            assert False
         except Exception:
-            raised = True
-
-        assert raised
+            pass
 
     def test_allowcoloverride_true(self):
         class MyEntity(Entity):
@@ -203,10 +201,9 @@ class TestTableOptions(object):
         metadata.bind = 'sqlite://'
 
     def teardown(self):
-        cleanup_all()
+        cleanup_all(True)
 
     def test_unique_constraint(self):
-
         class Person(Entity):
             firstname = Field(String(30))
             surname = Field(String(30))
@@ -222,13 +219,39 @@ class TestTableOptions(object):
 
         homer2 = Person(firstname="Homer", surname='Simpson')
 
-        raised = False
         try:
             session.commit()
+            assert False
         except SQLError:
-            raised = True
+            pass
 
-        assert raised
+    def test_several_statements(self):
+        class A(Entity):
+            name1 = Field(String(30))
+            name2 = Field(String(30))
+            name3 = Field(String(30))
+            using_table_options(UniqueConstraint('name1', 'name2'))
+            using_table_options(UniqueConstraint('name2', 'name3'))
+
+        setup_all(True)
+
+        a000 = A(name1='0', name2='0', name3='0')
+        a010 = A(name1='0', name2='1', name3='0')
+        session.commit()
+
+        a001 = A(name1='0', name2='0', name3='1')
+        try:
+            session.commit()
+            assert False
+        except SQLError:
+            session.close()
+
+        a100 = A(name1='1', name2='0', name3='0')
+        try:
+            session.commit()
+            assert False
+        except SQLError:
+            session.close()
 
     def test_unique_constraint_many_to_one(self):
         class Author(Entity):

@@ -1,12 +1,16 @@
 0.8.0
 
+New features:
+
 Changes:
+- using_options_defaults and using_table_options statements can be used several
+  times within the same class (closes #70).
 - Dropped support for python 2.3, SQLAlchemy 0.4 and deprecated stuff from
   Elixir 0.7
 
 Bug fixes:
-- Fixed custom bases classes along side zope interfaces (closes #98, patch from
-  Valentin Lab)
+- Fixed custom base classes and versioned extension when used with zope
+  interfaces (closes #98, patch from Valentin Lab)
 
 0.7.0 - 2009-10-01
 
