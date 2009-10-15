@@ -55,6 +55,7 @@ from sqlalchemy.orm        import mapper, MapperExtension, EXT_CONTINUE, \
 from elixir                import Integer, DateTime
 from elixir.statements     import Statement
 from elixir.properties     import EntityBuilder
+from elixir.entity         import getmembers
 
 __all__ = ['acts_as_versioned', 'after_revert']
 __doc_all__ = []
@@ -176,7 +177,7 @@ class VersionedEntityBuilder(EntityBuilder):
 
         # look for events
         after_revert_events = []
-        for name, func in inspect.getmembers(entity, inspect.ismethod):
+        for name, func in getmembers(entity, inspect.ismethod):
             if getattr(func, '_elixir_after_revert', False):
                 after_revert_events.append(func)
 

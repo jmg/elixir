@@ -4,7 +4,6 @@ This module provides the ``Entity`` base class, as well as its metaclass
 '''
 
 import sys
-import inspect
 import types
 import warnings
 
@@ -318,23 +317,15 @@ class EntityDescriptor(object):
 
         # create a list of callbacks for each event
         methods = {}
-        entity = self.entity
 
-        # Note that we don't use inspect.getmembers because of
-        # http://bugs.python.org/issue1785
-        # See also http://elixir.ematia.de/trac/changeset/262
+        all_methods = getmembers(self.entity,
+                                 lambda a: isinstance(a, types.MethodType))
 
-        # dir returns the attributes of the class and *all its parents* listed
-        # alphabetically.
-        for key in dir(entity):
-            try:
-                value = getattr(entity, key)
-                if isinstance(value, types.MethodType):
-                    for event in getattr(value, '_elixir_events', []):
-                        event_methods = methods.setdefault(event, [])
-                        event_methods.append(value)
-            except AttributeError:
-                pass
+        for name, method in all_methods:
+            for event in getattr(method, '_elixir_events', []):
+                event_methods = methods.setdefault(event, [])
+                event_methods.append(method)
+
         if not methods:
             return
 
@@ -690,6 +681,21 @@ def is_entity(cls):
     return False
 
 
+# Note that we don't use inspect.getmembers because of
+# http://bugs.python.org/issue1785
+# See also http://elixir.ematia.de/trac/changeset/262
+def getmembers(object, predicate=None):
+    base_props = []
+    for key in dir(object):
+        try:
+            value = getattr(object, key)
+        except AttributeError:
+            continue
+        if not predicate or predicate(value):
+            base_props.append((key, value))
+    return base_props
+
+
 def instrument_class(cls):
     """
     Instrument a class as an Entity. This is usually done automatically through
@@ -709,8 +715,8 @@ def instrument_class(cls):
         # If so, copy the base entity properties ('Property' instances).
         # We use inspect.getmembers (instead of __dict__) so that we also
         # get the properties from the parents of the base_class if any.
-        base_props = inspect.getmembers(entity_base,
-                                        lambda a: isinstance(a, Property))
+        base_props = getmembers(entity_base,
+                                lambda a: isinstance(a, Property))
         base_props = [(name, copy(attr)) for name, attr in base_props]
     else:
         base_props = []

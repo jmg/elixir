@@ -35,6 +35,25 @@ class TestCustomBase(object):
 
         assert a.name == 'a1'
 
+    def test_bad_property(self):
+        # create a meta entity which mimick cases where dir() method
+        # will report attribute that can't be directly accessed.
+        # Note: this happens with zope.interface. See ticket #98.
+        class BrokenDescriptor(object):
+            def __get__(*args):
+                raise AttributeError
+
+        class MyEntity(EntityBase):
+            __metaclass__ = EntityMeta
+
+            d = BrokenDescriptor()
+
+        class A(MyEntity):
+            value = Field(Unicode)
+
+        # we just check that the instrument_class phases doesn't trigger an
+        # exception
+
     def test_inherit(self):
         class A(MyBase):
             name = Field(String(30))
