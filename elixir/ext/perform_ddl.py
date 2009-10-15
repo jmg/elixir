@@ -7,6 +7,7 @@ creation in SQL.
 
 The 'when' argument can be either 'before-create' or 'after-create'.
 The 'statement' argument can be one of:
+
 - a single string statement
 - a list of string statements, in which case, each of them will be executed
   in turn.

@@ -20,6 +20,7 @@ argument onto the statement, as follows:
         name = Field(Unicode(64))
 
         using_options(shortnames=True, order_by='name')
+
 The list of supported arguments are as follows:
 
 +---------------------+-------------------------------------------------------+
