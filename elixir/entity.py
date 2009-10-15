@@ -845,6 +845,7 @@ class EntityBase(object):
         for key, value in kwargs.iteritems():
             setattr(self, key, value)
 
+    @classmethod
     def update_or_create(cls, data, surrogate=True):
         pk_props = cls._descriptor.primary_key_properties
 
@@ -864,7 +865,6 @@ class EntityBase(object):
                 raise Exception("cannot create non surrogate without pk")
         record.from_dict(data)
         return record
-    update_or_create = classmethod(update_or_create)
 
     def from_dict(self, data):
         """
