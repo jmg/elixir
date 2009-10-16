@@ -644,19 +644,20 @@ class FakePK(object):
     def __init__(self, descriptor):
         self.descriptor = descriptor
 
+    @property
     def columns(self):
         return self.descriptor.primary_keys
-    columns = property(columns)
 
 class FakeTable(object):
     def __init__(self, descriptor):
         self.descriptor = descriptor
         self.primary_key = FakePK(descriptor)
 
+    @property
     def columns(self):
         return self.descriptor.columns
-    columns = property(columns)
 
+    @property
     def fullname(self):
         '''
         Complete name of the table for the related entity.
@@ -667,7 +668,6 @@ class FakeTable(object):
             return "%s.%s" % (schema, self.descriptor.tablename)
         else:
             return self.descriptor.tablename
-    fullname = property(fullname)
 
 
 def is_entity(cls):
