@@ -265,13 +265,11 @@ class EntityDescriptor(object):
                         if not col.primary_key:
                             self.add_column(col.copy())
 
-                    #FIXME: use the public equivalent of _get_colspec when
-                    # available (e.target_fullname)
                     for con in self.parent._descriptor.constraints:
                         self.add_constraint(
                             ForeignKeyConstraint(
                                 [e.parent.key for e in con.elements],
-                                [e._get_colspec() for e in con.elements],
+                                [e.target_fullname for e in con.elements],
                                 name=con.name, #TODO: modify it
                                 onupdate=con.onupdate, ondelete=con.ondelete,
                                 use_alter=con.use_alter))
