@@ -11,6 +11,8 @@ Changes:
 Bug fixes:
 - Fixed custom base classes and versioned extension when used with zope
   interfaces (closes #98, patch from Valentin Lab)
+- Fixed having relationships in custom base classes (based on patch
+  by Stéphane Klein)
 
 0.7.0 - 2009-10-01
 

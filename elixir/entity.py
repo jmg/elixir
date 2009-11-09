@@ -7,7 +7,7 @@ import sys
 import types
 import warnings
 
-from copy import copy
+from copy import deepcopy
 
 import sqlalchemy
 from sqlalchemy import Table, Column, Integer, desc, ForeignKey, and_, \
@@ -717,7 +717,7 @@ def instrument_class(cls):
         # get the properties from the parents of the base_class if any.
         base_props = getmembers(entity_base,
                                 lambda a: isinstance(a, Property))
-        base_props = [(name, copy(attr)) for name, attr in base_props]
+        base_props = [(name, deepcopy(attr)) for name, attr in base_props]
     else:
         base_props = []
 

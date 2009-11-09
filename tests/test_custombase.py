@@ -115,6 +115,24 @@ class TestCustomBase(object):
         assert 'common' in A.table.columns
         assert 'common' in B.table.columns
 
+    def test_base_with_relation(self):
+        class FieldBase(object):
+            __metaclass__ = EntityMeta
+
+            common = ManyToOne('A')
+
+        class A(FieldBase):
+            name = Field(String(32))
+
+        class B(FieldBase):
+            pass
+
+        setup_all(True)
+
+        assert 'name' in A.table.columns
+        assert 'common_id' in A.table.columns
+        assert 'common_id' in B.table.columns
+
     def test_base_with_fields_in_parent(self):
         class BaseParent(object):
             common1 = Field(String(32))
