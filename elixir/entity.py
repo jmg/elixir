@@ -47,14 +47,7 @@ class EntityDescriptor(object):
 
     def __init__(self, entity):
         self.entity = entity
-        # entity.__module__ is not always reliable (eg in mod_python)
-        self.module = sys.modules.get(entity.__module__)
-
-        self.builders = []
-
         self.parent = None
-        #XXX: use entity.__subclasses__ ?
-        self.children = []
 
         bases = []
         for base in entity.__bases__:
@@ -72,9 +65,16 @@ class EntityDescriptor(object):
                 else:
                     bases.append(base)
         self.bases = bases
-
-        if not is_entity(entity):
+        if not is_entity(entity) or is_abstract_entity(entity):
             return
+
+        # entity.__module__ is not always reliable (eg in mod_python)
+        self.module = sys.modules.get(entity.__module__)
+
+        self.builders = []
+
+        #XXX: use entity.__subclasses__ ?
+        self.children = []
 
         # used for multi-table inheritance
         self.join_condition = None
@@ -97,9 +97,7 @@ class EntityDescriptor(object):
         self.table_args = []
 
         # base class(es) options_defaults
-        base_defaults = {}
-        for base in self.bases:
-            base_defaults.update(getattr(base, 'options_defaults', {}))
+        options_defaults = self.options_defaults()
 
         complete_defaults = options.options_defaults.copy()
         complete_defaults.update({
@@ -110,7 +108,7 @@ class EntityDescriptor(object):
 
         # set default value for other options
         for key in options.valid_options:
-            value = base_defaults.get(key, complete_defaults[key])
+            value = options_defaults.get(key, complete_defaults[key])
             if isinstance(value, dict):
                 value = value.copy()
             setattr(self, key, value)
@@ -120,6 +118,13 @@ class EntityDescriptor(object):
             attr = '__%s__' % key
             if hasattr(self.module, attr):
                 setattr(self, key, getattr(self.module, attr))
+
+    def options_defaults(self):
+        base_defaults = {}
+        for base in self.bases:
+            base_defaults.update(base._descriptor.options_defaults())
+        base_defaults.update(getattr(self.entity, 'options_defaults', {}))
+        return base_defaults
 
     def setup_options(self):
         '''

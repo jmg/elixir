@@ -241,7 +241,10 @@ def using_options_defaults_handler(entity, **kwargs):
         if kwarg not in valid_options:
             raise Exception("'%s' is not a valid option for Elixir entities."
                             % kwarg)
-    if not hasattr(entity, 'options_defaults'):
+
+    # We use __dict__ instead of hasattr to not check its presence within the
+    # parent, and thus update the parent dict instead of creating a local dict.
+    if not entity.__dict__.get('options_defaults'):
         entity.options_defaults = {}
     entity.options_defaults.update(kwargs)
 

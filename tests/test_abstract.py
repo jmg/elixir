@@ -32,37 +32,43 @@ class TestAbstractInheritance(object):
     def test_inheritance(self):
         class AbstractPerson(Entity):
             using_options(abstract=True)
+            using_options_defaults(tablename=camel_to_underscore)
 
             firstname = Field(String(30))
             lastname = Field(String(30))
 
-        class AbstractEmployed(AbstractPerson):
+        class AbstractEmployee(AbstractPerson):
             using_options(abstract=True)
+            using_options_defaults(identity=camel_to_underscore)
 
             corporation = Field(String(30))
 
-        class Employed(AbstractEmployed):
+        class ConcreteEmployee(AbstractEmployee):
             service = Field(String(30))
 
-        class Citizen(AbstractPerson):
+        class ConcreteCitizen(AbstractPerson):
             country = Field(String(30))
 
         setup_all(True)
 
         assert not hasattr(AbstractPerson, 'table')
-        assert not hasattr(AbstractEmployed, 'table')
-        assert hasattr(Employed, 'table')
-        assert hasattr(Citizen, 'table')
+        assert not hasattr(AbstractEmployee, 'table')
+        assert hasattr(ConcreteEmployee, 'table')
+        assert hasattr(ConcreteCitizen, 'table')
+        assert ConcreteEmployee.table.name == 'concrete_employee'
+        assert ConcreteCitizen.table.name == 'concrete_citizen'
 
-        assert 'firstname' in Employed.table.columns
-        assert 'lastname' in Employed.table.columns
-        assert 'corporation' in Employed.table.columns
-        assert 'service' in Employed.table.columns
+        assert 'firstname' in ConcreteEmployee.table.columns
+        assert 'lastname' in ConcreteEmployee.table.columns
+        assert 'corporation' in ConcreteEmployee.table.columns
+        assert 'service' in ConcreteEmployee.table.columns
 
-        assert 'firstname' in Citizen.table.columns
-        assert 'lastname' in Citizen.table.columns
-        assert 'corporation' not in Citizen.table.columns
-        assert 'country' in Citizen.table.columns
+        assert 'firstname' in ConcreteCitizen.table.columns
+        assert 'lastname' in ConcreteCitizen.table.columns
+        assert 'corporation' not in ConcreteCitizen.table.columns
+        assert 'country' in ConcreteCitizen.table.columns
+        # test that the options_defaults do not leak into the parent base
+        assert ConcreteCitizen._descriptor.identity == 'concretecitizen'
 
     def test_simple_relation(self):
         class Page(Entity):
@@ -165,16 +171,18 @@ class TestAbstractInheritance(object):
         class Contact(AbstractContact):
             using_options(inheritance='multi')
 
-        class DatedContact(AbstractDated, Contact):
+        class MixedDatedContact(AbstractDated, Contact):
             using_options(inheritance='multi')
 
         setup_all(True)
 
-        assert 'created_date' in DatedContact.table.columns
-        assert 'modified_date' in DatedContact.table.columns
-        assert DatedContact._descriptor.identity == 'dated_contact'
-        assert DatedContact.table.name == 'dated_contact'
+        assert 'created_date' in MixedDatedContact.table.columns
+        assert 'modified_date' in MixedDatedContact.table.columns
+        assert MixedDatedContact._descriptor.identity == 'mixed_dated_contact'
+        assert MixedDatedContact.table.name == 'mixed_dated_contact'
 
-        contact1 = DatedContact(first_name=u"Guido", last_name=u"van Rossum")
+        contact1 = MixedDatedContact(first_name=u"Guido",
+                                     last_name=u"van Rossum")
         session.commit()
+
 
