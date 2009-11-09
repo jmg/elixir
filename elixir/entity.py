@@ -46,8 +46,6 @@ class EntityDescriptor(object):
     '''
 
     def __init__(self, entity):
-        entity.table = None
-        entity.mapper = None
 
         self.entity = entity
         # entity.__module__ is not always reliable (eg in mod_python)
@@ -700,6 +698,9 @@ def instrument_class(cls):
     Instrument a class as an Entity. This is usually done automatically through
     the EntityMeta metaclass.
     """
+    cls.table = None
+    cls.mapper = None
+
     # create the entity descriptor
     desc = cls._descriptor = EntityDescriptor(cls)
 
