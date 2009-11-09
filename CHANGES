@@ -1,6 +1,9 @@
 0.8.0
 
 New features:
+- Entities can now be declared "abstract" so that they do not create a table,
+  etc... This allows, among others, an entity to inherit from multiple abstract
+  classes (patch from Stéphane Klein, closes #89).
 
 Changes:
 - using_options_defaults and using_table_options statements can be used several

@@ -35,6 +35,14 @@ The list of supported arguments are as follows:
 |                     | #mapping-class-inheritance-hierarchies for an         |
 |                     | explanation of the different kinds of inheritances.   |
 +---------------------+-------------------------------------------------------+
+| ``abstract``        | Set 'abstract'=True to declare abstract entity.       |
+|                     | Abstract base classes are useful when you want to put |
+|                     | some common information into a number of other        |
+|                     | entities. Abstract entity will not be used to create  |
+|                     | any database table. Instead, when it is used as a base|
+|                     | class for other entity, its fields will be added to   |
+|                     | those of the child class.                             |
++---------------------+-------------------------------------------------------+
 | ``polymorphic``     | Whether the inheritance should be polymorphic or not. |
 |                     | Defaults to ``True``. The column used to store the    |
 |                     | type of each row is named "row_type" by default. You  |
@@ -164,8 +172,10 @@ default options on a custom base class. These will be used as the default value
 for options of all its subclasses. Note that any option not set within the
 using_options_defaults (nor specifically on a particular Entity) will use the
 global defaults, so you don't have to provide a default value for all options,
-but only those you want to change.
-
+but only those you want to change. Please also note that this statement does
+not work on normal entities, and the normal using_options statement does not
+work on base classes (because normal options do not and should not propagate to
+the children classes).
 '''
 
 from sqlalchemy import Integer, String
@@ -204,6 +214,7 @@ MIGRATION_TO_07_AID = False
 
 #
 options_defaults = dict(
+    abstract=False,
     inheritance='single',
     polymorphic=True,
     identity=None,

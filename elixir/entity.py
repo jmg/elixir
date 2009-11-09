@@ -18,7 +18,7 @@ from sqlalchemy.orm import MapperExtension, mapper, object_session, \
 from sqlalchemy.sql import ColumnCollection
 
 import elixir
-from elixir.statements import process_mutators
+from elixir.statements import process_mutators, MUTATORS
 from elixir import options
 from elixir.properties import Property
 
@@ -64,7 +64,10 @@ class EntityDescriptor(object):
 
         for base in entity.__bases__:
             if isinstance(base, EntityMeta):
-                if is_entity(base):
+                if (
+                    is_entity(base) and
+                    (not is_abstract_entity(base))
+                ):
                     if self.parent:
                         raise Exception(
                             '%s entity inherits from several entities, '
@@ -692,6 +695,17 @@ def getmembers(object, predicate=None):
             base_props.append((key, value))
     return base_props
 
+def is_abstract_entity(dict_or_cls):
+    if isinstance(dict_or_cls, dict):
+        mutators = dict_or_cls.get(MUTATORS, [])
+    else:
+        mutators = getattr(dict_or_cls, MUTATORS, [])
+        
+    for m in mutators:
+        if 'abstract' in m[2]:
+            return m[2]['abstract']
+
+    return False
 
 def instrument_class(cls):
     """
@@ -705,21 +719,20 @@ def instrument_class(cls):
     desc = cls._descriptor = EntityDescriptor(cls)
 
     # Determine whether this entity is a *direct* subclass of its base entity
-    entity_base = None
+    entity_bases = []
     for base in cls.__bases__:
         if isinstance(base, EntityMeta):
-            if not is_entity(base):
-                entity_base = base
-
-    if entity_base:
+            if not is_entity(base) or is_abstract_entity(base):
+                entity_bases.append(base)
+ 
+    base_props = []
+    if entity_bases:
         # If so, copy the base entity properties ('Property' instances).
         # We use inspect.getmembers (instead of __dict__) so that we also
         # get the properties from the parents of the base_class if any.
-        base_props = getmembers(entity_base,
-                                lambda a: isinstance(a, Property))
-        base_props = [(name, deepcopy(attr)) for name, attr in base_props]
-    else:
-        base_props = []
+        for base in entity_bases:
+            base_props += [(name, deepcopy(attr)) for name, attr in 
+                           getmembers(base, lambda a: isinstance(a, Property))]
 
     # Process attributes (using the assignment syntax), looking for
     # 'Property' instances and attaching them to this entity.
@@ -749,6 +762,10 @@ class EntityMeta(type):
         # not the base classes themselves. We don't want the base entities to
         # be registered in an entity collection, nor to have a table name and
         # so on.
+
+        if is_abstract_entity(dict_):
+            return
+
         if not is_entity(cls):
             if isinstance(cls, EntityMeta):
                 process_mutators(cls)
