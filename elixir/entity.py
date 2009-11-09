@@ -46,15 +46,9 @@ class EntityDescriptor(object):
     '''
 
     def __init__(self, entity):
-
         self.entity = entity
         # entity.__module__ is not always reliable (eg in mod_python)
         self.module = sys.modules.get(entity.__module__)
-
-        # used for multi-table inheritance
-        self.join_condition = None
-        self.has_pk = False
-        self._pk_col_done = False
 
         self.builders = []
 
@@ -62,12 +56,10 @@ class EntityDescriptor(object):
         #XXX: use entity.__subclasses__ ?
         self.children = []
 
+        bases = []
         for base in entity.__bases__:
             if isinstance(base, EntityMeta):
-                if (
-                    is_entity(base) and
-                    (not is_abstract_entity(base))
-                ):
+                if is_entity(base) and not is_abstract_entity(base):
                     if self.parent:
                         raise Exception(
                             '%s entity inherits from several entities, '
@@ -75,10 +67,19 @@ class EntityDescriptor(object):
                             % self.entity.__name__)
                     else:
                         self.parent = base
-                        self.base = base._descriptor.base
+                        bases.extend(base._descriptor.bases)
                         self.parent._descriptor.children.append(entity)
                 else:
-                    self.base = base
+                    bases.append(base)
+        self.bases = bases
+
+        if not is_entity(entity):
+            return
+
+        # used for multi-table inheritance
+        self.join_condition = None
+        self.has_pk = False
+        self._pk_col_done = False
 
         # columns and constraints waiting for a table to exist
         self._columns = ColumnCollection()
@@ -95,8 +96,11 @@ class EntityDescriptor(object):
         # set default value for options
         self.table_args = []
 
-        # base class options_defaults
-        base_defaults = getattr(self.base, 'options_defaults', {})
+        # base class(es) options_defaults
+        base_defaults = {}
+        for base in self.bases:
+            base_defaults.update(getattr(base, 'options_defaults', {}))
+
         complete_defaults = options.options_defaults.copy()
         complete_defaults.update({
             'metadata': elixir.metadata,
@@ -696,14 +700,11 @@ def getmembers(object, predicate=None):
     return base_props
 
 def is_abstract_entity(dict_or_cls):
-    if isinstance(dict_or_cls, dict):
-        mutators = dict_or_cls.get(MUTATORS, [])
-    else:
-        mutators = getattr(dict_or_cls, MUTATORS, [])
-        
-    for m in mutators:
-        if 'abstract' in m[2]:
-            return m[2]['abstract']
+    if not isinstance(dict_or_cls, dict):
+        dict_or_cls = dict_or_cls.__dict__
+    for mutator, args, kwargs in dict_or_cls.get(MUTATORS, []):
+        if 'abstract' in kwargs:
+            return kwargs['abstract']
 
     return False
 
@@ -712,26 +713,32 @@ def instrument_class(cls):
     Instrument a class as an Entity. This is usually done automatically through
     the EntityMeta metaclass.
     """
+    # Create the entity descriptor
+    #XXX: we might want to use a simplified descriptor for bases and abstract
+    # classes which only need "bases", "options_defaults" and "abstract"
+    desc = cls._descriptor = EntityDescriptor(cls)
+
+    # Process mutators
+    # We *do* want mutators to be processed for base/abstract classes
+    # (so that statements like using_options_defaults work).
+    process_mutators(cls)
+
+    # We do not want to do any more processing for base/abstract classes
+    # (Entity et al.).
+    if not is_entity(cls) or is_abstract_entity(cls):
+        return
+
     cls.table = None
     cls.mapper = None
 
-    # create the entity descriptor
-    desc = cls._descriptor = EntityDescriptor(cls)
-
-    # Determine whether this entity is a *direct* subclass of its base entity
-    entity_bases = []
-    for base in cls.__bases__:
-        if isinstance(base, EntityMeta):
-            if not is_entity(base) or is_abstract_entity(base):
-                entity_bases.append(base)
- 
+    # Copy the properties ('Property' instances) of the entity base class(es).
+    # We use getmembers (instead of __dict__) so that we also get the
+    # properties from the parents of the base class if any.
     base_props = []
-    if entity_bases:
-        # If so, copy the base entity properties ('Property' instances).
-        # We use inspect.getmembers (instead of __dict__) so that we also
-        # get the properties from the parents of the base_class if any.
-        for base in entity_bases:
-            base_props += [(name, deepcopy(attr)) for name, attr in 
+    for base in cls.__bases__:
+        if isinstance(base, EntityMeta) and \
+           (not is_entity(base) or is_abstract_entity(base)):
+            base_props += [(name, deepcopy(attr)) for name, attr in
                            getmembers(base, lambda a: isinstance(a, Property))]
 
     # Process attributes (using the assignment syntax), looking for
@@ -742,9 +749,6 @@ def instrument_class(cls):
                           key=lambda i: i[1]._counter)
     for name, prop in sorted_props:
         prop.attach(cls, name)
-
-    # Process mutators
-    process_mutators(cls)
 
     # setup misc options here (like tablename etc.)
     desc.setup_options()
@@ -758,19 +762,6 @@ class EntityMeta(type):
     """
 
     def __init__(cls, name, bases, dict_):
-        # Only process further subclasses of the base classes (Entity et al.),
-        # not the base classes themselves. We don't want the base entities to
-        # be registered in an entity collection, nor to have a table name and
-        # so on.
-
-        if is_abstract_entity(dict_):
-            return
-
-        if not is_entity(cls):
-            if isinstance(cls, EntityMeta):
-                process_mutators(cls)
-            return
-
         instrument_class(cls)
 
     def __setattr__(cls, key, value):

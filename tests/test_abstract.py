@@ -2,8 +2,13 @@
 test inheritance with abstract entities
 """
 
+import re
+
 from elixir import *
 import elixir
+
+def camel_to_underscore(entity):
+    return re.sub(r'(.+?)([A-Z])+?', r'\1_\2', entity.__name__).lower()
 
 def setup():
     metadata.bind = 'sqlite://'
@@ -113,6 +118,7 @@ class TestAbstractInheritance(object):
     def test_multiple_inheritance(self):
         class AbstractDated(Entity):
             using_options(abstract=True)
+            using_options_defaults(tablename=camel_to_underscore)
 
             #TODO: add defaults
             created_date = Field(DateTime)
@@ -120,21 +126,55 @@ class TestAbstractInheritance(object):
 
         class AbstractContact(Entity):
             using_options(abstract=True)
+            using_options_defaults(identity=camel_to_underscore)
 
             first_name = Field(Unicode(50))
             last_name = Field(Unicode(50))
 
-        class Contact(AbstractContact, AbstractDated):
+        class DatedContact(AbstractContact, AbstractDated):
             pass
 
         setup_all(True)
 
-        for f in ('created_date', 'modified_date',
-                  'first_name', 'last_name'):
-            assert f in Contact.table.columns, \
-                   "column '%s' does not exist in table " % f
+        assert 'created_date' in DatedContact.table.columns
+        assert 'modified_date' in DatedContact.table.columns
+        assert 'first_name' in DatedContact.table.columns
+        assert 'last_name' in DatedContact.table.columns
+        assert DatedContact._descriptor.identity == 'dated_contact'
+        assert DatedContact.table.name == 'dated_contact'
 
-        contact1 = Contact(first_name=u"Guido", last_name=u"van Rossum")
+        contact1 = DatedContact(first_name=u"Guido", last_name=u"van Rossum")
         session.commit()
 
+    def test_mixed_inheritance(self):
+        class AbstractDated(Entity):
+            using_options(abstract=True)
+            using_options_defaults(tablename=camel_to_underscore)
+
+            #TODO: add defaults
+            created_date = Field(DateTime)
+            modified_date = Field(DateTime)
+
+        class AbstractContact(Entity):
+            using_options(abstract=True)
+            using_options_defaults(identity=camel_to_underscore)
+
+            first_name = Field(Unicode(50))
+            last_name = Field(Unicode(50))
+
+        class Contact(AbstractContact):
+            using_options(inheritance='multi')
+
+        class DatedContact(AbstractDated, Contact):
+            using_options(inheritance='multi')
+
+        setup_all(True)
+
+        assert 'created_date' in DatedContact.table.columns
+        assert 'modified_date' in DatedContact.table.columns
+        assert DatedContact._descriptor.identity == 'dated_contact'
+        assert DatedContact.table.name == 'dated_contact'
+
+        contact1 = DatedContact(first_name=u"Guido", last_name=u"van Rossum")
+        session.commit()
 
