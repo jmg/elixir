@@ -719,8 +719,6 @@ def instrument_class(cls):
     the EntityMeta metaclass.
     """
     # Create the entity descriptor
-    #XXX: we might want to use a simplified descriptor for bases and abstract
-    # classes which only need "bases", "options_defaults" and "abstract"
     desc = cls._descriptor = EntityDescriptor(cls)
 
     # Process mutators
