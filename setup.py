@@ -23,6 +23,7 @@ SVN version: <http://elixir.ematia.de/svn/elixir/trunk#egg=Elixir-dev>
 """,
       author="Gaetan de Menten, Daniel Haus and Jonathan LaCour",
       author_email="sqlelixir@googlegroups.com",
+      #TODO: use maintainer field
       url="http://elixir.ematia.de",
       license = "MIT License",
       install_requires = [

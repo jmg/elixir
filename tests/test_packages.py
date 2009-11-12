@@ -4,12 +4,13 @@ Test spreading entities accross several modules
 
 import sys
 
+import elixir
 from elixir import *
 
 def setup():
     metadata.bind = 'sqlite://'
-    sys.modules.pop('tests.a', None)
-    sys.modules.pop('tests.b', None)
+    for module in ('a', 'b', 'db1', 'db1.a', 'db1.b', 'db1.c', 'db2', 'db2.a'):
+        sys.modules.pop('tests.%s' % module, None)
 
 
 class TestPackages(object):
@@ -45,7 +46,7 @@ class TestPackages(object):
 
     def test_ref_to_imported_entity_using_class(self):
         from tests.a import A
-        from tests.b import B
+        import tests.b
 
         class C(Entity):
             name = Field(String(30))
@@ -56,8 +57,8 @@ class TestPackages(object):
         assert 'a_id' in C.table.columns
 
     def test_ref_to_imported_entity_using_name(self):
-        from tests.a import A
-        from tests.b import B
+        import tests.a
+        import tests.b
 
         class C(Entity):
             name = Field(String(30))
@@ -67,3 +68,32 @@ class TestPackages(object):
 
         assert 'a_id' in C.table.columns
 
+    def test_resolve_root(self):
+        import tests.a
+        import tests.b
+
+        class C(Entity):
+            using_options(resolve_root='tests')
+
+            name = Field(String(30))
+            a = ManyToOne('a.A')
+
+        setup_all(True)
+
+        assert 'a_id' in C.table.columns
+
+    def test_relative_collection(self):
+        from elixir.collection import RelativeEntityCollection, \
+                                      GlobalEntityCollection
+
+        elixir.entities = RelativeEntityCollection()
+
+        import db1
+        import db2
+
+        setup_all(True)
+
+        try:
+            assert len(elixir.entities) == 5
+        finally:
+            elixir.entities = GlobalEntityCollection()

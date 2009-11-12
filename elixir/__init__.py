@@ -35,7 +35,7 @@ from elixir.relationships import belongs_to, has_one, has_many, \
 from elixir.properties import has_property, GenericProperty, ColumnProperty, \
                               Synonym
 from elixir.statements import Statement
-from elixir.collection import EntityCollection
+from elixir.collection import EntityCollection, GlobalEntityCollection
 
 
 __version__ = '0.8.0dev'
@@ -67,7 +67,7 @@ metadata = sqlalchemy.MetaData()
 metadatas = set()
 
 # default entity collection
-entities = EntityCollection()
+entities = GlobalEntityCollection()
 
 
 def create_all(*args, **kwargs):

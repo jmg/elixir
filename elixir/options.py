@@ -225,6 +225,7 @@ options_defaults = dict(
     version_id_col=False,
     allowcoloverride=False,
     order_by=None,
+    resolve_root=None,
     mapper_options={},
     table_options={}
 )

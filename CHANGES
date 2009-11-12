@@ -4,6 +4,13 @@ New features:
 - Entities can now be declared "abstract" so that they do not create a table,
   etc... This allows, among others, an entity to inherit from multiple abstract
   classes (patch from Stéphane Klein, closes #89).
+- Added a new collection which can resolve entities relative to the current
+  entity, for example "..other_module.Class" (based on patches from Johannes
+  Janssen, closes #93).
+- Added a new entity option "resolve_root", which allows one to specify the
+  root module where your entities are defined. The string will be prepended
+  to all "absolute" entity paths. It can also be used on a per-entity basis.
+  This feature is based on a patch from Johannes Janssen, see #93.
 
 Changes:
 - using_options_defaults and using_table_options statements can be used several

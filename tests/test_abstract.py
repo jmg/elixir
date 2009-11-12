@@ -11,8 +11,18 @@ def camel_to_underscore(entity):
     return re.sub(r'(.+?)([A-Z])+?', r'\1_\2', entity.__name__).lower()
 
 def setup():
+    # this is an ugly hack because globally defined entities of other tests 
+    # (a.*, b.*, db1.* and db2.*) leak into this one because of nosetests 
+    # habit of importing all modules before running the first test. 
+    # test_abstract is usually the first test to be run, so it gets all the 
+    # crap.
+    cleanup_all()
+
     metadata.bind = 'sqlite://'
     elixir.options_defaults['shortnames'] = True
+
+def teardown():
+    elixir.options_defaults['shortnames'] = False
 
 class TestAbstractInheritance(object):
     def teardown(self):
