@@ -3,6 +3,7 @@ test having entities using a custom base class
 """
 
 from elixir import *
+import elixir
 
 def setup():
     metadata.bind = 'sqlite://'
@@ -180,4 +181,54 @@ class TestCustomBase(object):
         assert TestA.table.name == 'test_a'
         assert SuperTestB.table.name == 'super_test_b'
         assert TestA._descriptor.identity == 'test_a'
+
+    def test_base_custom_collection(self):
+        global A, B
+
+        collection = elixir.collection.RelativeEntityCollection()
+
+        class Base(object):
+            __metaclass__ = EntityMeta
+            using_options_defaults(collection=collection)
+
+        class A(Base):
+            b = ManyToOne('B')
+
+        class B(Base):
+            a = OneToOne('A')
+
+        assert not elixir.entities
+        assert A.table is None
+        assert B.table is None
+
+        setup_entities(collection)
+
+        assert A.table is not None
+        assert B.table is not None
+
+        del A
+        del B
+
+    def test_base_custom_session(self):
+        from sqlalchemy.orm import sessionmaker
+
+        class Base(object):
+            __metaclass__ = EntityMeta
+            using_options_defaults(session=None)
+
+        class A(Base):
+            b = ManyToOne('B')
+
+        class B(Base):
+            a = OneToOne('A')
+        
+        setup_all(True)
+
+        a = A()
+
+        assert a not in elixir.session
+
+        session = sessionmaker()()
+        session.add(a)
+        assert a in session
 
