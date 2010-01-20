@@ -278,8 +278,9 @@ relationships accept the following optional (keyword) arguments:
 |                    | reference the "local"/current entity's table.          |
 +--------------------+--------------------------------------------------------+
 | ``table``          | Use a manually created table. If this argument is      |
-|                    | used, Elixir won't generate a table for this           |
-|                    | relationship, and use the one given instead.           |
+|                    | used, Elixir will not generate a table for this        |
+|                    | relationship, and use the one given instead. This      |
+|                    | argument only accepts SQLAlchemy's Table objects.      |
 +--------------------+--------------------------------------------------------+
 | ``order_by``       | Specify which field(s) should be used to sort the      |
 |                    | results given by accessing the relation field.         |
