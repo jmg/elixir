@@ -964,6 +964,7 @@ class EntityBase(object):
     def _global_session(self):
         return self._descriptor.session.registry()
 
+    #FIXME: remove all deprecated methods, possibly all of these
     def merge(self, *args, **kwargs):
         return self._global_session.merge(self, *args, **kwargs)
 
