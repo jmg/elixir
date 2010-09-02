@@ -25,6 +25,7 @@ Bug fixes:
   interfaces (closes #98, patch from Valentin Lab)
 - Fixed having relationships in custom base classes (based on patch
   by Stéphane Klein)
+- Fixed a few tests to work on SA 0.6.x
 
 0.7.0 - 2009-10-01
 
