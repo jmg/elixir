@@ -3,6 +3,17 @@
 New features:
 - Better support for Python 3.x by running 2to3 within setup (patch by
   "foogod", closes #110).
+
+Changes:
+- Dropped support for python 2.3, SQLAlchemy 0.4 and deprecated stuff from
+  Elixir 0.7
+
+Bug fixes:
+- Fixed a few tests to work on SA 0.6.x
+
+0.7.1 - 2009-11-16
+
+New features:
 - Entities can now be declared "abstract" so that they do not create a table,
   etc... This allows, among others, an entity to inherit from multiple abstract
   classes (patch from Stéphane Klein, closes #89).
@@ -17,15 +28,12 @@ New features:
 Changes:
 - using_options_defaults and using_table_options statements can be used several
   times within the same class (closes #70).
-- Dropped support for python 2.3, SQLAlchemy 0.4 and deprecated stuff from
-  Elixir 0.7
 
 Bug fixes:
 - Fixed custom base classes and versioned extension when used with zope
   interfaces (closes #98, patch from Valentin Lab)
 - Fixed having relationships in custom base classes (based on patch
   by Stéphane Klein)
-- Fixed a few tests to work on SA 0.6.x
 
 0.7.0 - 2009-10-01
 
