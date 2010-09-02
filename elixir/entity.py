@@ -363,6 +363,11 @@ class EntityDescriptor(object):
 
         order = []
         for colname in order_by:
+            #FIXME: get_column uses self.columns[key] instead of property
+            # names. self.columns correspond to the columns of the table if
+            # the table was already created and to self._columns otherwise,
+            # which is a ColumnCollection indexed on columns.key
+            # See ticket #108.
             col = self.get_column(colname.strip('-'))
             if colname.startswith('-'):
                 col = desc(col)
@@ -486,6 +491,7 @@ class EntityDescriptor(object):
                                 (col.key, self.entity.__name__))
             else:
                 del self._columns[col.key]
+        # are indexed on col.key
         self._columns.add(col)
 
         if col.primary_key:
@@ -642,6 +648,8 @@ class EntityDescriptor(object):
             for prop in mapper.iterate_properties:
                 if isinstance(prop, ColumnProperty):
                     for col in prop.columns:
+                        #XXX: Why is this extra loop necessary? What is this
+                        #     "proxy_set" supposed to mean?
                         for col in col.proxy_set:
                             col_to_prop[col] = prop
             pk_cols = [c for c in mapper.mapped_table.c if c.primary_key]

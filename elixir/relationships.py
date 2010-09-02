@@ -628,7 +628,10 @@ class ManyToOne(Relationship):
         source_desc = self.entity._descriptor
         if isinstance(self.target, EntityMeta):
             # make sure the target has all its pk set up
+            #FIXME: this is not enough when specifying target_column manually,
+            # on unique, non-pk col, see tests/test_m2o.py:test_non_pk_forward
             self.target._descriptor.create_pk_cols()
+
         #XXX: another option, instead of the FakeTable, would be to create an
         # EntityDescriptor for the SA class.
         target_table = self.target_table
@@ -649,6 +652,12 @@ class ManyToOne(Relationship):
                             "Couldn't find a foreign key constraint in table "
                             "'%s' using the following columns: %s."
                             % (self.entity.table.name, colnames))
+            else:
+                # in this case we let SA handle everything. 
+                # XXX: we might want to try to build join clauses anyway so 
+                # that we know whether there is an ambiguity or not, and
+                # suggest using colname if there is one
+                pass
             if self.field:
                 raise NotImplementedError(
                     "'field' argument not allowed on autoloaded table "
@@ -802,8 +811,8 @@ class OneToOne(Relationship):
         # useless because the remote_side is already setup in the other way
         # (ManyToOne).
         if self.entity.table is self.target.table:
-            #FIXME: IF this code is of any use, it will probably break for
-            # autoloaded tables
+            # When using a manual/autoloaded table, it will be assigned
+            # an empty list, which doesn't seem to upset SQLAlchemy
             kwargs['remote_side'] = self.inverse.foreign_key
 
         # Contrary to ManyToMany relationships, we need to specify the join
