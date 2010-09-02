@@ -3,6 +3,7 @@
 New features:
 - Better support for Python 3.x by running 2to3 within setup (patch by
   "foogod", closes #110).
+- Added more tests for relationships to forward-declared entities.
 
 Changes:
 - Dropped support for python 2.3, SQLAlchemy 0.4 and deprecated stuff from

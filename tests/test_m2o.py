@@ -30,6 +30,30 @@ class TestManyToOne(object):
 
         assert b.a.name == 'a1'
 
+    def test_forward(self):
+        class A(Entity):
+            name = Field(String(60))
+
+        class B(Entity):
+            name = Field(String(60))
+            a = ManyToOne('A')
+            c = ManyToOne('C')
+
+        class C(Entity):
+            name = Field(String(60))
+
+        setup_all(True)
+
+        b1 = B(name='b1', a=A(name='a1'), c=C(name='c1'))
+
+        session.commit()
+        session.expunge_all()
+
+        b = B.query.one()
+
+        assert b.a.name == 'a1'
+        assert b.c.name == 'c1'
+
     # this test is in test_o2m.py
     # def test_selfref(self):
 
@@ -207,11 +231,6 @@ class TestManyToOne(object):
         class B(Entity):
             name = Field(String(60))
             a = ManyToOne('A', target_column=['id', 'name'])
-# currently fails
-#            c = ManyToOne('C', target_column=['id', 'name'])
-
-#        class C(Entity):
-#            name = Field(String(60), unique=True)
 
         setup_all(True)
 
@@ -223,6 +242,26 @@ class TestManyToOne(object):
         b = B.query.one()
 
         assert b.a.name == 'a1'
+
+    # currently fails. See elixir/relationships.py:create_keys
+#    def test_non_pk_forward(self):
+#        class B(Entity):
+#            name = Field(String(60))
+#            a = ManyToOne('A', target_column=['id', 'name'])
+#
+#        class A(Entity):
+#            name = Field(String(60), unique=True)
+#
+#        setup_all(True)
+#
+#        b1 = B(name='b1', a=A(name='a1'))
+#
+#        session.commit()
+#        session.expunge_all()
+#
+#        b = B.query.one()
+#
+#        assert b.a.name == 'a1'
 
     def test_belongs_to_syntax(self):
         class Person(Entity):
