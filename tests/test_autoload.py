@@ -32,6 +32,68 @@ class TestAutoload(object):
         cleanup_all(True)
 
     def test_simple(self):
+        conn = metadata.bind.connect()
+        conn.execute("CREATE TABLE a ("
+                     "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                     "name VARCHAR(32))")
+        conn.close()
+
+        class A(Entity):
+            pass
+
+        setup_all()
+
+        a1 = A(name="a1")
+        a2 = A(name="a2")
+
+        session.commit()
+        session.expunge_all()
+
+        a1 = A.get_by(name="a1")
+        a2 = A.get_by(name="a2")
+        assert a1.name == 'a1'
+        assert a2.name == 'a2'
+
+    def test_fk_auto_join_sa(self):
+        # SQLAlchemy produces the join in this case
+        person_table = Table('person', metadata,
+            Column('id', Integer, primary_key=True),
+            Column('name', String(32)))
+
+        animal_table = Table('animal', metadata,
+            Column('id', Integer, primary_key=True),
+            Column('name', String(30)),
+            Column('owner_id', Integer, ForeignKey('person.id')))
+
+        metadata.create_all()
+        metadata.clear()
+
+        class Person(Entity):
+            pets = OneToMany('Animal')
+
+        class Animal(Entity):
+            owner = ManyToOne('Person')
+
+        setup_all()
+
+        snowball = Animal(name="Snowball")
+        snowball2 = Animal(name="Snowball II")
+        slh = Animal(name="Santa's Little Helper")
+        homer = Person(name="Homer", pets=[slh, snowball])
+        lisa = Person(name="Lisa", pets=[snowball2])
+
+        session.commit()
+        session.expunge_all()
+
+        homer = Person.get_by(name="Homer")
+        lisa = Person.get_by(name="Lisa")
+        slh = Animal.get_by(name="Santa's Little Helper")
+
+        assert len(homer.pets) == 2
+        assert homer == slh.owner
+        assert lisa.pets[0].name == "Snowball II"
+
+    def test_fk_auto_join_colname(self):
         person_table = Table('person', metadata,
             Column('id', Integer, primary_key=True),
             Column('name', String(32)))
@@ -150,6 +212,54 @@ class TestAutoload(object):
         assert len(c.persons) == 4
         assert c in grampa.categories
 
+     # currently fails. See elixir/relationships.py:_get_join_clauses
+#    def test_m2m_extra_fk(self):
+#        person_table = Table('person', metadata,
+#            Column('id', Integer, primary_key=True),
+#            Column('name', String(32), unique=True))
+#
+#        category_table = Table('category', metadata,
+#            Column('name', String(30), primary_key=True))
+#
+#        person_category_table = Table('person_category', metadata,
+#            Column('person_id', Integer, ForeignKey('person.id')),
+#            Column('category_name', String(30), ForeignKey('category.name')),
+#            Column('person_name', String(32), ForeignKey('person.name')))
+#
+#        metadata.create_all()
+#        metadata.clear()
+#
+#        class Person(Entity):
+#            categories = ManyToMany('Category',
+#                                    tablename='person_category',
+#                                    local_colname='person_id')
+#
+#        class Category(Entity):
+#            persons = ManyToMany('Person',
+#                                 tablename='person_category')
+#
+#        setup_all()
+#
+#        stupid = Category(name="Stupid")
+#        simpson = Category(name="Simpson")
+#        old = Category(name="Old")
+#
+#        grampa = Person(name="Abe", categories=[simpson, old])
+#        homer = Person(name="Homer", categories=[simpson, stupid])
+#        bart = Person(name="Bart")
+#        lisa = Person(name="Lisa")
+#
+#        simpson.persons.extend([bart, lisa])
+#
+#        session.commit()
+#        session.expunge_all()
+#
+#        c = Category.get_by(name="Simpson")
+#        grampa = Person.get_by(name="Abe")
+#
+#        assert len(c.persons) == 4
+#        assert c in grampa.categories
+
     def test_m2m_selfref(self):
         person_table = Table('person', metadata,
             Column('id', Integer, primary_key=True),
@@ -168,6 +278,7 @@ class TestAutoload(object):
                                     local_colname='person_id1')
             isappreciatedby = ManyToMany('Person',
                                          tablename='person_person',
+                                         # this one is not necessary
                                          local_colname='person_id2')
 
         setup_all()
