@@ -1,6 +1,8 @@
 0.8.0
 
 New features:
+- Better support for Python 3.x by running 2to3 within setup (patch by
+  "foogod", closes #110).
 - Entities can now be declared "abstract" so that they do not create a table,
   etc... This allows, among others, an entity to inherit from multiple abstract
   classes (patch from Stéphane Klein, closes #89).
