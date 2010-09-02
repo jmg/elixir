@@ -1,4 +1,9 @@
 from setuptools import setup, find_packages
+import sys
+
+extra = {}
+if sys.version_info >= (3,):
+    extra['use_2to3'] = True
 
 setup(name="Elixir",
       version="0.8.0",
@@ -40,4 +45,5 @@ SVN version: <http://elixir.ematia.de/svn/elixir/trunk#egg=Elixir-dev>
           "Topic :: Database :: Front-Ends",
           "Topic :: Software Development :: Libraries :: Python Modules"
       ],
-      test_suite = 'nose.collector')
+      test_suite = 'nose.collector',
+      **extra)
