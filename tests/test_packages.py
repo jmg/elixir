@@ -83,10 +83,9 @@ class TestPackages(object):
         assert 'a_id' in C.table.columns
 
     def test_relative_collection(self):
-        from elixir.collection import RelativeEntityCollection, \
-                                      GlobalEntityCollection
+        original_collection = elixir.entities
 
-        elixir.entities = RelativeEntityCollection()
+        elixir.entities = elixir.collection.RelativeEntityCollection()
 
         import db1
         import db2
@@ -96,4 +95,4 @@ class TestPackages(object):
         try:
             assert len(elixir.entities) == 5
         finally:
-            elixir.entities = GlobalEntityCollection()
+            elixir.entities = original_collection
