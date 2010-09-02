@@ -431,9 +431,11 @@ class TestManyToMany(object):
     def test_manual_table_auto_joins(self):
         from sqlalchemy import Table, Column, ForeignKey, ForeignKeyConstraint
 
+        # Can't use None as column types because this is unsupported in SA 0.6+
+        # for composite foreign keys
         a_b = Table('a_b', metadata,
-                    Column('a_key1', None),
-                    Column('a_key2', None),
+                    Column('a_key1', Integer),
+                    Column('a_key2', String(40)),
                     Column('b_id', None, ForeignKey('b.id')),
                     ForeignKeyConstraint(['a_key1', 'a_key2'],
                                          ['a.key1', 'a.key2']))
