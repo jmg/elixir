@@ -880,14 +880,14 @@ class EntityBase(object):
             record = cls.query.get(pk_tuple)
             if record is None:
                 if surrogate:
-                    raise Exception("cannot create surrogate with pk")
+                    raise Exception("Cannot create surrogate with pk")
                 else:
                     record = cls()
         else:
             if surrogate:
                 record = cls()
             else:
-                raise Exception("cannot create non surrogate without pk")
+                raise Exception("Cannot create non surrogate without pk")
         record.from_dict(data)
         return record
 
