@@ -1,62 +1,49 @@
-from elixir import *
-from elixir.ext.versioned import acts_as_versioned
+import time
 from datetime import datetime
 
-import time
-
-nextOneValue = 0
-def nextOne():
-    global nextOneValue
-    nextOneValue += 2
-    return nextOneValue
-
-def setup():
-    global Director, Movie, Actor
-
-    class Director(Entity):
-        name = Field(String(60))
-        movies = OneToMany('Movie', inverse='director')
-        using_options(tablename='directors')
-
-
-    class Movie(Entity):
-        id = Field(Integer, primary_key=True)
-        title = Field(String(60), primary_key=True)
-        description = Field(String(512))
-        releasedate = Field(DateTime)
-        ignoreme = Field(Integer, default=0)
-        autoupd = Field(Integer, default=nextOne, onupdate=nextOne)
-        director = ManyToOne('Director', inverse='movies')
-        actors = ManyToMany('Actor', inverse='movies',
-                            tablename='movie_casting')
-        using_options(tablename='movies')
-        acts_as_versioned(ignore=['ignoreme', 'autoupd'],
-                          column_names=['version_no', 'timestamp_value'])
-
-
-    class Actor(Entity):
-        name = Field(String(60))
-        movies = ManyToMany('Movie', inverse='actors',
-                            tablename='movie_casting')
-        using_options(tablename='actors')
-
-    setup_all()
-    metadata.bind = 'sqlite://'
-
-
-def teardown():
-    cleanup_all()
+from elixir import *
+from elixir.ext.versioned import acts_as_versioned
 
 
 class TestVersioning(object):
-    def setup(self):
-        create_all()
-
     def teardown(self):
-        drop_all()
-        session.close()
+        cleanup_all(True)
 
     def test_versioning(self):
+        nextOneValue = {'value': 0}
+
+        def nextOne():
+            nextOneValue['value'] += 2
+            return nextOneValue['value']
+
+        class Director(Entity):
+            name = Field(String(60))
+            movies = OneToMany('Movie', inverse='director')
+            using_options(tablename='directors')
+
+        class Movie(Entity):
+            id = Field(Integer, primary_key=True)
+            title = Field(String(60), primary_key=True)
+            description = Field(String(512))
+            releasedate = Field(DateTime)
+            ignoreme = Field(Integer, default=0)
+            autoupd = Field(Integer, default=nextOne, onupdate=nextOne)
+            director = ManyToOne('Director', inverse='movies')
+            actors = ManyToMany('Actor', inverse='movies',
+                                tablename='movie_casting')
+            using_options(tablename='movies')
+            acts_as_versioned(ignore=['ignoreme', 'autoupd'],
+                              column_names=['version_no', 'timestamp_value'])
+
+        class Actor(Entity):
+            name = Field(String(60))
+            movies = ManyToMany('Movie', inverse='actors',
+                                tablename='movie_casting')
+            using_options(tablename='actors')
+
+        metadata.bind = 'sqlite://'
+        setup_all(True)
+
         gilliam = Director(name='Terry Gilliam')
         monkeys = Movie(id=1, title='12 Monkeys',
                         description='draft description', director=gilliam)
