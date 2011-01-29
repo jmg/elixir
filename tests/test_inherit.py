@@ -7,7 +7,7 @@ import elixir
 
 def setup():
     metadata.bind = 'sqlite://'
-#    metadata.bind = 'postgres://@/test'
+#    metadata.bind = 'postgresql://@/test'
 #    metadata.bind.echo = True
     elixir.options_defaults['shortnames'] = True
 
@@ -142,6 +142,28 @@ class TestInheritance(object):
                                  inverse='childs')
 
         setup_all()
+
+    def test_multi_pk(self):
+        class A(Entity):
+            using_options(inheritance='multi')
+            firstname = Field(String(50), primary_key=True)
+            lastname = Field(String(50), primary_key=True)
+
+        class B(A):
+            using_options(inheritance='multi')
+
+        setup_all(True)
+
+        b1 = B(firstname='1', lastname='b')
+        b2 = B(firstname='2', lastname='b')
+
+        session.commit()
+
+        b1.delete()
+
+        session.commit()
+
+        assert len(B.query.all()) == 1
 
     def test_multitable_polymorphic_load(self):
         class A(Entity):

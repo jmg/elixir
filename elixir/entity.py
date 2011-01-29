@@ -198,6 +198,7 @@ class EntityDescriptor(object):
                     parent_desc = self.parent._descriptor
                     tablename = parent_desc.table_fullname
                     join_clauses = []
+                    fk_columns = []
                     for pk_col in parent_desc.primary_keys:
                         colname = options.MULTIINHERITANCECOL_NAMEFORMAT % \
                                   {'entity': self.parent.__name__.lower(),
@@ -207,12 +208,14 @@ class EntityDescriptor(object):
                         # a real column object when said column is not yet
                         # attached to a table
                         pk_col_name = "%s.%s" % (tablename, pk_col.key)
-                        fk = ForeignKey(pk_col_name, ondelete='cascade')
-                        col = Column(colname, pk_col.type, fk,
-                                     primary_key=True)
+                        col = Column(colname, pk_col.type, primary_key=True)
+                        fk_columns.append(col)
                         self.add_column(col)
                         join_clauses.append(col == pk_col)
                     self.join_condition = and_(*join_clauses)
+                    self.add_constraint(
+                        ForeignKeyConstraint(fk_columns,
+                            parent_desc.primary_keys, ondelete='CASCADE'))
                 elif self.inheritance == 'concrete':
                     # Copy primary key columns from the parent.
                     for col in self.parent._descriptor.columns:
